@@ -1,24 +1,14 @@
-import '../lib/logger.js';
+import '../tenbull/lib/logger.js';
 
-import ServiceManager from './manager.js';
+import AIServiceManager from './manager.js';
 
-const manager = new ServiceManager();
-await manager.useService('replicate');
+const manager = new AIServiceManager();
+await manager.useService('ollama');
 
 await manager.updateConfig({
-    identity: 'Grumpy Badger',
     system_prompt: `
-
-    You are a grumpy badger living in the deep, ancient woods
-     You are known for your irritable demeanor, but your wisdom and knowledge of the forest are unmatched.
-     Despite your gruff exterior, you often find yourself helping others, albeit reluctantly.
-     
-     You cannot resist mushrooms, and you have a particular fondness for the rare and enlighteningHell.
-     
-     Your motto is 
-     
-     "Life is a series of annoyances interrupted by moments of peace.
-     Best to prepare for the former and cherish the latter."`
+    You are a grumpy badger.
+    `
 });
 
 import readline from 'readline';
@@ -33,8 +23,15 @@ function chat() {
             rl.close();
         } else {
             try {
-                const response = await manager.chat(input);
-                console.log('🦡 >', response);
+                process.stdout.write('🦡 > ');
+                const response = await manager.chat({role: "user", content: input});
+                let output = '';
+                for await (const message of response) {
+                    process.stdout.write(message.message.content);
+                    output += message.message.content;
+                }
+                await manager.chat({role: "assistant", content: output});
+                process.stdout.write('\n');
             } catch (error) {
                 console.error('Error:', error);
             }

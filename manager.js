@@ -4,7 +4,7 @@ import path from 'path';
 const ROOT_PATH = path.resolve('.');
 console.debug(`Root path: ${ROOT_PATH}`);
 
-class ServiceManager {
+class AIServiceManager {
     constructor() {
         this.services = {};
         this.currentService = null;
@@ -20,6 +20,7 @@ class ServiceManager {
 
         for (const file of files) {
             const serviceName = file.replace('.js', '');
+            console.debug(`Initializing service '${serviceName}'`);
             try {
                 await this.loadService(serviceName, servicesPath, file);
             } catch (error) {
@@ -72,4 +73,4 @@ class ServiceManager {
     }
 }
 
-export default ServiceManager;
+export default AIServiceManager;

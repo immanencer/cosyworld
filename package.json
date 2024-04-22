@@ -1,0 +1,17 @@
+{
+  "name": "cosyworld",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ai-service.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ollama": "^0.5.0",
+    "openai": "^4.38.2",
+    "replicate": "^0.29.1"
+  }
+}

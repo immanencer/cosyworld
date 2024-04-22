@@ -1,4 +1,7 @@
 class AIService {
+    updateConfig(config) {
+        this.config = { ...this.config, ...config };
+    }
     handleStream(prompt) {
         throw new Error('handleStream method must be implemented');
     }

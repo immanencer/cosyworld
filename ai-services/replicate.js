@@ -8,42 +8,45 @@ import AIService from "../ai-service.js";
 export default class ReplicateService extends AIService {
 
     system_prompt = "You are a helpful assistant";
+    prompt_template = (system_prompt, prompt, identity) => (`
+        
+    <|begin_of_text|>
+    <|start_header_id|>system<|end_header_id|>
+    
+        ${system_prompt}
+    
+    <|eot_id|>
+    <|start_header_id|>user<|end_header_id|>
+    ${prompt}
+    <|eot_id|>
+    <|start_header_id|>${identity || 'ai'}<|end_header_id|>
+    
+    `);
     config = {
         top_k: 0,
         top_p: 0.9,
-        temperature: 0,
+        temperature: 0.6,
         system_prompt:"You are a helpful assistant",
         length_penalty: 1,
         max_new_tokens: 512,
         stop_sequences: "<|end_of_text|>,<|eot_id|>",
-        prompt_template: (system_prompt, prompt, identity) => (`
-        
-        <|begin_of_text|>
-        <|start_header_id|>system<|end_header_id|>
-        
-            ${system_prompt}
-        
-        <|eot_id|>
-        <|start_header_id|>user<|end_header_id|>
-        ${prompt}
-        <|eot_id|>
-        <|start_header_id|>${identity || 'ai'}<|end_header_id|>
-        
-        `),
         presence_penalty: 0
     };
-
-    updateConfig(config) {
-        this.config = { ...this.config, ...config };
-    }
-
+    
     chat_history = [];
     chat = async (prompt) => {
+        if (this.chat_history.length === 0) {
+            this.chat_history.push({
+                role: "system",
+                content: this.config.system_prompt
+            });
+        }
         this.chat_history.push({
             role: "user",
             content: prompt
         });
-        
+
+        this.config.prompt_template = this.prompt_template(this.config.system_prompt, prompt, this.config.identity);
         
         let history = this.chat_history.map((message) => `${message.role}: ${message.content}`).join("\n")
         // truncate history to 4096 tokens

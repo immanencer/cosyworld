@@ -1,25 +1,13 @@
 import fs from 'fs';
 import crypto from 'crypto';
-import OpenAI from 'openai';
 
+import OpenAI from 'openai';
 const openai = new OpenAI();
 
-// load the assistant by the id from filesystem
-// create new assistants through the web interface if needed
-console.log('🤖 Loading assistant...');
-const assistant = fs.existsSync('assistant_id.txt')
-  ? (await openai.beta.assistants.retrieve(fs.readFileSync('assistant_id.txt', 'utf8')))
-  : (await openai.beta.assistants.create({ name: 'Persistent Chat Bot' }));
-fs.writeFileSync('assistant_id.txt', assistant.id);
-
-if (!assistant) throw new Error('Failed to load assistant');
-
-// load the thread by the id from filesystem or create a new one
-console.log('🧵 Loading thread...');
-const thread = await (async (path) => fs.existsSync(path)
-  ? (await openai.beta.threads.retrieve(fs.readFileSync(path, 'utf8')))
-  : (await openai.beta.threads.create()))('thread_id.txt');
-fs.writeFileSync('thread_id.txt', thread.id);
+import AIService from '../ai-service.js';
+class OpenAIService extends AIService {
+  // Not implemented
+}
 
 
 class MessageProcessor {
@@ -27,13 +15,33 @@ class MessageProcessor {
     this.queue = [];
   }
 
+  async initialize() {
+
+    // load the assistant by the id from filesystem
+    // create new assistants through the web interface if needed
+    console.log('🤖 Loading assistant...');
+    const assistant = fs.existsSync('assistant_id.txt')
+      ? (await openai.beta.assistants.retrieve(fs.readFileSync('assistant_id.txt', 'utf8')))
+      : (await openai.beta.assistants.create({ name: 'Persistent Chat Bot' }));
+    fs.writeFileSync('assistant_id.txt', assistant.id);
+
+    if (!assistant) throw new Error('Failed to load assistant');
+
+    // load the thread by the id from filesystem or create a new one
+    console.log('🧵 Loading thread...');
+    const thread = await (async (path) => fs.existsSync(path)
+      ? (await openai.beta.threads.retrieve(fs.readFileSync(path, 'utf8')))
+      : (await openai.beta.threads.create()))('thread_id.txt');
+    fs.writeFileSync('thread_id.txt', thread.id);
+  }
+
   async completion({ model, prompt }) {
     const completion = await openai.chat.completions.create({
-      messages: [{"role": "system", "content": "You are a cute newspaper editor in a redwall style woods. You summarize the goings on and events in the forest. You are a kind and gentle editor. You are a rat."},
-          {"role": "user", "content": "What are the contents of today's newspaper?"}],
+      messages: [{ "role": "system", "content": "You are a cute newspaper editor in a redwall style woods. You summarize the goings on and events in the forest. You are a kind and gentle editor. You are a rat." },
+      { "role": "user", "content": "What are the contents of today's newspaper?" }],
       model: "gpt-3.5-turbo",
     });
-  
+
     console.log(completion.choices[0]);
     return completion.choices[0].message.content;
   }
