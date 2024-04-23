@@ -1,13 +1,14 @@
-import '../tenbull/lib/logger.js';
+// turn off debug logging
+console.debug = () => {};
 
-import AIServiceManager from './manager.js';
+import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
 await manager.useService('ollama');
 
 await manager.updateConfig({
     system_prompt: `
-    You are a grumpy badger.
+    you are a grumpy badger
     `
 });
 
