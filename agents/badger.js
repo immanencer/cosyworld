@@ -16,11 +16,8 @@ function chunkMessage(message, chunkSize = 2000) {
             return '🦡';
         },
         handleMessage: async (message) => {
-            // Handle the message with the chatbot
-            console.log(`🐀 📩 Message channel: ${message.channel}`);
-            console.log(`🐀 📩 Message content: ${message.content}`);
-            // Add more handling logic here
-
+            if (message.channel.id !== discordBot.threads['🦡 badger burrow'])
+            return;
 
             await aiServiceManager.updateConfig({ system_prompt:
             `
@@ -46,7 +43,12 @@ function chunkMessage(message, chunkSize = 2000) {
 
             let chunks = chunkMessage(output);
             chunks.forEach(chunk => {
-                discordBot.sendMessage(message.channel, chunk);
+                discordBot.sendAsAvatar('old-oak-tree', {
+                    name: 'Badger 🦡',
+                    emoji: '😠',
+                    avatar: 'https://i.imgur.com/97zSXlR.png',
+                    threadName: '🦡 badger burrow'
+                }, chunk);
             });
         }
     };
