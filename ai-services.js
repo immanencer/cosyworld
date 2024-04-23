@@ -15,7 +15,7 @@ class AIServiceManager {
         if (this.initialized) {
             return;
         }
-        const servicesPath = path.join(ROOT_PATH, 'services');
+        const servicesPath = path.join(ROOT_PATH, 'ai-services');
         const files = fs.readdirSync(servicesPath).filter(file => file.endsWith('.js'));
 
         for (const file of files) {
@@ -44,7 +44,7 @@ class AIServiceManager {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
-        this.currentService.updateConfig(config);
+        await this.currentService.updateConfig(config);
     }
 
     async useService(serviceName) {
