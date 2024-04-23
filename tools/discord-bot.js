@@ -2,7 +2,8 @@ import c from '../configuration.js';
 const configuration = c('discord-bot');
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 
-console.log('🎮 Discord Bot Initialized');
+import { chunkText } from './chunk-text.js';
+
 class DiscordBot {
     constructor(chatBotActions) {
         this.client = new Client({
@@ -15,6 +16,7 @@ class DiscordBot {
         this.chatBotActions = chatBotActions;
         this.webhookCache = {}; // Cache to store webhook references
         this.setupEventListeners();
+        console.log('🎮 Discord Bot Initialized');
     }
 
     getChannelHistory(channel) {
@@ -29,13 +31,36 @@ class DiscordBot {
         this.client.user.setActivity(activity, options);
     }
 
-    sendTyping(channel) {
-        if (!channel) {
-            console.error('🎮 ❌ No channel provided');
+    async sendTyping({ channelName, threadName = null}) {
+        console.log('🎮 Sending typing indicator');
+        if (!channelName) {
+            console.error('🎮 ❌ No channel ID provided');
             return;
         }
-        channel.sendTyping();
+    
+        try {
+            const channel = await client.channels.fetch(this.channels[channelName]);
+            if (!channel || !channel.isTextBased()) {
+                console.error('🎮 ❌ Invalid or non-text channel');
+                return;
+            }
+    
+            if (threadName) {
+                const thread = channel.threads.cache.get(threadName);
+                if (!thread || !thread.isTextBased()) {
+                    console.error('🎮 ❌ Invalid or non-text thread');
+                    return;
+                }
+                thread.sendTyping();
+            } else {
+                channel.sendTyping();
+            }
+        } catch (error) {
+            console.error(`🎮 ❌ Error sending typing indicator: ${error}`);
+        }
     }
+    
+    
 
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
@@ -44,16 +69,16 @@ class DiscordBot {
 
             const guild = await this.client.guilds.fetch(configuration.guild); // Replace 'YOUR_GUILD_ID' with your actual guild ID
             const channels = await guild.channels.fetch();
-        
+
             const channelsDictionary = {};
             const threadsDictionary = {};
-        
+
             // Iterate over each channel
             for (const [channelId, channel] of channels) {
                 // Add to channel dictionary if it's a text-based channel (can contain threads)
                 if (channel.isTextBased()) {
                     channelsDictionary[channel.name] = channelId;
-        
+
                     try {
                         // Fetch all active threads in the channel
                         const threads = await channel.threads.fetchActive();
@@ -65,7 +90,7 @@ class DiscordBot {
                     }
                 }
             }
-        
+
             this.channels = channelsDictionary;
             this.threads = threadsDictionary;
         });
@@ -87,17 +112,24 @@ class DiscordBot {
             console.error('🎮 ❌ No message provided');
             return;
         }
-        channel.send(message);
+
+
+        let chunks = chunkText(message);
+        chunks.forEach(chunk => { channel.send(chunk) });
     }
 
-    async sendAsAvatar(channelName, avatar, message) {
-        const webhook = await this.getOrCreateWebhook(this.channels[channelName]);
+    async sendAsAvatar(avatar, message) {
+        const webhook = await this.getOrCreateWebhook(this.channels[avatar.channel]);
         if (webhook) {
-            await webhook.send({
-                content: message.substring(0, 2000), // Ensuring message length limits
-                username: avatar.name + ' ' + (avatar.emoji || ''),
-                avatarURL: avatar.avatar,
-                threadId: this.threads[avatar.threadName] || null  // Send to a specific thread if provided
+
+            let chunks = chunkText(message);
+            chunks.forEach(async chunk => {
+                await webhook.send({
+                    content: chunk, // Ensuring message length limits
+                    username: avatar.name + ' ' + (avatar.emoji || ''),
+                    avatarURL: avatar.avatar,
+                    threadId: this.threads[avatar.thread] || null  // Send to a specific thread if provided
+                });
             });
             console.log(`📩 Message sent as ${avatar.name}: ${message}`);
         } else {

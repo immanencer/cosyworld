@@ -33,10 +33,13 @@ To use the Discord bot functionality, you will need a valid token. Without this,
 }
 ```
 
-Ensure that your `.configurations/discord-bot.json` file contains a valid Discord token:
+Ensure that your `.configurations/discord-bot.json` file contains a valid Discord token and server ID:
 
 ```json
-{ "token": "YOUR_DISCORD_TOKEN" }
+{
+    "token": "YOUR_DISCORD_TOKEN" ,
+    "guild": "YOUR_DISCORD_SERVER_ID"
+}
 ```
 
 ## Troubleshooting
