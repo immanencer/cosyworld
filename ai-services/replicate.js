@@ -35,6 +35,7 @@ export default class ReplicateService extends AIService {
     
     chat_history = [];
     chat = async (prompt) => {
+        throw new Error("⚠️ This is probably broken. You'll need to debug code if you remove this throw.");
         if (this.chat_history.length === 0) {
             this.chat_history.push({
                 role: "system",

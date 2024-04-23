@@ -1,102 +1,65 @@
-# ServiceManager Framework
+# AI Agent Framework
 
-The `ServiceManager` framework is designed to facilitate the integration and management of multiple AI services in Node.js applications. It provides a standardized way to interact with different AI services, making it easier to switch, test, and deploy various AI functionalities. The included `demo.js` serves as a demonstration of how the `ServiceManager` can be used to build a simple console chat interface.
+This repository provides a straightforward framework for creating AI agents using Node.js. It aims to simplify the integration and management of multiple AI services within Node.js applications. By offering a standard interface to interact with different AI services, this framework assists in the seamless switching, testing, and deployment of various AI functionalities.
 
-## Prerequisites
+Currently, the framework supports **OLLAMA** exclusively. The integration with other platforms like Replicate may have issues due to recent changes.
 
-Before you begin, ensure you have the following installed:
-- Node.js (version 12 or later recommended)
-- npm (typically comes with Node.js)
+## Getting Started
 
-## Installation
+### Installation
 
-Follow these steps to set up the project locally:
+To use this framework with OLLAMA, first ensure you have downloaded the necessary AI model:
 
-1. Clone the Repository
-
-
-2. Install Dependencies
-   ```bash
-   npm install
-
-
-3. Set environment variables for the Replicate API token
-  in Bash
-
-    ```bash
-    export REPLICATE_API_TOKEN="{YOUR_TOKEN}"
-    ```
-
-or in PowerShell
-
-    ```bash
-    $env:REPLICATE_API_TOKEN="{YOUR_TOKEN}"
-    ```
-
-3. Run the demo script to see the `ServiceManager` in action:
-   ```bash
-   node demo.js
-   ```
-
-## Configuration
-
-To utilize the `ServiceManager` effectively, you need to configure the AI services it will manage:
-- Edit the `ServiceManager.js` file to include or exclude services.
-- Ensure each service module is properly configured in the `services` directory.
-
-## Usage
-
-### Using the ServiceManager
-
-The `ServiceManager` is designed to be flexible and can be incorporated into various parts of your application. Here’s a basic example of how to initialize and use the `ServiceManager`:
-
-```javascript
-const ServiceManager = require('./ServiceManager');
-const manager = new ServiceManager();
-
-async function main() {
-    try {
-        const response = await manager.chat('What is your name?');
-        console.log('Response:', response);
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-main();
-```
-
-### Running the Demo
-
-To see the `ServiceManager` in action, run the chat interface demo:
 ```bash
-node demo.js
+ollama pull llama3
 ```
 
-This script demonstrates how the `ServiceManager` handles real-time chat interactions through the command line.
+### Running the Agent
 
-## Features
+To start the agent, use the provided script:
 
-- **Modular Service Management**: Easily add or remove AI services by configuring the `ServiceManager`.
-- **Standardized API**: Uniform API across different AI services to streamline interactions.
-- **Demo Interface**: `demo.js` provides a real-world example of using the `ServiceManager` in a chat application.
+```bash
+node agents/badger.js
+```
 
-## Contributing
+## Setting Up the Discord Bot
 
-We welcome contributions to improve the `ServiceManager` and its implementations. To contribute:
+To use the Discord bot functionality, you will need a valid token. Without this, the application will not be able to log in, resulting in the following error:
 
-1. Fork the repository.
-2. Create a new branch for your features (`git checkout -b feature-branch`).
-3. Commit your changes.
-4. Push to the branch and open a pull request.
+```plaintext
+🎮 ❌ Error logging in: Error [TokenInvalid]: An invalid token was provided.
+    at Client.login [...]
+    code: 'TokenInvalid'
+}
+```
+
+Ensure that your `.configurations/discord-bot.json` file contains a valid Discord token:
+
+```json
+{ "token": "YOUR_DISCORD_TOKEN" }
+```
 
 ## Troubleshooting
 
-If you encounter issues with specific services or configurations:
-- Verify the configuration files in the `config` directory.
-- Check the service modules in the `services` directory for errors or misconfigurations.
-- Ensure that all dependencies are correctly installed by running `npm install`.
+If you encounter an error stating that you have an invalid token, check that the `.configurations/discord-bot.json` file is configured correctly with a valid token.
 
-## License
+## Conclusion
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
+This framework is currently tailored for use with OLLAMA. Adjustments or expansions to include additional AI services like Replicate may require further modifications to ensure compatibility.
+
+
+# License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# Acknowledgments
+
+Created by Jonathan Beckwith for Cenetex Inc.
+
+- [OpenAI](https://openai.com/)
+- [OLLAMA](https://ollama.com/)
+- [Replicate](https://replicate.ai/)
+- [Node.js](https://nodejs.org/)
+- [Discord.js](https://discord.js.org/)
+- [MIT License](https://opensource.org/licenses/MIT)
+```
