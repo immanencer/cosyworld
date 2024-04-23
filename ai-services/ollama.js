@@ -15,8 +15,7 @@ class OllamaService extends AIService {
 
         console.debug('🦙 Updating with : ' + JSON.stringify(config, null, 2));
 
-        const modelfile = `
-FROM llama3
+const modelfile = `FROM phi3
 SYSTEM "${config.system_prompt}"`;
 
         console.debug('🦙 Updating model with:', modelfile);

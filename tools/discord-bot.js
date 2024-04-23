@@ -124,6 +124,7 @@ class DiscordBot {
 
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
+                if (chunk.trim() === '') return;
                 await webhook.send({
                     content: chunk, // Ensuring message length limits
                     username: avatar.name + ' ' + (avatar.emoji || ''),

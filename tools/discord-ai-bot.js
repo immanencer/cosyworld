@@ -6,10 +6,16 @@ class DiscordAIBot {
         this.systemPrompt = systemPrompt;
         this.avatar = avatar;
         this.aiServiceManager = new AIServiceManager();
-        this.aiServiceManager.useService('ollama');
+        
         this.discordBot = new DiscordBot({
             handleMessage: this.handleMessage.bind(this)
         });
+        this.system_prompt = systemPrompt;
+    }
+
+    async initialize() {
+        await this.aiServiceManager.useService('ollama');
+        await this.aiServiceManager.updateConfig({ system_prompt: this.systemPrompt });   
     }
 
     async handleMessage(message) {
@@ -22,9 +28,20 @@ class DiscordAIBot {
 
         if (!respond) return;
 
-        await this.aiServiceManager.updateConfig({ system_prompt: this.systemPrompt });
-
-        const stream = await this.aiServiceManager.chat({ role: 'user', content: `${message.author.displayName} said: \n\n${message.content}` });
+        // There is a hack here
+        // We are not using the message content directly
+        // Instead we are using the author's display name
+        // This is because the llm only provides the role of 'user' and 'assistant'
+        const stream = await this.aiServiceManager.chat({
+            role: 'user',
+            content: `${message.author.displayName} said:
+                
+            ${message.content}
+            
+            write a response in the style of ${this.avatar.name}
+            don't use quotes around the message
+            use emoji
+            `});
         let output = '';
 
         this.discordBot.sendTyping(this.avatar);
@@ -35,13 +52,14 @@ class DiscordAIBot {
         }
         console.log(`🐀 📤 Response: ${output}`);
 
-        this.aiServiceManager.chat({ role: 'assistant', content: output });
+        this.aiServiceManager.chat({ role: 'assistant', content: `${output}` });
         
         this.discordBot.sendAsAvatar(this.avatar, output);
     }
 
-    login() {
-        this.discordBot.login();
+    async login() {
+        await this.initialize();
+        await this.discordBot.login();
     }
 }
 
