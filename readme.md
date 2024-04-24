@@ -2,7 +2,11 @@
 
 This repository provides a straightforward framework for creating AI agents using Node.js. It aims to simplify the integration and management of multiple AI services within Node.js applications. By offering a standard interface to interact with different AI services, this framework assists in the seamless switching, testing, and deployment of various AI functionalities.
 
-Currently, the framework supports **OLLAMA** exclusively. The integration with other platforms like Replicate may have issues due to recent changes.
+Currently, the framework supports the following AI services:
+
+- [ollama](https://ollama.com/) (for local llms)
+- [replicate](https://replicate.ai/) (for access to AI models)
+- [openai](https://openai.com/) (for access to the assistants API)
 
 ## Getting Started
 
