@@ -1,72 +1,70 @@
 import Replicate from "replicate";
-const replicate = new Replicate();
-
-const MODEL = "meta/meta-llama-3-8b-instruct";
 
 import AIService from "../ai-service.js";
+import c from "../configuration.js";
+const configuration = c('replicate', {
+    token: "YOUR_API_KEY",
+    model: "meta/meta-llama-3-70b-instruct",
+    options: {
+        top_k: 50,
+        top_p: 0.9,
+        max_tokens: 512,
+        min_tokens: 0,
+        temperature: 0.6,
+        prompt_template: "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+        presence_penalty: 1.15,
+        frequency_penalty: 0.2
+    }
+});
+
+
+const replicate = new Replicate();
+replicate.auth = configuration.token;
+
+async function* mapAsyncIterator(iterator, mapFn) {
+    for await (const item of iterator) {
+        yield mapFn(item);
+    }
+}
 
 export default class ReplicateService extends AIService {
 
-    system_prompt = "You are a helpful assistant";
-    prompt_template = (system_prompt, prompt, identity) => (`
-        
-    <|begin_of_text|>
-    <|start_header_id|>system<|end_header_id|>
-    
-        ${system_prompt}
-    
-    <|eot_id|>
-    <|start_header_id|>user<|end_header_id|>
-    ${prompt}
-    <|eot_id|>
-    <|start_header_id|>${identity || 'ai'}<|end_header_id|>
-    
-    `);
-    config = {
-        top_k: 0,
-        top_p: 0.9,
-        temperature: 0.6,
-        system_prompt:"You are a helpful assistant",
-        length_penalty: 1,
-        max_new_tokens: 512,
-        stop_sequences: "<|end_of_text|>,<|eot_id|>",
-        presence_penalty: 0
-    };
-    
+    constructor() {
+        super();
+        this.updateConfig(configuration.options);
+    }
+
+    updateConfig(config) {
+        this.config = { ...this.config, ...config };
+        this.config.prompt_template = this.config.prompt_template.replace("{system_prompt}", this.config.system_prompt);
+    }
     chat_history = [];
-    chat = async (prompt) => {
-        throw new Error("⚠️ This is probably broken. You'll need to debug code if you remove this throw.");
+    chat = async (message) => {
         if (this.chat_history.length === 0) {
             this.chat_history.push({
                 role: "system",
                 content: this.config.system_prompt
             });
         }
-        this.chat_history.push({
-            role: "user",
-            content: prompt
-        });
+        this.chat_history.push(message);
 
-        this.config.prompt_template = this.prompt_template(this.config.system_prompt, prompt, this.config.identity);
-        
         let history = this.chat_history.map((message) => `${message.role}: ${message.content}`).join("\n")
-        // truncate history to 4096 tokens
+        // truncate history to 2048 tokens
         if (history.length > 2048) {
             history = history.slice(history.length - 2048);
         }
 
-        const stream = await this.createStream(history);
-        const output = await this.handleStream(stream);
-        this.chat_history.push({
-            role: this.config.identity || "ai",
-            content: output
+        return mapAsyncIterator(await this.createStream(history), (message) => {
+            if (message.event === "done") return;
+            return {
+                message: { content: message.data }
+            }
         });
-        return output;
     };
 
     async createStream(prompt) {
-        const input = {...this.config, prompt };
-        return replicate.stream(MODEL, { input });
+        const input = { ...this.config, prompt };
+        return replicate.stream(configuration.model, { input });
     }
 
     message_handlers = {

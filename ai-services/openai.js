@@ -31,6 +31,23 @@ SYSTEM "${config.system_prompt}"`;
 
     messages = [];
     async chat(message) {
+        if (this.messages.length > 2) {
+            const content = this.messages.map(m => m.content).join(' ');
+
+            console.log('🦙 Summarizing:', content);
+
+            const response = await ollama.chat({
+                model: this.model, messages: [
+                    {
+                        role: 'system',
+                        content: content + '\n\n summarize the above text in a few sentences.'
+                    }
+                ]
+            });
+
+            this.messages = [response.message]
+        }
+
         this.messages.push(message);
         if (message.role === 'assistant') { return; }
 

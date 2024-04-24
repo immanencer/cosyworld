@@ -34,14 +34,7 @@ class DiscordAIBot {
         // This is because the llm only provides the role of 'user' and 'assistant'
         const stream = await this.aiServiceManager.chat({
             role: 'user',
-            content: `${message.author.displayName} said:
-                
-            ${message.content}
-            
-            write a response in the style of ${this.avatar.name}
-            don't use quotes around the message
-            use emoji
-            `});
+            content: `${message.author.displayName} said: ${message.content}`});
         let output = '';
 
         this.discordBot.sendTyping(this.avatar);

@@ -168,7 +168,7 @@ class DiscordBot {
             await this.client.login(configuration.token);
         } catch (error) {
             console.error('🎮 ❌ Error logging in:', error);
-            console.log('If this says you have an invalid token, make sure that .configurations/discord-bot.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')
+            console.log('📰 If this says you have an invalid token, make sure that .configurations/discord-bot.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')
         }
     }
 }

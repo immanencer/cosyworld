@@ -4,7 +4,7 @@ console.debug = () => {};
 import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
-await manager.useService('ollama');
+await manager.useService('replicate');
 
 await manager.updateConfig({
     system_prompt: `
@@ -28,6 +28,7 @@ function chat() {
                 const response = await manager.chat({role: "user", content: input});
                 let output = '';
                 for await (const message of response) {
+                    if (!message) { continue; }
                     process.stdout.write(message.message.content);
                     output += message.message.content;
                 }
