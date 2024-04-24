@@ -6,13 +6,25 @@ Currently, the framework supports **OLLAMA** exclusively. The integration with o
 
 ## Getting Started
 
+Run the app once to create the relevant config files in `./configurations`
+
 ### Installation
 
 To use this framework with OLLAMA, first ensure you have downloaded the necessary AI model:
 
+#### OLLAMA
 ```bash
 ollama pull llama3
 ```
+
+#### REPLICATE
+
+You'll need a valid API key to use Replicate. You can obtain one by signing up at [Replicate.ai](https://replicate.ai/).
+
+Run the app once and it will create a `./configurations/replicate.json` file. Add your API key to this file.
+
+### Configuration
+
 
 ### Running the Agent
 
