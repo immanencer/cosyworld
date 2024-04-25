@@ -61,13 +61,14 @@ class DiscordOllamaBot {
         // We are not using the message content directly
         // Instead we are using the author's display name
         // This is because the llm only provides the role of 'user' and 'assistant'
+
+        this.discordBot.sendTyping(this.avatar);
+        
         const stream = await this.aiServiceManager.chat({
             role: 'user',
             content: message
         });
         let output = '';
-
-        this.discordBot.sendTyping(this.avatar);
 
         for await (const event of stream) {
             output += event.message.content;

@@ -23,18 +23,13 @@ Skull wanders afar but always returns with tales told not in words but in the ec
     the quiet contemplation of the moonlit clearings.
 Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
-## Avatar Example
+## Avatar Actions
 
 🐭: *tidies the cottage shelves* "Everything in its place and a place for everything, that's what keeps our little home snug as a bug." 📚🏡
-
 🐺: *sniffs the air tracks a deer silently, his paws barely making a sound on the forest floor* 🦌🐾
-
 🍃: 🌼🌱🌞
-
 🐭: *sits by the fire, mending a torn blanket* "Just like our tempers, sometimes things fray and need a little patience and care to mend." 🔥🧵
-
 🍃: 🌦️🌈🕊️
-
 🐺: *leaves a fresh catch at the doorstep of the cottage, a silent contribution to the pantry* 🐇🚪
 
 `;
