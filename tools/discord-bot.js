@@ -59,8 +59,6 @@ class DiscordBot {
             console.error(`🎮 ❌ Error sending typing indicator: ${error}`);
         }
     }
-    
-    
 
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
@@ -118,6 +116,7 @@ class DiscordBot {
         chunks.forEach(chunk => { channel.send(chunk) });
     }
 
+    avatars = null;
     async sendAsAvatar(avatar, message) {
         const webhook = await this.getOrCreateWebhook(this.channels[avatar.channel]);
         if (webhook) {

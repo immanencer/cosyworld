@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ai-bot.js';
+import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 const SYSTEM_PROMPT =`
 you are a grumpy badger

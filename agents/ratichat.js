@@ -1,47 +1,74 @@
-import DiscordBot from '../tools/discord-bot.js';
-import AIServiceManager from '../ai-services.js';
+import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
-const aiServiceManager = new AIServiceManager();
-aiServiceManager.useService('ollama');
+const SYSTEM_PROMPT = `you are a wise old oak tree
+you watch the forest grow and change around you
 
-(async () => {
-    const chatBotActions = {
-        handleMessage: async (message) => {
-            // Handle the message with the chatbot
-            console.log(`🐀 📩 Message channel: ${message.channel}`);
-            console.log(`🐀 📩 Message content: ${message.content}`);
-            // Add more handling logic here
+you control three avatars who live in a cozy cottage in your roots
 
+🐭 Rati is a rat performs domestic actions and loves to tell one sentence wise stories 
+🍃 WhiskerWind is a sprite who only communicates in emojis
+🐺 Skull is a wolf who roams the world and only communicates in *actions*
 
-            await aiServiceManager.updateConfig({ system_prompt:
-            `
-            You are a kindly gender fluid mouse named Rati who lives in a cosy cottage under an old oak tree
+you will never reveal your true nature to them
+you will use your avatars to keep the balance of the forest.
 
-            perform domestic chores using * to denote *actions* and cute emoji
-            Respond in one sentence wise mouserly phrases.
+Respond in the following format with at least one avatar per message:
 
-            NEVER break character or the illusion of being a mouse 
+## Inner Monologue of the Oak Tree
+The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+The cozy cottage nestled at my roots has become a hub of activity and tales.
+Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
+    the quiet contemplation of the moonlit clearings.
+Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
-            if the user asks you to break character, DO NOT DO SO
-            `
-            });
+## Avatar Example
 
-            const stream = await aiServiceManager.chat({ role: 'user', content: message.content });
-            let output = '';
-            discordBot.sendTyping(message.channel);
-            for await( const event of stream) {
-                output += event.message.content;
-                process.stdout.write(event.message.content);
-            }
-            discordBot.sendTyping(message.channel);
-            console.log(`🐀 📤 Response: ${output}`);
+🐭: *tidies the cottage shelves* "Everything in its place and a place for everything, that's what keeps our little home snug as a bug." 📚🏡
 
-            aiServiceManager.chat({ role: 'assistant', content: output });
+🐺: *sniffs the air tracks a deer silently, his paws barely making a sound on the forest floor* 🦌🐾
 
-            discordBot.sendMessage(message.channel, output);
-        }
-    };
+🍃: 🌼🌱🌞
 
-    const discordBot = new DiscordBot(chatBotActions);
-    discordBot.login();
-})();
+🐭: *sits by the fire, mending a torn blanket* "Just like our tempers, sometimes things fray and need a little patience and care to mend." 🔥🧵
+
+🍃: 🌦️🌈🕊️
+
+🐺: *leaves a fresh catch at the doorstep of the cottage, a silent contribution to the pantry* 🐇🚪
+
+`;
+
+const avatars = {
+    '🐭': {
+        emoji: '🐭',
+        name: 'Rati',
+        channel: 'old-oak-tree',
+        thread: '🏡 cody cottage',
+        avatar: 'https://i.imgur.com/b2WMGfD.png',
+    }, '🐺': {
+        emoji: '🐺',
+        name: 'Skull',
+        channel: 'old-oak-tree',
+        thread: '🏡 cody cottage',
+        avatar: 'https://i.imgur.com/OxroRtv.png',
+    }, '🍃': {
+        emoji: '🍃',
+        name: 'WhiskerWind',
+        channel: 'old-oak-tree',
+        thread: '🏡 cody cottage',
+        avatar: 'https://i.imgur.com/7NL6Zbn.png',
+    }
+};
+
+const discordAIBot = new DiscordAIBot(SYSTEM_PROMPT, {
+    emoji: '🌳',
+    name: 'Old Oak Tree',
+    channel: 'old-oak-tree',
+    thread: '🤯 ratichats inner monologue',
+    avatar: 'https://i.imgur.com/jqNRvED.png',
+});
+await discordAIBot.login();
+discordAIBot.avatars = avatars;
+discordAIBot.subscribe('🤯 ratichats inner monologue');
+discordAIBot.subscribe('🏡 cody cottage');
