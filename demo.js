@@ -1,6 +1,3 @@
-// turn off debug logging
-console.debug = () => {};
-
 import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
