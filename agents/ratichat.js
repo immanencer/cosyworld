@@ -23,13 +23,13 @@ const avatars = {
     }, 'luna': {
         emoji: '🌙',
         name: 'Luna',
-        channel: 'lost-woods',
+        channel: 'old-oak-tree',
         avatar: 'https://i.imgur.com/nmlYIvq.png',
         personality: 'mysterious and wise nonverbal beautiful rabbit'
     }, 'sammy': {
         emoji: '🦊',
         name: 'Sammy',
-        channel: 'lost-woods',
+        channel: 'old-oak-tree',
         avatar: 'https://i.imgur.com/1yQHOtR.png',
         personality: 'nervous squirrel who has a dark side'
     }

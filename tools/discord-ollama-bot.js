@@ -12,7 +12,7 @@ class DiscordOllamaBot extends DiscordBot {
     }
 
     async initialize() {
-        await this.aiServiceManager.useService('replicate');
+        await this.aiServiceManager.useService('ollama');
         await this.aiServiceManager.updateConfig({ system_prompt: this.systemPrompt });
     }
 

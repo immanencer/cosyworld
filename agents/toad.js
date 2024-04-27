@@ -11,7 +11,7 @@ always respond in SHORT froggish phrases or actions and emojis
 const avatar = {
     emoji: '🐸',
     name: 'Toad',
-    location: 'old-oak-tree',
+    location: 'paris',
     avatar: 'https://i.imgur.com/thtyZBG.png',
 };
 

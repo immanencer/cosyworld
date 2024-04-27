@@ -5,7 +5,7 @@ const discordAIBot = new DiscordAIBot({
 
     emoji: '🦡',
     name: 'Badger',
-    location: 'old-oak-tree',
+    location: '🦡 badger burrow',
     avatar: 'https://i.imgur.com/97zSXlR.png',
 
 }, `

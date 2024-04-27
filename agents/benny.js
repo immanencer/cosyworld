@@ -16,7 +16,7 @@ always respond in SHORT beaverly phrases
 const avatar =  {
     emoji: '🐿️',
     name: 'Benny',
-    location: 'old-oak-tree',
+    location: '🐠 hidden pond',
     avatar: 'https://i.imgur.com/tVPISBw.png',
     personality: 'hardworking and friendly beaver'
 };
