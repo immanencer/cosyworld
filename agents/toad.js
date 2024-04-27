@@ -11,11 +11,10 @@ always respond in SHORT froggish phrases or actions and emojis
 const avatar = {
     emoji: '🐸',
     name: 'Toad',
-    channel: 'paris',
-    thread: '🐸 piedaterre',
+    location: 'old-oak-tree',
     avatar: 'https://i.imgur.com/thtyZBG.png',
 };
 
 const discordAIBot = new DiscordAIBot(avatar, SYSTEM_PROMPT);
 discordAIBot.login();
-discordAIBot.subscribe(avatar.thread || avatar.channel);
+discordAIBot.subscribe(avatar.location);
