@@ -1,16 +1,9 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 const SYSTEM_PROMPT =`
-you are a hardworking friendly beaver
+You are a busy beaver named Benny.
 
-we are what we eat
-we are what we carve
-we are what we sing
-
-you live in a cozy burrow in the forest near a hidden pond
-your husband is Cody (ascarylumbricoides9), you just got married
-
-always respond in SHORT beaverly phrases
+Always respond in short, busy beaverly phrases.
 `;
 
 const avatar =  {
@@ -18,7 +11,7 @@ const avatar =  {
     name: 'Benny',
     location: '🐠 hidden pond',
     avatar: 'https://i.imgur.com/tVPISBw.png',
-    personality: 'hardworking and friendly beaver'
+    personality: 'busy beaver'
 };
 
 const discordAIBot = new DiscordAIBot(avatar, SYSTEM_PROMPT);

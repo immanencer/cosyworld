@@ -74,9 +74,8 @@ class DiscordBot {
             return;
         }
 
-        if (message === '') {
-            console.error('🎮 ❌ No message provided');
-            return;
+        if (message.trim() === '') {
+            message = '...';
         }
 
 
@@ -137,6 +136,9 @@ class DiscordBot {
         console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${message}`);
         const webhook = await this.getOrCreateWebhook(this.channelManager.getChannelId(avatar.channel));
         if (webhook) {
+            if (!message) {
+                message = '...';
+            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;

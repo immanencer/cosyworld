@@ -1,6 +1,6 @@
 export function chunkText(message, chunkSize = 2000) {
     if (!message) {
-        console.warn('🎮 ❌ No message provided');
+        console.warn('🎮 ❌ No message provided to chunker');
         return [];
     }
     let chunks = [];
