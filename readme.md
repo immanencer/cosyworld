@@ -29,14 +29,34 @@ Run the app once and it will create a `./configurations/replicate.json` file. Ad
 
 ### Configuration
 
+### Running the demo
 
-### Running the Agent
+```bash
+node demo.js
+```
+
+
+### Running an Agent
 
 To start the agent, use the provided script:
 
 ```bash
 node agents/badger.js
 ```
+
+### Running all the agents
+
+Install pm2
+    
+    ```bash
+    npm install pm2 -g
+    ```
+
+Start all the agents
+
+    ```bash
+    pm2 start ecosystem.config.js
+    ```
 
 ## Setting Up the Discord Bot
 

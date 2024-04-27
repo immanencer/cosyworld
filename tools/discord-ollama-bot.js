@@ -35,7 +35,7 @@ class DiscordOllamaBot extends DiscordBot {
                 }
                 this.message_cache = [];
             }
-        }, 333);
+        }, 3333);
     }
 
     async sendMessage(message) {
