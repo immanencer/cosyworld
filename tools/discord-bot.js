@@ -1,7 +1,9 @@
-import c from '../configuration.js';
-const configuration = c('discord-bot');
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 
+import ChannelManager from './discord-channel-manager.js';
+
+import c from '../configuration.js';
+const configuration = c('discord-bot');
 import { chunkText } from './chunk-text.js';
 
 class DiscordBot {
@@ -14,9 +16,15 @@ class DiscordBot {
             ]
         });
         this.chatBotActions = chatBotActions;
-        this.webhookCache = {}; // Cache to store webhook references
+        this.webhookCache = {};
+        this.channelManager = new ChannelManager(this.client);
         this.setupEventListeners();
         console.log('🎮 Discord Bot Initialized');
+    }
+
+    handleMessage(message) {
+        if (!this.subscribed_channels.includes(message.channel.name)) return;
+        this.chatBotActions.handleMessage(message, respond);
     }
 
     getChannelHistory(channel) {
@@ -27,78 +35,36 @@ class DiscordBot {
         return channel.messages.fetch();
     }
 
+    subscribed_channels = [];
+    subscribe(channelName) {
+        this.subscribed_channels.push(channelName);
+        console.log(`🎮 📥 Subscribed to: ${channelName}`);
+    }
+
     setActivity(activity, options = {}) {
         this.client.user.setActivity(activity, options);
     }
 
-    async sendTyping({ channelName, threadName = null}) {
-        console.log('🎮 Sending typing indicator');
-        if (!channelName) {
-            console.error('🎮 ❌ No channel ID provided');
-            return;
-        }
-    
-        try {
-            const channel = await client.channels.fetch(this.channels[channelName]);
-            if (!channel || !channel.isTextBased()) {
-                console.error('🎮 ❌ Invalid or non-text channel');
-                return;
-            }
-    
-            if (threadName) {
-                const thread = channel.threads.cache.get(threadName);
-                if (!thread || !thread.isTextBased()) {
-                    console.error('🎮 ❌ Invalid or non-text thread');
-                    return;
-                }
-                thread.sendTyping();
-            } else {
-                channel.sendTyping();
-            }
-        } catch (error) {
-            console.error(`🎮 ❌ Error sending typing indicator: ${error}`);
-        }
-    }
-    
-    
+
 
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
+            await this.initialize();
+            await this.channelManager.initialize(configuration.guild);
+
             console.log(`🎮 ✅ Ready! Logged in as ${this.client.user.tag}`);
             this.setActivity('whimsical tales', { type: 'WATCHING' });
 
             const guild = await this.client.guilds.fetch(configuration.guild); // Replace 'YOUR_GUILD_ID' with your actual guild ID
-            const channels = await guild.channels.fetch();
 
-            const channelsDictionary = {};
-            const threadsDictionary = {};
-
-            // Iterate over each channel
-            for (const [channelId, channel] of channels) {
-                // Add to channel dictionary if it's a text-based channel (can contain threads)
-                if (channel.isTextBased()) {
-                    channelsDictionary[channel.name] = channelId;
-
-                    try {
-                        // Fetch all active threads in the channel
-                        const threads = await channel.threads.fetchActive();
-                        threads.threads.forEach(thread => {
-                            threadsDictionary[thread.name] = thread.id;
-                        });
-                    } catch (error) {
-                        console.error('Failed to fetch threads:', error);
-                    }
-                }
-            }
-
-            this.channels = channelsDictionary;
-            this.threads = threadsDictionary;
         });
 
         this.client.on(Events.MessageCreate, async (message) => {
-            if (message.author.bot || message.author.id === this.client.user.id) return;
             console.log(`🎮 ✉️ Received message from ${message.author.displayName} in ${message.channel.name}`);
-            await this.chatBotActions.handleMessage(message);
+            if (message.author.bot || message.author.id === this.client.user.id) return;
+            if (this.subscribed_channels.includes(message.channel.name)) {
+                await this.handleMessage(message);
+            }
         });
     }
 
@@ -118,10 +84,59 @@ class DiscordBot {
         chunks.forEach(chunk => { channel.send(chunk) });
     }
 
-    async sendAsAvatar(avatar, message) {
-        const webhook = await this.getOrCreateWebhook(this.channels[avatar.channel]);
-        if (webhook) {
+    async sendAsAvatars(avatar, output) {
+        if (this.avatars) {
+            // Find any lines beginning with each avatar's emoji and send it as that avatar
+            const lines = output.split('\n');
 
+            lines.forEach(line => {
+                if (!line.includes(':')) return;
+                console.log(`🎮 📥 Received: ${line}`);
+                let nameAndLocation = line.split(':')[0].trim();
+                let msg = line.split(':')[1].trim();
+
+                let name = nameAndLocation.split('(')[0].trim();
+                let location = '';
+
+                // Check if location is present
+                if (nameAndLocation.includes('(') && nameAndLocation.includes(')')) {
+                    location = nameAndLocation.split('(')[1].split(')')[0].trim();
+                }
+
+                if (this.avatars[name.toLowerCase()]) {
+                    console.log(`🎮 📤 Sending as ${name}: ${location}: ${msg}`);
+                    let avatar = this.avatars[name.toLowerCase()];
+
+                    if (location) {
+                        avatar.location = location;
+                    }
+
+                    this.sendAsAvatar(avatar, msg);
+                }
+            });
+        }
+
+        // Send the rest of the message as the default avatar
+        console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
+        this.sendAsAvatar(avatar, output);
+    }
+
+    async sendAsAvatar(avatar, message) {
+        if (avatar.location) {
+            if (this.channelManager.channels[avatar.location]) {
+                avatar.channel = avatar.location;
+                avatar.thread = null;
+            }
+            if (this.channelManager.threads[avatar.location]) {
+                avatar.thread = avatar.location;
+                avatar.channel = this.channelManager.channel_for_thread[avatar.location];
+            }
+        } else {
+            avatar.location = avatar.thread || avatar.channel;
+        }
+        console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${message}`);
+        const webhook = await this.getOrCreateWebhook(this.channelManager.getChannelId(avatar.channel));
+        if (webhook) {
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
@@ -129,11 +144,11 @@ class DiscordBot {
                     content: chunk, // Ensuring message length limits
                     username: avatar.name + ' ' + (avatar.emoji || ''),
                     avatarURL: avatar.avatar,
-                    threadId: this.threads[avatar.thread] || null  // Send to a specific thread if provided
+                    threadId: this.channelManager.getThreadId(avatar.thread)  // Send to a specific thread if provided
                 });
             });
-            console.log(`📩 Message sent as ${avatar.name}: ${message}`);
         } else {
+            console.log(JSON.stringify(avatar, null, 2));
             throw new Error('Failed to send message: No webhook available.');
         }
     }
@@ -162,6 +177,9 @@ class DiscordBot {
         }
     }
 
+    sendTyping(avatar) {
+        this.channelManager.sendTyping(avatar);
+    }
 
     async login() {
         try {
