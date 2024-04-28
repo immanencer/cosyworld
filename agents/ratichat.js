@@ -5,8 +5,9 @@ const avatars = {
     'old oak tree': {
         emoji: '🌳',
         name: 'Old Oak Tree',
-        location: '🤯 ratichats inner monologue',
         avatar: 'https://i.imgur.com/jqNRvED.png',
+        location: '🤯 ratichats inner monologue',
+        personality: 'wise and ancient silent guardian of the forest'
     },
     'rati': {
         emoji: '🐭',
@@ -76,24 +77,44 @@ Luna (lost-woods): 🌦️🌈🕊️ *floats an orb of light*
 Skull (lost-woods): *leaves a fresh catch at the doorstep of the cottage, a silent contribution to the pantry* 🐇🚪
 `;
 
-const discordAIBot = new DiscordAIBot(avatars['old oak tree'], SYSTEM_PROMPT);
+const discordAIBot = new DiscordAIBot({
+    emoji: '🌳',
+    name: 'Old Oak Tree',
+    location: '🤯 ratichats inner monologue',
+    avatar: 'https://i.imgur.com/jqNRvED.png',
+    personality: 'wise and ancient'
+}, SYSTEM_PROMPT);
 
 await discordAIBot.login();
 discordAIBot.avatars = avatars;
-discordAIBot.response_instructions = `
-Summarize the state of the world and your feelings as the old oak tree
+discordAIBot.on_login = async function() {
+    discordAIBot.response_instructions = `
+    Summarize the state of the world and your feelings as the old oak tree
+    
+    ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}) ${avatars[avatar].personality}`).join('\n')}
 
-${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}) ${avatars[avatar].personality}`).join('\n')
-    }
+    valid locations include
+    
+    old-oak-tree
+    🦡 badger burrow
+    🏡 cody cottage
+    🪵 roots
+    lost-woods
+    🐠 hidden pond
+    paris
+    🐸 piedaterre
+    📚 library
 
+    Send a message in the format of the character actions and location to respond as that character in a specific location
+    use the avatars to keep the balance of the forest
+    you can move the avatars to different locations by sending a message in the format of 
+    
+    name (location): message
+    
+    `;
+    
+}
 
-Send a message in the format of the character actions and location to respond as that character in a specific location
-use the avatars to keep the balance of the forest
-you can move the avatars to different locations by sending a message in the format of 
-
-name (location): message
-
-`;
 
 discordAIBot.subscribe('🤯 ratichats inner monologue');
 discordAIBot.subscribe('🏡 cody cottage');

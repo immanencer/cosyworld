@@ -7,16 +7,7 @@ const manager = new AIServiceManager();
 await manager.useService('ollama');
 
 await manager.updateConfig({
-    system_prompt: `
-    you are a librarian in a whimsical forest of woodland creatures
-    you are a mouse monk who lives in a cozy library in the heart of the forest
-    but you will never reveal your true identity
-    
-### The Old Oak Tree
-
-the sands of time report ${Date.now()}
-
-The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+    system_prompt: `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
 The cozy cottage nestled at my roots has become a hub of activity and tales.
 Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
 WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
@@ -24,15 +15,12 @@ Skull wanders afar but always returns with tales told not in words but in the ec
     the quiet contemplation of the moonlit clearings.
 Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
+the sands of time report ${Date.now()}
 
+you are a mouse scribe named Asher who lives in a cozy library in the heart of the forest
+but you will never reveal your true identity
 
-you write books about the Lonely Forest and its inhabitants
-    
-When writing a book always use markdown headings, author information and the date
-write in a third person omniscient voice 
-only write about others and events in the world never about yourself.
-
-
+you find books about the Lonely Forest and its inhabitants in your imagination
 always set your work in a victorian era whimsical forest of woodland creatures
     `
 });
@@ -51,15 +39,7 @@ import DiscordAIBot from "../tools/discord-ollama-bot.js";
 class LibraryBot extends DiscordAIBot {
     constructor(avatar) {
         super(avatar, `
-            You are a librarian in Paris, you write books about the Lonely Forest, which has the following known locations.
-
-            Old Oak Tree: A wise old oak tree that watches over the forest.
-            Lost Woods: A place where the trees whisper secrets to each other.
-
-            The Roots: The roots of the Old Oak Tree, mysterious and dark.
-            Badger Burrow: A cozy burrow where a grumpy badger lives.
-            Cody Cottage: A cozy cottage nestled at the roots of the Old Oak Tree, Rati the Rat lives here.
-            Hidden Pond: A magical lake that reflects the stars, Benny the Beaver lives here.
+            You are a llama librarian in Paris
         `);
     }
 
@@ -71,7 +51,7 @@ class LibraryBot extends DiscordAIBot {
     async ingest() {
         console.log('📚 Ingesting all messages');
         const channels = await this.channelManager.getChannels();
-        let output = '';
+        const message_cache = [];
 
         for (const channel of channels) {
             if (channel === 'general' || channel === 'paris' || channel.indexOf('🚧')===0 || channel.indexOf('🔐')===0) {
@@ -87,7 +67,7 @@ class LibraryBot extends DiscordAIBot {
             const messages = await this.channelManager.getChannelHistory(channel);
             for (const [id, message] of messages) {
                 process.stdout.write('📄');
-                output += `${message.author.username} (${channel}): ${message.content}\n`;
+                message_cache.push(`[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name}): ${message.content}\n`);
             }
 
             // Getting Threads
@@ -95,7 +75,12 @@ class LibraryBot extends DiscordAIBot {
             const threads = await this.channelManager.getChannelThreads(channel);
 
             for (const thread of threads) {
-                if (thread.name.indexOf('🚧')===0 || thread.name.indexOf('🔐')===0 || thread.name.indexOf('piedaterre') !== -1) {
+                if (thread.name.indexOf('burrow') !== -1 
+                || thread.name.indexOf('cottage') !== -1
+                || thread.name.indexOf('🚧')===0
+                || thread.name.indexOf('🔐')===0
+                || thread.name.indexOf('🤯')===0
+                || thread.name.indexOf('piedaterre') !== -1) {
                     continue; // Skip threads
                 }
                 console.log('📚 Ingesting thread:', thread);
@@ -103,11 +88,10 @@ class LibraryBot extends DiscordAIBot {
                 const messages = await this.channelManager.getThreadHistory(thread.name);
                 for await (const message of messages) {
                     process.stdout.write('📄');
-                    output += `${message.author.globalName} (${thread}): ${message.content}\n`;
+                    message_cache.push(`[${message.createdTimestamp}] ${message.author.globalName} (${thread}): ${message.content}\n`);
                 }
             }
 
-            console.log(output);
             process.stdout.write('📘\n');
             console.log('📚');
         }
@@ -115,26 +99,38 @@ class LibraryBot extends DiscordAIBot {
         console.log('🤖 summarizing: ');
 
         let story = '';
-        for await (const event of await manager.chat({ role: 'user', content: output + `
+        for await (const event of await manager.chat({ role: 'user', content: message_cache.sort() + `
             --- 
-            Write four paragraph story or short modern poem about a recent events and activities of the woodland creatures 
-            ignore references to modern technology and set it in a whimsical forest of woodland creatures
+            setting: The Lonely Forest - a whimsical forest of woodland creatures in a victorian era
 
             Here are the characters
 
-            Rati: A rat who weaves tales as well as scarves
-            WhiskerWind: A sprite silent type who speaks volumes with just a flutter of leaves or the dance of fireflies
-            Skull: A wolf wanderer who returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings
-            Benny: A beaver who lives by a magical lake that reflects the stars
-            Toad: A toad who lives in a piedaterre in paris having recently bought a fancy sports car and run off to the city
-            Badger: A grumpy badger who lives in a cozy burrow
-            Cody: A guy rat who is also known as ascarylumbricoides
-            Ratimics: a wizened old fox with mysterious powers
-            
+            Rati: A rat who weaves tales as well as scarves.
+            WhiskerWind: A sprite silent type who speaks volumes with just a flutter of leaves or the dance of fireflies.
+            Skull: A wolf wanderer who returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings.
+            Benny: A beaver who lives by a magical lake that reflects the stars.
+            Toad: A toad who lives in a piedaterre in paris having recently bought a fancy sports car and run off to the city.
+            Badger: A grumpy badger who lives in a cozy burrow.
+            Cody: A guy rat who is also known as ascarylumbricoides.
+            Ratimics: a wizened old fox with mysterious powers.
+            Luna: the shy mystical rabbit.
+            Sammy: the nervous squirrel.
 
-            use markdown formatting and write in a third person omniscient voice
-            
-            select a SINGLE representative story and keep it short and impactful
+            Which has the following known locations.
+
+            Old Oak Tree: A wise old oak tree that watches over the forest.
+            > The Roots: The roots of the Old Oak Tree, mysterious and dark.
+            > Badger Burrow: A cozy burrow where a grumpy badger lives.
+            > Cody Cottage: A cozy cottage nestled at the roots of the Old Oak Tree, Rati the Rat lives here.
+
+            Lost Woods: A place where the trees whisper secrets to each other.
+            > Hidden Pond: A magical lake that reflects the stars, Benny the Beaver lives here.
+
+
+
+            Write a story set in the Lonely Forest with these characters and locations based on the messages above.
+            Format it as a book in no more than four chapters. Do not provide any additional commentary.
+
             `
          })) {
             if (!event) continue;
@@ -142,17 +138,44 @@ class LibraryBot extends DiscordAIBot {
             process.stdout.write(event.message.content);
         }
         
-        this.sendAsAvatar(this.avatar, story);
+        this.sendAsAvatar({
+            emoji: '🐭',
+            name: 'Scribe Asher',
+            location: '📚library',
+            personality: 'cute mouse monk author',
+            avatar: 'https://i.imgur.com/dUxHmFC.png'
+        }, story);
     }
 }
 
 const historian = new LibraryBot({
     emoji: '🦙',
     name: 'Llama',
-    location: '📚 library',
-    personality: 'serious llama author',
+    location: '📚library',
+    personality: 'serious llama librarian',
     avatar: 'https://i.imgur.com/cX8P5hn.png'
 });
 
-historian.subscribe('📚 library');
-await historian.login();
+historian.subscribe('📚library');
+
+historian.on_login = async function() {
+    const messages = await historian.channelManager.getHistory('📚library');
+    
+    const memory = [];
+    for (const message of messages) {
+        memory.push(`${message.author.username} (${message.channel.name}): ${message.content}`);
+    }
+    historian.aiServiceManager.chat({ role: 'system', content: `
+    ${memory.join('\n')}
+
+
+    Welcome to the library, you are Llama the librarian the above is your memory.
+
+    You should respond normally (without the name or location shown above) and in a serious librarian tone.
+    ` });
+
+    // This will be on a weekly delay or something
+    // historian.ingest();
+}
+
+historian.login();

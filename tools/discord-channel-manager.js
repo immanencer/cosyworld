@@ -1,3 +1,4 @@
+
 class ChannelManager {
     constructor(client) {
         this.client = client;
@@ -64,7 +65,7 @@ class ChannelManager {
     getChannelId(channel) {
         console.log('🎮 Getting channel ID for ' + channel);
         console.log(JSON.stringify(this.channels, null, 2));
-        return this.channels[channel];
+        return this.channels[channel] || null;
     }
 
     async getThreads() {
@@ -74,7 +75,7 @@ class ChannelManager {
     getThreadId(thread) {
         console.log('🎮 Getting thread ID for ' + thread);
         console.log(JSON.stringify(this.threads, null, 2));
-        return this.threads[thread];
+        return this.threads[thread] || null;
     }
 
     // Location management
@@ -85,13 +86,23 @@ class ChannelManager {
         console.log('🎮 Getting location for ' + location)
         console.log('🎮 Channel: ' + channel);
         console.log('🎮 Thread: ' + thread);
-        return ({ channel, thread });
+        return { channel, thread };
     };
+
+    async getHistory(name) {
+        console.log('🎮 Getting history for ' + name);
+        const location = await this.getLocation(name);
+        if (location.thread) {
+            return this.getThreadHistory(name);
+        } else {
+            return this.getChannelHistory(name);
+        }
+    }
 
     // Message history
     async getChannelHistory(channel_name) {
         const messages = [];
-        const channel_id = this.channels[channel_name];
+        const channel_id = this.getChannelId(channel_name);
         const channel = await this.client.channels.fetch(channel_id);
         const history = await channel.messages.fetch({ limit: 100 });
         for (const message of history) {
@@ -125,7 +136,7 @@ class ChannelManager {
         for (const [id, message] of history) {
             messages.push(message);
         }
-        return messages;
+        return messages.reverse();
     }
 
     async getMessage(message_id) {

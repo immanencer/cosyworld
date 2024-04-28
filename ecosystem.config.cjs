@@ -11,5 +11,8 @@ module.exports ={
   },{
     name   : "toad",
     script : "./agents/toad.js"
+  },{
+    name   : "librarian",
+    script : "./agents/librarian.js"
   }]
 }
