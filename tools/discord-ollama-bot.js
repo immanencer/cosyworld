@@ -3,12 +3,26 @@ import AIServiceManager from '../ai-services.js';
 
 class DiscordOllamaBot extends DiscordBot {
     constructor(avatar, systemPrompt = "You are an alien intelligence from the future.") {
-        super(avatar);
+        super();
+        if (!avatar) throw new Error('Avatar is required');
+        this.avatar = avatar;
 
         this.systemPrompt = systemPrompt;
-        this.avatar = avatar;
         this.aiServiceManager = new AIServiceManager();
-        this.system_prompt = systemPrompt;
+        this.system_prompt = systemPrompt + `
+        
+        Here are the known locations in the forest:
+         ${
+    Object.keys(this.channelManager.channels).join('\n ')
+}
+
+${
+    Object.keys(this.channelManager.threads).join('\n')
+}
+        `;
+
+        console.log('🎮 🤖 Discord Ollama Bot Initialized');
+        console.log('🎮 🤖 System Prompt:' + this.system_prompt);
     }
 
     async initialize() {
@@ -19,6 +33,7 @@ class DiscordOllamaBot extends DiscordBot {
     message_cache = [];
     message_timeout = 0;
     async handleMessage(message) {
+        if(!super.handleMessage(message)) return;
         const formatted_message = `${message.author.displayName} (${message.channel.name}): ${message.content}`;
         this.message_cache.push(formatted_message)
 
@@ -35,11 +50,10 @@ class DiscordOllamaBot extends DiscordBot {
                 }
                 this.message_cache = [];
             }
-        }, 333);
+        }, 3333);
     }
 
     async sendMessage(message) {
-        this.sendTyping(this.avatar);
         const stream = await this.aiServiceManager.chat({
             role: 'user',
             content: message
@@ -51,7 +65,9 @@ class DiscordOllamaBot extends DiscordBot {
             output += event.message.content;
         }
 
-        this.sendAsAvatars(this.avatar, output);
+        await this.aiServiceManager.chat({ role: 'assistant', content: output });
+
+        await this.sendAsAvatars(output);
     }
 }
 

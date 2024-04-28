@@ -26,23 +26,26 @@ class ChannelManager {
         console.log('🎮 Initialized channel manager');
     }
 
-    async sendTyping(avatar) {
-        console.log('🎮 Sending typing indicator');
-        if (!avatar.channel) {
-            console.error('🎮 ❌ No channel provided');
-            console.log(JSON.stringify(avatar, null, 2));
+    async sendTyping(location) {
+        console.log('🎮 Sending typing indicator to ' + location);
+        if (!location) {
+            console.error('🎮 ❌ No location provided');
             return;
         }
 
-        const channel = await this.client.channels.fetch(this.channels[avatar.channel]);
+        const guild = {
+            channel: this.channels[location] || this.channel_for_thread[location],
+            thread: (channel !== location) ? location : null
+        };
+
+        const channel = await this.client.channels.fetch(this.channels[guild.channel]);
         if (!channel || !channel.isTextBased()) {
             console.error('🎮 ❌ Invalid or non-text channel');
             return;
         }
 
-        if (avatar.thread) {
-            console.log(avatar.thread, this.threads[avatar.thread])
-            const thread = await channel.threads.fetch(this.threads[avatar.thread]);
+        if (guild.thread) {
+            const thread = await channel.threads.fetch(this.threads[guild.thread]);
             if (!thread || !thread.isTextBased()) {
                 console.error('🎮 ❌ Invalid or non-text thread');
                 return;
@@ -53,13 +56,28 @@ class ChannelManager {
         }
     }
 
-    getChannelId(channelName) {
-        return this.channels[channelName];
+    getChannelId(channel) {
+        console.log('🎮 Getting channel ID for ' + channel);
+        console.log(JSON.stringify(this.channels, null, 2));
+        return this.channels[channel];
     }
 
-    getThreadId(threadName) {
-        return this.threads[threadName];
+    getThreadId(thread) {
+        console.log('🎮 Getting thread ID for ' + thread);
+        console.log(JSON.stringify(this.threads, null, 2));
+        return this.threads[thread];
     }
+
+    async getLocation(location) {
+        const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
+        const thread = this.threads[location];
+
+        console.log('🎮 Getting location for ' + location)
+        console.log('🎮 Channel: ' + channel);
+        console.log('🎮 Thread: ' + thread);
+        return ({ channel, thread });
+    };
 }
+
 
 export default ChannelManager;

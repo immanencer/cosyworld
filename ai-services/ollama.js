@@ -34,7 +34,9 @@ SYSTEM "${config.system_prompt}"`;
         this.messages.push(message);
         if (message.role === 'assistant') { return; }
 
-        return await ollama.chat({ model: this.model, messages: this.messages, stream: true })
+        console.debug('🦙 Chatting with:', this.messages);
+
+        return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
     }
 
     async draw(prompt) {

@@ -15,7 +15,6 @@ class DiscordBot {
                 GatewayIntentBits.MessageContent
             ]
         });
-        this.chatBotActions = chatBotActions;
         this.webhookCache = {};
         this.channelManager = new ChannelManager(this.client);
         this.setupEventListeners();
@@ -23,8 +22,9 @@ class DiscordBot {
     }
 
     handleMessage(message) {
-        if (!this.subscribed_channels.includes(message.channel.name)) return;
-        this.chatBotActions.handleMessage(message, respond);
+        if (!this.subscribed_channels.includes(message.channel.name)) return false;
+        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
+        return true;
     }
 
     getChannelHistory(channel) {
@@ -44,8 +44,6 @@ class DiscordBot {
     setActivity(activity, options = {}) {
         this.client.user.setActivity(activity, options);
     }
-
-
 
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
@@ -74,9 +72,8 @@ class DiscordBot {
             return;
         }
 
-        if (message === '') {
-            console.error('🎮 ❌ No message provided');
-            return;
+        if (message.trim() === '') {
+            message = '...';
         }
 
 
@@ -84,7 +81,7 @@ class DiscordBot {
         chunks.forEach(chunk => { channel.send(chunk) });
     }
 
-    async sendAsAvatars(avatar, output) {
+    async sendAsAvatars(output) {
         if (this.avatars) {
             // Find any lines beginning with each avatar's emoji and send it as that avatar
             const lines = output.split('\n');
@@ -117,43 +114,50 @@ class DiscordBot {
         }
 
         // Send the rest of the message as the default avatar
+        const avatar = this.avatar || { name: 'Discord Bot', 
+            location: Object.keys(this.channelManager.channels)[0],
+            avatar: 'https://i.imgur.com/VpjPJOx.png'
+        };
         console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
         this.sendAsAvatar(avatar, output);
     }
 
     async sendAsAvatar(avatar, message) {
-        if (avatar.location) {
-            if (this.channelManager.channels[avatar.location]) {
-                avatar.channel = avatar.location;
-                avatar.thread = null;
-            }
-            if (this.channelManager.threads[avatar.location]) {
-                avatar.thread = avatar.location;
-                avatar.channel = this.channelManager.channel_for_thread[avatar.location];
-            }
-        } else {
-            avatar.location = avatar.thread || avatar.channel;
-        }
-        console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${message}`);
-        const webhook = await this.getOrCreateWebhook(this.channelManager.getChannelId(avatar.channel));
+        const location = await this.channelManager.getLocation(avatar.location);
+        
+        console.log(`🎮 📤 Sending message as ${avatar.name}: ${JSON.stringify(location)}`);
+        const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
+            if (!message) {
+                message = '...';
+            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
-                await webhook.send({
+                const data = {
                     content: chunk, // Ensuring message length limits
                     username: avatar.name + ' ' + (avatar.emoji || ''),
-                    avatarURL: avatar.avatar,
-                    threadId: this.channelManager.getThreadId(avatar.thread)  // Send to a specific thread if provided
-                });
+                    avatarURL: avatar.avatar
+                };
+                if (location.thread) {
+                    data.threadId =  location.thread
+                }
+                await webhook.send(data);
             });
         } else {
-            console.log(JSON.stringify(avatar, null, 2));
-            throw new Error('Failed to send message: No webhook available.');
+            console.log(JSON.stringify(location, null, 2));
+            console.error('🎮 ❌ Unable to send message as avatar:', avatar.name);
         }
     }
 
     async getOrCreateWebhook(channelId) {
+        console.log(`🎮 Getting or creating webhook for channel ${channelId}`);
+        
+        if (!channelId) {
+            console.error('🎮 ❌ (getOrCreateWebhook) No channel ID provided');
+            return null;
+        }
+
         if (this.webhookCache[channelId]) {
             return this.webhookCache[channelId];
         }
@@ -164,9 +168,7 @@ class DiscordBot {
             let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
 
             if (!webhook) {
-                webhook = await channel.createWebhook('Custom Webhook', {
-                    avatar: 'https://i.imgur.com/VpjPJOx.png'
-                });
+                webhook = await channel.createWebhook('Ratichat Webhook');
             }
 
             this.webhookCache[channelId] = webhook;
@@ -177,8 +179,12 @@ class DiscordBot {
         }
     }
 
-    sendTyping(avatar) {
-        this.channelManager.sendTyping(avatar);
+    sendTyping(location) {
+        if (!location) { 
+            console.error('🎮 ❌ (sendTyping) No location provided');
+            return;
+        }
+        this.channelManager.sendTyping(location);
     }
 
     async login() {
