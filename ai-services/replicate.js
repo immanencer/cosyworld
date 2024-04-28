@@ -36,7 +36,7 @@ export default class ReplicateService extends AIService {
 
     updateConfig(config) {
         this.config = { ...this.config, ...config };
-        this.config.prompt_template = this.config.prompt_template.replace("{system_prompt}", this.config.system_prompt);
+        this.config.prompt_template = (this.config.prompt_template || 'You are a helpful assistant').replace("{system_prompt}", this.config.system_prompt);
     }
     chat_history = [];
     chat = async (message) => {

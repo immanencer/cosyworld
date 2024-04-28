@@ -1,7 +1,7 @@
 import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
-await manager.useService('replicate');
+await manager.useService('ollama');
 
 await manager.updateConfig({
     system_prompt: `
