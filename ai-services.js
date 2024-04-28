@@ -58,11 +58,11 @@ class AIServiceManager {
         this.currentService = service;
     }
     
-    async chat(input) {
+    async chat(message) {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
-        return this.currentService.chat(input);
+        return this.currentService.chat(message);
     }
 
     async complete(prompt) {
