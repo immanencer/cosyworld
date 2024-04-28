@@ -19,16 +19,16 @@ function chat() {
             process.stdout.write('🦙 > ');
             let output = '';
             // Loop through the messages received from the chat function
-            for await (const message of await manager.chat({ role: "user", content: input })) {
-                if (!message) {
+            for await (const event of await manager.chat({ role: "user", content: input })) {
+                if (!event) {
                     // If no message is received, log a warning and continue
-                    console.warn('🪹 No message received');
+                    console.warn('🪹 No event received');
                     continue;
                 }
                 // Print the message content to the console
-                process.stdout.write(message.message.content);
+                process.stdout.write(event.message.content);
                 // Add the message content to the output
-                output += message.message.content;
+                output += event.message.content;
             }
             // Send the output to the chat function and
             await manager.chat({ role: "assistant", content: output });

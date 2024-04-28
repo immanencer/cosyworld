@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.14.1",
+    "flexsearch": "^0.7.43",
     "ollama": "^0.5.0",
     "openai": "^4.38.2",
     "replicate": "^0.29.1"

@@ -13,16 +13,13 @@ class OllamaService extends AIService {
     async updateConfig(config) {
         super.updateConfig(config);
 
-        console.debug('🦙 Updating with : ' + JSON.stringify(config, null, 2));
-
-const modelfile = `FROM llama3
+        const modelfile = `FROM llama3
 SYSTEM "${config.system_prompt}"`;
-
-        console.debug('🦙 Updating model with:', modelfile);
 
         this.model = generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
-        await ollama.create({ model: this.model, modelfile });
+        console.log('🎮 🦙 System Prompt:' + config.system_prompt);
+        await ollama.create({ model: this.model, modelfile, num_ctx: 32768 });
     }
 
     messages = [];

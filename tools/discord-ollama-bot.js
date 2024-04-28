@@ -7,27 +7,16 @@ class DiscordOllamaBot extends DiscordBot {
         if (!avatar) throw new Error('Avatar is required');
         this.avatar = avatar;
 
-        this.systemPrompt = systemPrompt;
+        this.system_prompt = systemPrompt;
         this.aiServiceManager = new AIServiceManager();
-        this.system_prompt = systemPrompt + `
-        
-        Here are the known locations in the forest:
-         ${
-    Object.keys(this.channelManager.channels).join('\n ')
-}
 
-${
-    Object.keys(this.channelManager.threads).join('\n')
-}
-        `;
-
-        console.log('🎮 🤖 Discord Ollama Bot Initialized');
-        console.log('🎮 🤖 System Prompt:' + this.system_prompt);
     }
 
     async initialize() {
         await this.aiServiceManager.useService('ollama');
-        await this.aiServiceManager.updateConfig({ system_prompt: this.systemPrompt });
+        await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt });
+        
+        console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 
     message_cache = [];

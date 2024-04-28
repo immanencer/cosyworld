@@ -56,10 +56,19 @@ class ChannelManager {
         }
     }
 
+    // Channel and thread management
+    async getChannels() {
+        return Object.keys(this.channels);
+    }
+    
     getChannelId(channel) {
         console.log('🎮 Getting channel ID for ' + channel);
         console.log(JSON.stringify(this.channels, null, 2));
         return this.channels[channel];
+    }
+
+    async getThreads() {
+        return Object.keys(this.threads);
     }
 
     getThreadId(thread) {
@@ -68,6 +77,7 @@ class ChannelManager {
         return this.threads[thread];
     }
 
+    // Location management
     async getLocation(location) {
         const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
         const thread = this.threads[location];
@@ -77,6 +87,52 @@ class ChannelManager {
         console.log('🎮 Thread: ' + thread);
         return ({ channel, thread });
     };
+
+    // Message history
+    async getChannelHistory(channel_name) {
+        const messages = [];
+        const channel_id = this.channels[channel_name];
+        const channel = await this.client.channels.fetch(channel_id);
+        const history = await channel.messages.fetch({ limit: 100 });
+        for (const message of history) {
+            messages.push(message);
+        }
+        return messages;
+    }
+
+    async getChannelThreads(channel_name) {
+        console.log('🎮 Getting threads for ' + channel_name);
+        const threads = [];
+        const channel_id = this.channels[channel_name];
+        const channel = await this.client.channels.fetch(channel_id);
+        const thread_list = (await channel.threads.fetch()).threads;
+
+        console.log('🎮 Threads:', thread_list);
+        for (const [id, thread] of thread_list) {
+            threads.push(thread);
+        }
+        return threads;
+    }
+
+    async getThreadHistory(thread_name) {
+        console.log('🎮 Getting thread history for ' + thread_name);
+        const messages = [];
+        const location = await this.getLocation(thread_name);
+        console.log('🎮 Location:', thread_name, JSON.stringify(location));
+        const channel = await this.client.channels.fetch(location.channel);
+        const thread = await channel.threads.fetch(location.thread);
+        const history = await thread.messages.fetch({ limit: 100 });
+        for (const [id, message] of history) {
+            messages.push(message);
+        }
+        return messages;
+    }
+
+    async getMessage(message_id) {
+        console.log('🎮 Getting message ' + message_id);
+        const message = await this.client.messages.fetch(message_id);
+        return message;
+    }
 }
 
 

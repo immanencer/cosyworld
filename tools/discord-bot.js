@@ -27,14 +27,6 @@ class DiscordBot {
         return true;
     }
 
-    getChannelHistory(channel) {
-        if (!channel) {
-            console.error('🎮 ❌ No channel provided');
-            return;
-        }
-        return channel.messages.fetch();
-    }
-
     subscribed_channels = [];
     subscribe(channelName) {
         this.subscribed_channels.push(channelName);
@@ -55,6 +47,9 @@ class DiscordBot {
 
             const guild = await this.client.guilds.fetch(configuration.guild); // Replace 'YOUR_GUILD_ID' with your actual guild ID
 
+            if (this.on_login) {
+                await this.on_login();
+            }
         });
 
         this.client.on(Events.MessageCreate, async (message) => {
