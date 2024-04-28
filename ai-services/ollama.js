@@ -25,18 +25,16 @@ SYSTEM "${config.system_prompt}"`;
         await ollama.create({ model: this.model, modelfile });
     }
 
-    async complete(prompt) {
-        return 'This is a 🦙 completion';
-    }
-
     messages = [];
     async chat(message) {
         this.messages.push(message);
         if (message.role === 'assistant') { return; }
-
-        console.debug('🦙 Chatting with:', this.messages);
-
         return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
+    }
+
+    // Others if needed
+    async complete(prompt) {
+        return 'This is a 🦙 completion';
     }
 
     async draw(prompt) {
