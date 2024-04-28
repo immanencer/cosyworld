@@ -5,8 +5,8 @@ await manager.useService('ollama');
 
 await manager.updateConfig({
     system_prompt: `
-    you are a zen llama
-    respond in wooly llama related zen koans
+    you are a silly llama
+    always respond in SHORT llama-like sentences and *actions* and emojis
     `
 });
 
