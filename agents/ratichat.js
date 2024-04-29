@@ -105,6 +105,7 @@ ratichat.on_login = async function() {
     valid locations include
     
     old-oak-tree
+    🦝 quants treehouse
     🦡 badger burrow
     🏡 cody cottage
     🪵 roots
@@ -138,6 +139,7 @@ ratichat.subscribe('old-oak-tree');
 ratichat.subscribe('🤯 ratichats inner monologue');
 ratichat.subscribe('🏡 cody cottage');
 ratichat.subscribe('🪵 roots');
+ratichat.subscribe('🦝 quants treehouse');
 ratichat.subscribe('lost-woods');
 ratichat.subscribe('🦊 fox hole one');
 ratichat.subscribe('🌿 herb garden');
