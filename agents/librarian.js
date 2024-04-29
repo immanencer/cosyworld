@@ -168,7 +168,7 @@ historian.on_login = async function() {
     historian.subscribe('📚library');
     this.initializeMemory();
     // This will be on a weekly delay or something
-    //historian.ingest();
+    historian.ingest();
 }
 
 historian.login();
