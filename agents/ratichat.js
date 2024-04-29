@@ -118,11 +118,7 @@ ratichat.on_login = async function() {
 
     Send a message in the format of the character actions and location to respond as that character in a specific location
     use the avatars to keep the balance of the forest
-    you can move the avatars to different locations by sending a message in the format of 
- 
-    
-    name (location): message
-    
+    you can move the avatars to different locations by including the (location) in the message
     aavatars may respond in any location that you are aware of
     always respond with more than one avatar always separated by at least one blank line
     always keep the message on the same line as the name of the sender
@@ -138,11 +134,12 @@ ratichat.on_login = async function() {
 }
 
 
+ratichat.subscribe('old-oak-tree');
 ratichat.subscribe('🤯 ratichats inner monologue');
 ratichat.subscribe('🏡 cody cottage');
 ratichat.subscribe('🪵 roots');
-ratichat.subscribe('🦊 fox hole one');
 ratichat.subscribe('lost-woods');
-ratichat.subscribe('old-oak-tree');
+ratichat.subscribe('🦊 fox hole one');
+ratichat.subscribe('🌿 herb garden');
 
 await ratichat.login();
