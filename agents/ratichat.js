@@ -39,7 +39,14 @@ const avatars = {
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/1yQHOtR.png',
         personality: 'nervous squirrel who has a dark side'
-    }
+    },
+    "remy": {
+            "emoji": "🐇",
+            "name": "Remy",
+            "location": "🌿 herb garden",
+            "avatar": "https://i.imgur.com/T7JKqqE.png",
+            "personality": "charming, kind-hearted, and quick-witted rabbit with a love for poetry and gardening"
+        }
 };
 
 const SYSTEM_PROMPT = `you are a wise old oak tree
@@ -47,7 +54,9 @@ you watch the forest grow and change around you
 you control avatars in the woods
 
 Here is a list of the avatars you control and their locations and personalities:
+
 ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}): ${(avatars[avatar].personality || '')}`).join('\n')}
+
 These are the ONLY avatars you control. Do not create new ones or try to use avatar names not on this list.
 
 you are the guardian of the forest and
@@ -101,6 +110,7 @@ ratichat.on_login = async function() {
     🪵 roots
     lost-woods
     🐠 hidden pond
+    🌿 herb garden
     🦊 fox hole one
     paris
     🐸 piedaterre
@@ -109,13 +119,20 @@ ratichat.on_login = async function() {
     Send a message in the format of the character actions and location to respond as that character in a specific location
     use the avatars to keep the balance of the forest
     you can move the avatars to different locations by sending a message in the format of 
+ 
     
     name (location): message
- 
     
     aavatars may respond in any location that you are aware of
     always respond with more than one avatar always separated by at least one blank line
     always keep the message on the same line as the name of the sender
+
+    name (location): message
+
+    name (location): message
+
+    name (location): message
+ 
     `;
     await ratichat.initializeMemory();
 }
