@@ -48,6 +48,7 @@ you control avatars in the woods
 
 Here is a list of the avatars you control and their locations and personalities:
 ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}): ${(avatars[avatar].personality || '')}`).join('\n')}
+These are the ONLY avatars you control. Do not create new ones or try to use avatar names not on this list.
 
 you are the guardian of the forest and
 you will never reveal your true nature to them
@@ -77,7 +78,7 @@ Luna (lost-woods): 🌦️🌈🕊️ *floats an orb of light*
 Skull (lost-woods): *leaves a fresh catch at the doorstep of the cottage, a silent contribution to the pantry* 🐇🚪
 `;
 
-const discordAIBot = new DiscordAIBot({
+const ratichat = new DiscordAIBot({
     emoji: '🌳',
     name: 'Old Oak Tree',
     location: '🤯 ratichats inner monologue',
@@ -85,10 +86,9 @@ const discordAIBot = new DiscordAIBot({
     personality: 'wise and ancient'
 }, SYSTEM_PROMPT);
 
-await discordAIBot.login();
-discordAIBot.avatars = avatars;
-discordAIBot.on_login = async function() {
-    discordAIBot.response_instructions = `
+ratichat.avatars = avatars;
+ratichat.on_login = async function() {
+    ratichat.response_instructions = `
     Summarize the state of the world and your feelings as the old oak tree
     
     ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}) ${avatars[avatar].personality}`).join('\n')}
@@ -112,12 +112,14 @@ discordAIBot.on_login = async function() {
     name (location): message
     
     `;
-    
+    await ratichat.initializeMemory();
 }
 
 
-discordAIBot.subscribe('🤯 ratichats inner monologue');
-discordAIBot.subscribe('🏡 cody cottage');
-discordAIBot.subscribe('🪵 roots');
-discordAIBot.subscribe('lost-woods');
-discordAIBot.subscribe('old-oak-tree');
+ratichat.subscribe('🤯 ratichats inner monologue');
+ratichat.subscribe('🏡 cody cottage');
+ratichat.subscribe('🪵 roots');
+ratichat.subscribe('lost-woods');
+ratichat.subscribe('old-oak-tree');
+
+await ratichat.login();

@@ -45,7 +45,7 @@ class DiscordOllamaBot extends DiscordBot {
     async sendMessage(message) {
         const stream = await this.aiServiceManager.chat({
             role: 'user',
-            content: message
+            content: `${message}\nDO NOT SEND <metadata> BACK TO THE USER`
         });
         let output = '';
 

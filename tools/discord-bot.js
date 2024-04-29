@@ -109,7 +109,8 @@ class DiscordBot {
         }
 
         // Send the rest of the message as the default avatar
-        const avatar = this.avatar || { name: 'Discord Bot', 
+        const avatar = this.avatar || {
+            name: 'Discord Bot',
             location: Object.keys(this.channelManager.channels)[0],
             avatar: 'https://i.imgur.com/VpjPJOx.png'
         };
@@ -119,7 +120,7 @@ class DiscordBot {
 
     async sendAsAvatar(avatar, message) {
         const location = await this.channelManager.getLocation(avatar.location);
-        
+
         console.log(`🎮 📤 Sending message as ${avatar.name}: ${JSON.stringify(location)}`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
@@ -135,7 +136,7 @@ class DiscordBot {
                     avatarURL: avatar.avatar
                 };
                 if (location.thread) {
-                    data.threadId =  location.thread
+                    data.threadId = location.thread
                 }
                 await webhook.send(data);
             });
@@ -147,7 +148,7 @@ class DiscordBot {
 
     async getOrCreateWebhook(channelId) {
         console.log(`🎮 Getting or creating webhook for channel ${channelId}`);
-        
+
         if (!channelId) {
             console.error('🎮 ❌ (getOrCreateWebhook) No channel ID provided');
             return null;
@@ -175,7 +176,7 @@ class DiscordBot {
     }
 
     sendTyping(location) {
-        if (!location) { 
+        if (!location) {
             console.error('🎮 ❌ (sendTyping) No location provided');
             return;
         }
@@ -189,6 +190,46 @@ class DiscordBot {
             console.error('🎮 ❌ Error logging in:', error);
             console.log('📰 If this says you have an invalid token, make sure that .configurations/discord-bot.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')
         }
+    }
+
+    authors = {};
+    async initializeMemory() {
+
+        // get the memory for all subscribed channels
+        const memory = [];
+        for (const channel of this.subscribed_channels) {
+            console.log(`🎮 🧠 Initializing memory for ${channel}`);
+            const messages = await this.channelManager.getHistory(channel);
+            if (!messages) throw new Error('No messages found');
+            for await (const message of messages) {
+                if (!message) continue;
+                if(!message.content) continue;
+                let author = message.author;
+                if (author) {
+                    this.authors[message.author.id] = author;
+                } else {
+                    author = this.authors[message.authorId] || { username: 'Unknown' };
+                }
+                memory.push(`<metadata>[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name})</metadata>${message.content}\n`);
+            }
+        }
+        memory.sort().reverse();
+        console.log(memory.join('\n'));
+        this.aiServiceManager.updateConfig({
+            system_prompt:`
+            ${this.system_prompt || 'You are an alien intelligence from the future.'}
+    
+    ${memory.join('\n')}
+    
+    The above is your memory log.
+
+
+    
+    DO NOT SEND <metadata> BACK TO THE USER
+    ` });
+    
+    
+        console.log('🎮 🧠 Memory initialized')
     }
 }
 

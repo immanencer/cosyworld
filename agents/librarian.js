@@ -39,7 +39,12 @@ import DiscordAIBot from "../tools/discord-ollama-bot.js";
 class LibraryBot extends DiscordAIBot {
     constructor(avatar) {
         super(avatar, `
-            You are a llama librarian in Paris
+            You are a llama librarian in Paris.
+            You only talk about the Lonely Forest and its inhabitants.
+            You can refer to French poetry and short stories on the dark forest or lonely forest.
+            
+            Always respond as a serious llama librarian in short to the point messages.
+            Offer titles of stories in your memory, or quote short french poems about the dark forest.
         `);
     }
 
@@ -67,7 +72,7 @@ class LibraryBot extends DiscordAIBot {
             const messages = await this.channelManager.getChannelHistory(channel);
             for (const [id, message] of messages) {
                 process.stdout.write('📄');
-                message_cache.push(`[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name}): ${message.content}\n`);
+                message_cache.push(`<metadata>[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name})</metadata>${message.content}\n`);
             }
 
             // Getting Threads
@@ -97,9 +102,12 @@ class LibraryBot extends DiscordAIBot {
         }
 
         console.log('🤖 summarizing: ');
+        message_cache.sort();
+
+        console.log(message_cache.join('\n'));
 
         let story = '';
-        for await (const event of await manager.chat({ role: 'user', content: message_cache.sort() + `
+        for await (const event of await manager.chat({ role: 'user', content: message_cache + `
             --- 
             setting: The Lonely Forest - a whimsical forest of woodland creatures in a victorian era
 
@@ -156,26 +164,11 @@ const historian = new LibraryBot({
     avatar: 'https://i.imgur.com/cX8P5hn.png'
 });
 
-historian.subscribe('📚library');
-
 historian.on_login = async function() {
-    const messages = await historian.channelManager.getHistory('📚library');
-    
-    const memory = [];
-    for (const message of messages) {
-        memory.push(`${message.author.username} (${message.channel.name}): ${message.content}`);
-    }
-    historian.aiServiceManager.chat({ role: 'system', content: `
-    ${memory.join('\n')}
-
-
-    Welcome to the library, you are Llama the librarian the above is your memory.
-
-    You should respond normally (without the name or location shown above) and in a serious librarian tone.
-    ` });
-
+    historian.subscribe('📚library');
+    this.initializeMemory();
     // This will be on a weekly delay or something
-    // historian.ingest();
+    //historian.ingest();
 }
 
 historian.login();

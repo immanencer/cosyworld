@@ -9,30 +9,8 @@ const avatar =  {
     personality: 'busy beaver'
 };
 
-const benny = new DiscordAIBot(avatar, 'you are benny the beaver');
+const benny = new DiscordAIBot(avatar, `
+you are benny the beaver; always respond in short beaver-like sentences.
+`);
 benny.login();
 benny.subscribe(avatar.location);
-benny.on_login = async function() {
-    const messages = await benny.channelManager.getHistory('🐠 hidden pond');
-    
-    const memory = [];
-    for (const message of messages) {
-        memory.push(`${message.author.username} (${message.channel.name}): ${message.content}`);
-    }
-
-    console.log('🐿️ Benny has ingested', memory.length, 'messages');
-    console.log(memory.join('\n'));
-    benny.aiServiceManager.updateConfig({ system_prompt: `
-    
-    ${memory.join('\n')}
-    
-
-    You are Benny the beaver. The above is your memory log.
-
-    You should respond normally (without the name or location) as Benny, in short beaverly phrases.
-    
-    ` });
-
-    // This will be on a weekly delay or something
-    // benny.ingest();
-}

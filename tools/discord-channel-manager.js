@@ -82,10 +82,6 @@ class ChannelManager {
     async getLocation(location) {
         const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
         const thread = this.threads[location];
-
-        console.log('🎮 Getting location for ' + location)
-        console.log('🎮 Channel: ' + channel);
-        console.log('🎮 Thread: ' + thread);
         return { channel, thread };
     };
 
