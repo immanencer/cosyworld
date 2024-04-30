@@ -60,6 +60,8 @@ Start all the agents
 
 ## Setting Up the Discord Bot
 
+⚠️ You will currently need to create all referenced channels and threads or modify the references in the code or it will crash.
+
 To use the Discord bot functionality, you will need a valid token. Without this, the application will not be able to log in, resulting in the following error:
 
 ```plaintext
