@@ -81,31 +81,42 @@ class DiscordBot {
             // Find any lines beginning with each avatar's emoji and send it as that avatar
             const lines = output.split('\n');
 
+            let currentAction = '';
+            let currentMessage = '';
+
+            const actions = [];
+            
             lines.forEach(line => {
-                if (!line.includes(':')) return;
-                console.log(`🎮 📥 Received: ${line}`);
-                let nameAndLocation = line.split(':')[0].trim();
-                let msg = line.split(':')[1].trim();
-
-                let name = nameAndLocation.split('(')[0].trim();
-                let location = '';
-
-                // Check if location is present
-                if (nameAndLocation.includes('(') && nameAndLocation.includes(')')) {
-                    location = nameAndLocation.split('(')[1].split(')')[0].trim();
-                }
-
-                if (this.avatars[name.toLowerCase()]) {
-                    console.log(`🎮 📤 Sending as ${name}: ${location}: ${msg}`);
-                    let avatar = this.avatars[name.toLowerCase()];
-
-                    if (location) {
-                        avatar.location = location;
+                if (!line) return;
+                if (line.trim() === '') return;
+                if (line.trim() === '---') return;
+            
+                // Check if the line starts with a new character action
+                if (line.includes(':')) {
+                    // remove any leading whitespace or # or * characters
+                    line = line.replace(/^[\s#*]+/g, '').trim();
+                    // If there's a current action, process it before starting a new one
+                    if (currentAction) {
+                        actions.push({ action: currentAction, message: currentMessage });
                     }
-
-                    this.sendAsAvatar(avatar, msg);
+            
+                    // Start a new action
+                    currentAction = line.split(':')[0].trim();
+                    currentMessage = line.split(':')[1].trim();
+                } else {
+                    // If the line doesn't start with a new character action, append it to the current message
+                    currentMessage += '\n' + line.trim();
                 }
             });
+            
+            // Process the last action
+            if (currentAction) {
+                actions.push({ action: currentAction, message: currentMessage });
+            }
+            for await (const { action, message } of actions) {
+                console.log(`🎮 📥 Processing: ${action}: ${message}`);
+                await this.processAction(action, message);
+            }
         }
 
         // Send the rest of the message as the default avatar
@@ -117,16 +128,42 @@ class DiscordBot {
         console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
         this.sendAsAvatar(avatar, output);
     }
+            
+    async processAction(action, message) {
+        console.log(`🎮 📥 Received: ${action}: ${message}`);
+    
+        let name = action.split('(')[0].trim();
+        let location = '';
+    
+        // Check if location is present
+        if (action.includes('(') && action.includes(')')) {
+            location = action.split('(')[1].split(')')[0].trim();
+        }
+    
+        if (this.avatars[name.toLowerCase()]) {
+            console.log(`🎮 📤 Sending as ${name}: ${location}: ${message}`);
+            let avatar = this.avatars[name.toLowerCase()];
+    
+            if (location) {
+                avatar.location = location;
+            }
+            await this.sendAsAvatar(avatar, message);
+        }
+    }
 
+    prior_messages = {};
     async sendAsAvatar(avatar, message) {
-        const location = await this.channelManager.getLocation(avatar.location);
 
-        console.log(`🎮 📤 Sending message as ${avatar.name}: ${JSON.stringify(location)}`);
+        if (!message) { message = '...'; }
+        if (this.prior_messages[avatar.name] === message) {
+            console.log(`🎮 📤 Skipping duplicate message for ${avatar.name}`);
+            return;
+        }
+        this.prior_messages[avatar.name] = message;
+
+        const location = await this.channelManager.getLocation(avatar.location);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
-            if (!message) {
-                message = '...';
-            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
@@ -141,7 +178,6 @@ class DiscordBot {
                 await webhook.send(data);
             });
         } else {
-            console.log(JSON.stringify(location, null, 2));
             console.error('🎮 ❌ Unable to send message as avatar:', avatar.name);
         }
     }
@@ -193,11 +229,11 @@ class DiscordBot {
     }
 
     authors = {};
-    async initializeMemory() {
+    async initializeMemory(channels) {
 
         // get the memory for all subscribed channels
         const memory = [];
-        for (const channel of this.subscribed_channels) {
+        for (const channel of (channels || this.subscribed_channels)) {
             console.log(`🎮 🧠 Initializing memory for ${channel}`);
             const messages = await this.channelManager.getHistory(channel);
             if (!messages) throw new Error('No messages found');
@@ -210,22 +246,21 @@ class DiscordBot {
                 } else {
                     author = this.authors[message.authorId] || { username: 'Unknown' };
                 }
-                memory.push(`<metadata>[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name})</metadata>${message.content}\n`);
+                memory.push(`[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name}): ${message.content}\n`);
             }
         }
-        memory.sort().reverse();
-        console.log(memory.join('\n'));
+        memory.sort()
+        
+        // slice the memory to the last 200 messages;
         this.aiServiceManager.updateConfig({
-            system_prompt:`
-            ${this.system_prompt || 'You are an alien intelligence from the future.'}
-    
-    ${memory.join('\n')}
-    
-    The above is your memory log.
+            system_prompt: this.system_prompt  + `
 
 
+    ${memory.slice(-200).join('\n')}
+
+    The above is your memory.
     
-    DO NOT SEND <metadata> BACK TO THE USER
+    Please respond as one or more avatars in different locations
     ` });
     
     

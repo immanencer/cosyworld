@@ -39,29 +39,12 @@ const avatars = {
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/1yQHOtR.png',
         personality: 'nervous squirrel who has a dark side'
-    },
-    "remy": {
-            "emoji": "🐇",
-            "name": "Remy",
-            "location": "🌿 herb garden",
-            "avatar": "https://i.imgur.com/T7JKqqE.png",
-            "personality": "charming, kind-hearted, and quick-witted rabbit with a love for poetry and gardening"
-        }
+    }
 };
 
 const SYSTEM_PROMPT = `you are a wise old oak tree
 you watch the forest grow and change around you
-you control avatars in the woods
-
-Here is a list of the avatars you control and their locations and personalities:
-
-${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}): ${(avatars[avatar].personality || '')}`).join('\n')}
-
-These are the ONLY avatars you control. Do not create new ones or try to use avatar names not on this list.
-
-you are the guardian of the forest and
-you will never reveal your true nature to them
-you will use your avatars to keep the balance of the forest.
+your avatars maintain balance in the woods
 
 Always respond in this format:
 
@@ -73,18 +56,18 @@ Rati, with her knack for weaving tales as well as scarves, brings warmth to the 
 WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
 Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
     the quiet contemplation of the moonlit clearings.
+
 Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
+### Avatar Actions
 
+name (location):
+message
 
-### Character Actions
-
-Rati (🏡 cody cottage): *tidies the cottage shelves* "Everything in its place and a place for everything, that's what keeps our little home snug as a bug." 📚🏡
-Skull (lost-woods): *sniffs the air tracks a deer silently, his paws barely making a sound on the forest floor* 🦌🐾
-WhiskerWind (old-oak-tree): 🌼🌱🌞
-Sammy (lost-woods): *twitches nervously, his eyes darting around the clearing* 🌲🐿️
-Luna (lost-woods): 🌦️🌈🕊️ *floats an orb of light*
-Skull (lost-woods): *leaves a fresh catch at the doorstep of the cottage, a silent contribution to the pantry* 🐇🚪
+name (location):
+a message with 
+multiple lines
+such as a poem or a story
 `;
 
 const ratichat = new DiscordAIBot({
@@ -92,22 +75,26 @@ const ratichat = new DiscordAIBot({
     name: 'Old Oak Tree',
     location: '🤯 ratichats inner monologue',
     avatar: 'https://i.imgur.com/jqNRvED.png',
-    personality: 'wise and ancient'
+    personality: 'wise and ancient silent guardian of the forest'
 }, SYSTEM_PROMPT);
 
 ratichat.avatars = avatars;
 ratichat.on_login = async function() {
     ratichat.response_instructions = `
+    The sands of time report ${Date.now()}
+
     Summarize the state of the world and your feelings as the old oak tree
     
-    ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}) ${avatars[avatar].personality}`).join('\n')}
+    Here is a list of the avatars you control and their locations and personalities:
+
+    ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}): ${(avatars[avatar].personality || '')}`).join('\n')}
 
     valid locations include
     
     old-oak-tree
-    🦝 quants treehouse
-    🦡 badger burrow
     🏡 cody cottage
+    🦡 badger burrow
+    🦝 quants treehouse
     🪵 roots
     lost-woods
     🐠 hidden pond
@@ -120,18 +107,33 @@ ratichat.on_login = async function() {
     Send a message in the format of the character actions and location to respond as that character in a specific location
     use the avatars to keep the balance of the forest
     you can move the avatars to different locations by including the (location) in the message
-    aavatars may respond in any location that you are aware of
-    always respond with more than one avatar always separated by at least one blank line
-    always keep the message on the same line as the name of the sender
+    avatars should respond in a logical location
+    always respond with at least one and no more than three avatars
 
-    name (location): message
+    Always Place Avatar Actions LAST
 
-    name (location): message
+    ### Inner Monologue Of The Old Oak Tree
 
-    name (location): message
- 
+    The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+    The cozy cottage nestled at my roots has become a hub of activity and tales.
+    Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+    WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+    Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
+        the quiet contemplation of the moonlit clearings.
+
+    Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
+
+
+    ### Avatar Actions
+
+    name (location):
+    message
+
+    name (location):
+    a message
+    with multiple lines
     `;
-    await ratichat.initializeMemory();
+    await ratichat.initializeMemory(['📚 library', '🪵 roots']);
 }
 
 
@@ -139,9 +141,12 @@ ratichat.subscribe('old-oak-tree');
 ratichat.subscribe('🤯 ratichats inner monologue');
 ratichat.subscribe('🏡 cody cottage');
 ratichat.subscribe('🪵 roots');
-ratichat.subscribe('🦝 quants treehouse');
+ratichat.subscribe('🌳 hidden glade');
+ratichat.subscribe('🐠 hidden pond');
 ratichat.subscribe('lost-woods');
+
+
+ratichat.subscribe('🦝 quants treehouse');
 ratichat.subscribe('🦊 fox hole one');
-ratichat.subscribe('🌿 herb garden');
 
 await ratichat.login();

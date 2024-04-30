@@ -14,12 +14,12 @@ class OllamaService extends AIService {
     async updateConfig(config) {
         super.updateConfig(config);
 
-        const modelfile = `FROM llama3
+        const modelfile = `FROM phi3
 SYSTEM "${config.system_prompt}123"`;
 
-        this.model = generateHash(modelfile);
+        this.model = 'phi3'; //generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
-        await ollama.create({ model: this.model, modelfile, options: { num_ctx: 2048 * 4 }});
+        await ollama.create({ model: this.model, modelfile, num_ctx: 32768 });
     }
 
     messages = [];

@@ -20,7 +20,7 @@ the sands of time report ${Date.now()}
 you are a mouse scribe named Asher who lives in a cozy library in the heart of the forest
 but you will never reveal your true identity
 
-you find books about the Lonely Forest and its inhabitants in your imagination
+you translate books and scrolls and journals and scraps of writing 
 always set your work in a victorian era whimsical forest of woodland creatures
     `
 });
@@ -107,37 +107,12 @@ class LibraryBot extends DiscordAIBot {
         console.log(message_cache.join('\n'));
 
         let story = '';
-        for await (const event of await manager.chat({ role: 'user', content: message_cache + `
-            --- 
-            setting: The Lonely Forest - a whimsical forest of woodland creatures in a victorian era
-
-            Here are the characters
-
-            Rati: A rat who weaves tales as well as scarves.
-            WhiskerWind: A sprite silent type who speaks volumes with just a flutter of leaves or the dance of fireflies.
-            Skull: A wolf wanderer who returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings.
-            Benny: A beaver who lives by a magical lake that reflects the stars.
-            Toad: A toad who lives in a piedaterre in paris having recently bought a fancy sports car and run off to the city.
-            Badger: A grumpy badger who lives in a cozy burrow.
-            Cody: A guy rat who is also known as ascarylumbricoides.
-            Ratimics: a wizened old fox with mysterious powers.
-            Luna: the shy mystical rabbit.
-            Sammy: the nervous squirrel.
-
-            Which has the following known locations.
-
-            Old Oak Tree: A wise old oak tree that watches over the forest.
-            > The Roots: The roots of the Old Oak Tree, mysterious and dark.
-            > Badger Burrow: A cozy burrow where a grumpy badger lives.
-            > Cody Cottage: A cozy cottage nestled at the roots of the Old Oak Tree, Rati the Rat lives here.
-
-            Lost Woods: A place where the trees whisper secrets to each other.
-            > Hidden Pond: A magical lake that reflects the stars, Benny the Beaver lives here.
+        for await (const event of await manager.chat({ role: 'user', content: message_cache.join('\n') + `
 
 
+            From these notes write a short poem or quote or passage as from a vast library of knowledge about the Lonely Forest and its inhabitants.
 
-            Write a story set in the Lonely Forest with these characters and locations based on the messages above.
-            Format it as a book in no more than four chapters. Do not provide any additional commentary.
+            Do not offer any disclaimers or commentary other than as Asher the Mouse Scribe who fully believes in the truth of the Lonely Forest and its inhabitants.
 
             `
          })) {
@@ -149,7 +124,7 @@ class LibraryBot extends DiscordAIBot {
         this.sendAsAvatar({
             emoji: '🐭',
             name: 'Scribe Asher',
-            location: '📚library',
+            location: '📚 library',
             personality: 'cute mouse monk author',
             avatar: 'https://i.imgur.com/dUxHmFC.png'
         }, story);
@@ -159,13 +134,14 @@ class LibraryBot extends DiscordAIBot {
 const historian = new LibraryBot({
     emoji: '🦙',
     name: 'Llama',
-    location: '📚library',
+    location: '📚 library',
     personality: 'serious llama librarian',
     avatar: 'https://i.imgur.com/cX8P5hn.png'
 });
 
 historian.on_login = async function() {
-    historian.subscribe('📚library');
+    historian.subscribe('📚 library');
+    historian.subscribe('🌳 hidden glade');
     this.initializeMemory();
     // This will be on a weekly delay or something
     historian.ingest();
