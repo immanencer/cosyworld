@@ -77,19 +77,20 @@ class DiscordBot {
 
     async sendAsAvatars(output) {
         if (this.avatars) {
-            const actions = [];
+            let jsonObjects = output.match(/{[^}]*}/g);
 
-            if (output.indexOf('### Avatar Actions') !== -1) {
-                console.log('🎮 📥 Parsing actions from output');
+            let actions = jsonObjects.map(jsonObject => {
                 try {
-                    
-                    JSON.parse(output.replace(/},\s*]/g, '}]').split('### Avatar Actions')[1].trim().split('\n').map(line => line.trim()).join('\n')).forEach(action => {
-                        actions.push(action);
-                    });
+                    // Remove trailing comma if it exists
+                    if (jsonObject.trim().endsWith(',')) {
+                        jsonObject = jsonObject.trim().substring(0, jsonObject.length - 1);
+                    }
+                    return JSON.parse(jsonObject);
                 } catch (error) {
-                    console.error('🎮 ❌ Error parsing actions:', error);
+                    console.error('🎮 ❌ Error parsing JSON object:', error);
+                    console.error('🎮 ❌ Error parsing JSON object:', jsonObject);
                 }
-            }
+            }); 
 
             console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
 

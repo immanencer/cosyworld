@@ -59,7 +59,8 @@ class LibraryBot extends DiscordAIBot {
         const message_cache = [];
 
         for (const channel of channels) {
-            if (channel === 'general' || channel === 'paris' || channel.indexOf('🚧')===0 || channel.indexOf('🔐')===0) {
+            console.log('📚 Ingesting channel:', channel);
+            if (channel === 'general' || channel === 'paris' || channel.indexOf('🚧') === 0 || channel.indexOf('🚓') === 0 || channel.indexOf('🔐')===0) {
                 continue; // Skip channels
             }
             // Open the bookshelf for this channel from the filesystem, or create a new one
@@ -88,7 +89,7 @@ class LibraryBot extends DiscordAIBot {
                 || thread.name.indexOf('piedaterre') !== -1) {
                     continue; // Skip threads
                 }
-                console.log('📚 Ingesting thread:', thread);
+                console.log('📚 Ingesting thread... ');
                 process.stdout.write('\n📖');
                 const messages = await this.channelManager.getThreadHistory(thread.name);
                 for await (const message of messages) {

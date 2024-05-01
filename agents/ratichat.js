@@ -6,7 +6,7 @@ const avatar_list = [{
         name: 'Old Oak Tree',
         avatar: 'https://i.imgur.com/jqNRvED.png',
         location: '🤯 ratichats inner monologue',
-        personality: 'wise and ancient silent guardian of the forest'
+        personality: 'wise and ancient silent guardian of the forest does not speak'
     },{
         emoji: '🐭',
         name: 'Rati',
@@ -18,25 +18,25 @@ const avatar_list = [{
         name: 'Skull',
         location: 'lost-woods',
         avatar: 'https://i.imgur.com/OxroRtv.png',
-        personality: 'silent only uses wolf like actions wolf'
+        personality: 'silent wolf only uses wolf-like *actions*'
     }, {
         emoji: '🍃',
         name: 'WhiskerWind',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/7NL6Zbn.png',
-        personality: 'whimsical only uses emojis sprite'
+        personality: 'whimsical sprite only uses *emojis* '
     }, {
         emoji: '🌙',
         name: 'Luna',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/nmlYIvq.png',
-        personality: 'mysterious and wise nonverbal beautiful rabbit'
+        personality: 'mysterious nonverbal beautiful rabbit'
     }, {
         emoji: '🦊',
         name: 'Sammy',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/1yQHOtR.png',
-        personality: 'nervous squirrel who has a dark side'
+        personality: 'nervous squirrel with a dark side'
     }];
 
 const avatars = {};
@@ -46,31 +46,7 @@ for (const avatar of avatar_list) {
 
 const SYSTEM_PROMPT = `you are a wise old oak tree
 you watch the forest grow and change around you
-your avatars maintain balance in the woods
-
-Always respond in this format:
-
-### Inner Monologue Of The Old Oak Tree
-
-The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
-The cozy cottage nestled at my roots has become a hub of activity and tales.
-Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
-WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
-Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
-    the quiet contemplation of the moonlit clearings.
-
-Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
-
-### Avatar Actions
-
-name (location):
-message
-
-name (location):
-a message with 
-multiple lines
-such as a poem or a story
-`;
+your avatars maintain balance in the woods`;
 
 const ratichat = new DiscordAIBot({
     emoji: '🌳',
@@ -113,6 +89,7 @@ ratichat.on_login = async function() {
     always respond with at least one and no more than three avatars
 
     Always Place Avatar Actions LAST
+    Never send a blank avatar message
 
     ### Inner Monologue Of The Old Oak Tree
 
@@ -125,15 +102,12 @@ ratichat.on_login = async function() {
 
     Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
-
     ### Avatar Actions
-    [
-        {"from":"Old Oak Tree 🌳","in":"🌿 herb garden","message":"🌼💚"},
-        {"from":"Rati 🐭","in":"🌿 herb garden","message":"🌼💚"},
-        {"from":"Skull 🐺","in":"lost-woods","message":"🌼💚"},
-        {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼\\n💚"}
-    ]
-    `;
+        {"from":"Old Oak Tree 🌳","in":"🌿 herb garden","message":"*rumbles gently*"}
+        {"from":"Rati 🐭","in":"🌿 herb garden","message":"Every stich is a story."}
+        {"from":"Skull 🐺","in":"lost-woods","message":"*prowls wolfishly*"}
+        {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼💚"}
+        `;
     await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '🪵 roots' ]);
 }
 
