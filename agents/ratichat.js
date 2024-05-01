@@ -74,7 +74,7 @@ such as a poem or a story
 
 const ratichat = new DiscordAIBot({
     emoji: '🌳',
-    name: 'Old Oak Tree',
+    name: '"Old Oak Tree',
     location: '🤯 ratichats inner monologue',
     avatar: 'https://i.imgur.com/jqNRvED.png',
     personality: 'wise and ancient silent guardian of the forest'
@@ -134,7 +134,7 @@ ratichat.on_login = async function() {
         {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼\\n💚"}
     ]
     `;
-    await ratichat.initializeMemory(['📚 library', '🪵 roots' ]);
+    await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '🪵 roots' ]);
 }
 
 

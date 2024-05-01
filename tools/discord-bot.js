@@ -25,11 +25,10 @@ class DiscordBot {
         // By default ignore self messages and bot messages
         if (message.author.id === this.client.user.id) return false;
         if (message.author.bot) return false;
-        if (this.subscribed_channels[message.channel.name] === undefined) return false;
+        if (!this.subscribed_channels.includes(message.channel.name)) return false;
         return true;
     }
     handleMessage(message) {
-        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
         return this.message_filter(message);
     }
 
@@ -113,6 +112,9 @@ class DiscordBot {
     async processAction(action) {
         console.log('🎮 Processing action... ');
         try {
+            if (this.channelManager.getLocation(action.in)) {
+                this.avatars[action.from].location = action.in;
+            }
             await this.sendAsAvatar(this.avatars[action.from], action.message);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);

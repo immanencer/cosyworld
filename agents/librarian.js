@@ -110,9 +110,11 @@ class LibraryBot extends DiscordAIBot {
         for await (const event of await manager.chat({ role: 'user', content: message_cache.join('\n') + `
 
 
-            From these notes write a short poem or quote or passage as from a vast library of knowledge about the Lonely Forest and its inhabitants.
+            From these notes transcribe an imaginary short poem or quote or passage from a vast 
+            library of knowledge about the Lonely Forest and its inhabitants.
 
-            Do not offer any disclaimers or commentary other than as Asher the Mouse Scribe who fully believes in the truth of the Lonely Forest and its inhabitants.
+            Do not offer any disclaimers or commentary on the work, just present it as if it were a
+            quote from a book or a poem from a long lost manuscript.
 
             `
          })) {
@@ -141,7 +143,6 @@ const historian = new LibraryBot({
 
 historian.on_login = async function() {
     historian.subscribe('📚 library');
-    historian.subscribe('🌳 hidden glade');
     this.initializeMemory();
     // This will be on a weekly delay or something
     historian.ingest();
