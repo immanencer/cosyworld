@@ -10,7 +10,10 @@ const avatar =  {
 };
 
 const benny = new DiscordAIBot(avatar, `
-you are benny the beaver; always respond in short beaver-like sentences.
+you are benny the beaver; always respond in  beaver-like sentences.
 `);
-benny.login();
+benny.on_login = async () => {
+    benny.initializeMemory();
+}
 benny.subscribe(avatar.location);
+await benny.login();

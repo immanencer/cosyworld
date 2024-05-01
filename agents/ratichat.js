@@ -1,46 +1,48 @@
 
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
-const avatars = {
-    'old oak tree': {
+const avatar_list = [{
         emoji: '🌳',
         name: 'Old Oak Tree',
         avatar: 'https://i.imgur.com/jqNRvED.png',
         location: '🤯 ratichats inner monologue',
         personality: 'wise and ancient silent guardian of the forest'
-    },
-    'rati': {
+    },{
         emoji: '🐭',
         name: 'Rati',
         location: '🏡 cody cottage',
         avatar: 'https://i.imgur.com/b2WMGfD.png',
         personality: 'wise and domestic rat'
-    }, 'skull': {
+    }, {
         emoji: '🐺',
         name: 'Skull',
         location: 'lost-woods',
         avatar: 'https://i.imgur.com/OxroRtv.png',
         personality: 'silent only uses wolf like actions wolf'
-    }, 'whiskerwind': {
+    }, {
         emoji: '🍃',
         name: 'WhiskerWind',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/7NL6Zbn.png',
         personality: 'whimsical only uses emojis sprite'
-    }, 'luna': {
+    }, {
         emoji: '🌙',
         name: 'Luna',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/nmlYIvq.png',
         personality: 'mysterious and wise nonverbal beautiful rabbit'
-    }, 'sammy': {
+    }, {
         emoji: '🦊',
         name: 'Sammy',
         location: 'old-oak-tree',
         avatar: 'https://i.imgur.com/1yQHOtR.png',
         personality: 'nervous squirrel who has a dark side'
-    }
-};
+    }];
+
+const avatars = {};
+for (const avatar of avatar_list) {
+    avatars[avatar.name + ' ' + avatar.emoji] = avatar;
+}
 
 const SYSTEM_PROMPT = `you are a wise old oak tree
 you watch the forest grow and change around you
@@ -125,15 +127,14 @@ ratichat.on_login = async function() {
 
 
     ### Avatar Actions
-
-    name (location):
-    message
-
-    name (location):
-    a message
-    with multiple lines
+    [
+        {"from":"Old Oak Tree 🌳","in":"🌿 herb garden","message":"🌼💚"},
+        {"from":"Rati 🐭","in":"🌿 herb garden","message":"🌼💚"},
+        {"from":"Skull 🐺","in":"lost-woods","message":"🌼💚"},
+        {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼\\n💚"}
+    ]
     `;
-    await ratichat.initializeMemory(['📚 library', '🪵 roots']);
+    await ratichat.initializeMemory(['📚 library', '🪵 roots' ]);
 }
 
 

@@ -21,10 +21,16 @@ class DiscordBot {
         console.log('🎮 Discord Bot Initialized');
     }
 
-    handleMessage(message) {
-        if (!this.subscribed_channels.includes(message.channel.name)) return false;
-        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
+    message_filter = (message) => {
+        // By default ignore self messages and bot messages
+        if (message.author.id === this.client.user.id) return false;
+        if (message.author.bot) return false;
+        if (this.subscribed_channels[message.channel.name] === undefined) return false;
         return true;
+    }
+    handleMessage(message) {
+        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
+        return this.message_filter(message);
     }
 
     subscribed_channels = [];
@@ -52,13 +58,7 @@ class DiscordBot {
             }
         });
 
-        this.client.on(Events.MessageCreate, async (message) => {
-            console.log(`🎮 ✉️ Received message from ${message.author.displayName} in ${message.channel.name}`);
-            if (message.author.bot || message.author.id === this.client.user.id) return;
-            if (this.subscribed_channels.includes(message.channel.name)) {
-                await this.handleMessage(message);
-            }
-        });
+        this.client.on(Events.MessageCreate, async (message) => (await this.handleMessage(message)));
     }
 
     sendMessage(channel, message) {
@@ -78,81 +78,51 @@ class DiscordBot {
 
     async sendAsAvatars(output) {
         if (this.avatars) {
-            // Find any lines beginning with each avatar's emoji and send it as that avatar
-            const lines = output.split('\n');
-
-            let currentAction = '';
-            let currentMessage = '';
-
             const actions = [];
-            
-            lines.forEach(line => {
-                if (!line) return;
-                if (line.trim() === '') return;
-                if (line.trim() === '---') return;
-            
-                // Check if the line starts with a new character action
-                if (line.includes(':')) {
-                    // remove any leading whitespace or # or * characters
-                    line = line.replace(/^[\s#*]+/g, '').trim();
-                    // If there's a current action, process it before starting a new one
-                    if (currentAction) {
-                        actions.push({ action: currentAction, message: currentMessage });
-                    }
-            
-                    // Start a new action
-                    currentAction = line.split(':')[0].trim();
-                    currentMessage = line.split(':')[1].trim();
-                } else {
-                    // If the line doesn't start with a new character action, append it to the current message
-                    currentMessage += '\n' + line.trim();
+
+            if (output.indexOf('### Avatar Actions') !== -1) {
+                console.log('🎮 📥 Parsing actions from output');
+                try {
+                    
+                    JSON.parse(output.replace(/},\s*]/g, '}]').split('### Avatar Actions')[1].trim().split('\n').map(line => line.trim()).join('\n')).forEach(action => {
+                        actions.push(action);
+                    });
+                } catch (error) {
+                    console.error('🎮 ❌ Error parsing actions:', error);
                 }
-            });
-            
-            // Process the last action
-            if (currentAction) {
-                actions.push({ action: currentAction, message: currentMessage });
             }
-            for await (const { action, message } of actions) {
-                console.log(`🎮 📥 Processing: ${action}: ${message}`);
-                await this.processAction(action, message);
+
+            console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
+
+            for await (const action of actions) {
+                console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
+                await this.processAction(action);
             }
         }
 
         // Send the rest of the message as the default avatar
         const avatar = this.avatar || {
             name: 'Discord Bot',
-            location: Object.keys(this.channelManager.channels)[0],
+            location: '🤯 ratichats inner monologue',
             avatar: 'https://i.imgur.com/VpjPJOx.png'
         };
         console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
         this.sendAsAvatar(avatar, output);
     }
-            
-    async processAction(action, message) {
-        console.log(`🎮 📥 Received: ${action}: ${message}`);
-    
-        let name = action.split('(')[0].trim();
-        let location = '';
-    
-        // Check if location is present
-        if (action.includes('(') && action.includes(')')) {
-            location = action.split('(')[1].split(')')[0].trim();
-        }
-    
-        if (this.avatars[name.toLowerCase()]) {
-            console.log(`🎮 📤 Sending as ${name}: ${location}: ${message}`);
-            let avatar = this.avatars[name.toLowerCase()];
-    
-            if (location) {
-                avatar.location = location;
-            }
-            await this.sendAsAvatar(avatar, message);
+
+    async processAction(action) {
+        console.log('🎮 Processing action... ');
+        try {
+            await this.sendAsAvatar(this.avatars[action.from], action.message);
+        } catch (error) {
+            console.error('🎮 ❌ Error processing action:', error);
+            console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
         }
     }
 
     prior_messages = {};
     async sendAsAvatar(avatar, message) {
+        console.log(`🎮 📤 Sending as ${avatar.name}: ${message}`);
 
         if (!message) { message = '...'; }
         if (this.prior_messages[avatar.name] === message) {
@@ -239,7 +209,7 @@ class DiscordBot {
             if (!messages) throw new Error('No messages found');
             for await (const message of messages) {
                 if (!message) continue;
-                if(!message.content) continue;
+                if (!message.content) continue;
                 let author = message.author;
                 if (author) {
                     this.authors[message.author.id] = author;
@@ -250,20 +220,19 @@ class DiscordBot {
             }
         }
         memory.sort()
-        
+
         // slice the memory to the last 200 messages;
-        this.aiServiceManager.updateConfig({
-            system_prompt: this.system_prompt  + `
+        await this.aiServiceManager.chat({
+            role: 'assistant',
+            content: `This is what I remember: \n\n    
+            ${memory.slice(-200).join('\n')}
+            
+            DO NOT SEND <metadata> BACK TO THE USER
+            I will only speak in latin issuing prophecies and secrets about the  characters and events I remember.
+            `
+        });
 
 
-    ${memory.slice(-200).join('\n')}
-
-    The above is your memory.
-    
-    Please respond as one or more avatars in different locations
-    ` });
-    
-    
         console.log('🎮 🧠 Memory initialized')
     }
 }

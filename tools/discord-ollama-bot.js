@@ -23,7 +23,12 @@ class DiscordOllamaBot extends DiscordBot {
     message_timeout = 0;
     async handleMessage(message) {
         if(!super.handleMessage(message)) return;
-        const formatted_message = `${message.author.displayName} (${message.channel.name}): ${message.content}`;
+        const formatted_message = JSON.stringify({
+            from: message.author.displayName,
+            in: message.channel.name,
+            message: message.content
+        })
+        console.log('🎮 📥 Received message from', formatted_message)
         this.message_cache.push(formatted_message)
 
         if (this.message_timeout) {
@@ -45,7 +50,7 @@ class DiscordOllamaBot extends DiscordBot {
     async sendMessage(message) {
         const stream = await this.aiServiceManager.chat({
             role: 'user',
-            content: `${message}\nDO NOT SEND <metadata> BACK TO THE USER`
+            content: `${message}`
         });
         let output = '';
 
