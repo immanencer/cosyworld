@@ -15,7 +15,7 @@ class OllamaService extends AIService {
         super.updateConfig(config);
 
         const modelfile = `FROM llama3
-SYSTEM "${config.system_prompt}123"`;
+SYSTEM "${config.system_prompt || 'you are an alien intelligence from the future'}"`;
 
         this.model = generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
