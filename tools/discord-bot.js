@@ -76,8 +76,9 @@ class DiscordBot {
     }
 
     async sendAsAvatars(output) {
-        if (this.avatars) {
-            let jsonObjects = output.match(/{[^}]*}/g);
+        let jsonObjects = output.match(/{[^}]*}/g);
+
+        if (jsonObjects && this.avatars) {
 
             let actions = jsonObjects.map(jsonObject => {
                 try {
