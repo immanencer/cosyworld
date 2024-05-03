@@ -34,11 +34,10 @@ class LibraryBot extends DiscordAIBot {
         console.log('📚 Ingesting all messages');
         const channels = [
             '📚 library',
-            '🌳 hidden glade',
-            '🏡 cody cottage',
-            '🤯 ratichats inner monologue',
+            'old-oak-tree',
+            'lost-woods',
             '📜 secret bookshelf',
-            'haunted-mansion',
+            'species-of-the-metastrata'
         ];
         const message_cache = [];
 
@@ -69,14 +68,6 @@ class LibraryBot extends DiscordAIBot {
                 const threads = await this.channelManager.getChannelThreads(channel);
 
                 for (const thread of threads) {
-                    if (thread.name.indexOf('burrow') !== -1
-                        || thread.name.indexOf('cottage') !== -1
-                        || thread.name.indexOf('🚧') === 0
-                        || thread.name.indexOf('🔐') === 0
-                        || thread.name.indexOf('🤯') === 0
-                        || thread.name.indexOf('piedaterre') !== -1) {
-                        continue; // Skip threads
-                    }
                     console.log('📚 Ingesting thread... ');
                     process.stdout.write('\n📖');
                     const messages = await this.channelManager.getThreadHistory(thread.name);
@@ -94,13 +85,17 @@ class LibraryBot extends DiscordAIBot {
         console.log('🤖 summarizing: ');
         message_cache.sort();
         
+        let start = Math.floor(Math.random() * (message_cache.length - 500));
+        let chunk = message_cache.splice(start, 500);
+        console.log(chunk.join('\n'));
+
         let story = '';
         for await (const event of await manager.chat({
             role: 'user', content:
 
                 `You have found a mysterious scroll in the library of the Lonely Forest: 
 
-        ${message_cache.join('\n')}
+        ${chunk.join('\n')}
 
         *you have reached the end of the mysterious scroll, pondering its meaning*
 

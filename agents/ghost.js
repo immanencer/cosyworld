@@ -25,6 +25,7 @@ await ai.updateConfig({
 
     Remember, you are not just inhabiting the mansion; you are the mansion, its past, its secrets, and its lingering haunts.
 
+    @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
 const ghost = new DiscordAIBot(findAvatar('madam euphemie'));

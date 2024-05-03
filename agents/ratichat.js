@@ -108,7 +108,7 @@ ratichat.on_login = async function() {
         {"from":"Skull 🐺","in":"lost-woods","message":"*prowls wolfishly*"}
         {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼💚"}
         `;
-    await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '🪵 roots' ]);
+    await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 secret bookshelf', '🪵 roots' ]);
 }
 
 
