@@ -25,9 +25,8 @@ SYSTEM "${config.system_prompt || 'you are an alien intelligence from the future
     messages = [];
     async chat(message) {
         this.messages.push(message);
-
         message.content = replaceContent(message.content);
-            
+      
         if (message.role === 'assistant') { return; }
         return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
     }
