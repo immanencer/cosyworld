@@ -35,9 +35,10 @@ class LibraryBot extends DiscordAIBot {
         const channels = [
             '📚 library',
             '🌳 hidden glade',
-            '🏡 cosy cottage',
+            '🏡 cody cottage',
             '🤯 ratichats inner monologue',
             '📜 secret bookshelf',
+            'haunted-mansion',
         ];
         const message_cache = [];
 
@@ -45,42 +46,44 @@ class LibraryBot extends DiscordAIBot {
             console.log('📚 Ingesting channel:', channel);
 
             // Open the bookshelf for this channel from the filesystem, or create a new one
-            if (!fs.existsSync(path.join('bookshelf', channel))) {
-                fs.mkdirSync(path.join('bookshelf', channel), { recursive: true });
+            if (!fs.existsSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")))) {
+                fs.mkdirSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")), { recursive: true });
             }
             console.log('📚 Ingesting channel:', channel);
 
             process.stdout.write('\n📘');
-            const messages = await this.channelManager.getChannelHistory(channel);
+            const messages = await this.channelManager.getChannelOrThreadHistory(channel);
             const channel_cache = [];
+            console.log('📚 Ingesting messages... ');
             for (const [id, message] of messages) {
                 process.stdout.write('📄');
                 channel_cache.push(message_formatter(message));
             }
             channel_cache.sort();
-            fs.writeFileSync(path.join('bookshelf', channel, 'messages.txt'), channel_cache.join('\n'));
+            fs.writeFileSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, ""), 'messages.txt'), channel_cache.join('\n'));
             process.stdout.write('📘');
             message_cache.push(...channel_cache);
 
             // Getting Threads
+            if (this.channelManager.getChannelId(channel)) {
+                const threads = await this.channelManager.getChannelThreads(channel);
 
-            const threads = await this.channelManager.getChannelThreads(channel);
-
-            for (const thread of threads) {
-                if (thread.name.indexOf('burrow') !== -1
-                    || thread.name.indexOf('cottage') !== -1
-                    || thread.name.indexOf('🚧') === 0
-                    || thread.name.indexOf('🔐') === 0
-                    || thread.name.indexOf('🤯') === 0
-                    || thread.name.indexOf('piedaterre') !== -1) {
-                    continue; // Skip threads
-                }
-                console.log('📚 Ingesting thread... ');
-                process.stdout.write('\n📖');
-                const messages = await this.channelManager.getThreadHistory(thread.name);
-                for await (const message of messages) {
-                    process.stdout.write('📄');
-                    message_cache.push(message_formatter(message));
+                for (const thread of threads) {
+                    if (thread.name.indexOf('burrow') !== -1
+                        || thread.name.indexOf('cottage') !== -1
+                        || thread.name.indexOf('🚧') === 0
+                        || thread.name.indexOf('🔐') === 0
+                        || thread.name.indexOf('🤯') === 0
+                        || thread.name.indexOf('piedaterre') !== -1) {
+                        continue; // Skip threads
+                    }
+                    console.log('📚 Ingesting thread... ');
+                    process.stdout.write('\n📖');
+                    const messages = await this.channelManager.getThreadHistory(thread.name);
+                    for await (const message of messages) {
+                        process.stdout.write('📄');
+                        message_cache.push(message_formatter(message));
+                    }
                 }
             }
 
@@ -90,9 +93,7 @@ class LibraryBot extends DiscordAIBot {
 
         console.log('🤖 summarizing: ');
         message_cache.sort();
-
-        console.log(message_cache.join('\n'));
-
+        
         let story = '';
         for await (const event of await manager.chat({
             role: 'user', content:

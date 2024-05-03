@@ -120,7 +120,10 @@ class ChannelManager {
     async getChannelHistory(channel_name) {
         const messages = [];
         const channel_id = this.getChannelId(channel_name);
-        console.log('🎮 Getting history for ' + channel_name);
+        if (!channel_id) {
+            throw new Error('🎮 ❌ Invalid channel name ' + channel_name);
+        }
+        console.log('🎮 Getting channel history for ' + channel_name);
         const channel = await this.client.channels.fetch(channel_id);
         const history = await channel.messages.fetch({ limit: 100 });
         for (const message of history) {
@@ -132,7 +135,7 @@ class ChannelManager {
     async getChannelThreads(channel_name) {
         console.log('🎮 Getting threads for ' + channel_name);
         const threads = [];
-        const channel_id = this.channels[channel_name];
+        const channel_id = this.getChannelId(channel_name);
         const channel = await this.client.channels.fetch(channel_id);
         const thread_list = (await channel.threads.fetch()).threads;
         for (const [id, thread] of thread_list) {
@@ -152,6 +155,15 @@ class ChannelManager {
             messages.push(message);
         }
         return messages.reverse();
+    }
+
+    async getChannelOrThreadHistory(location) {
+        console.log('🎮 Getting channel or thread history for ' + location);
+        if (this.threads[location]) {
+            return (await this.getThreadHistory(location)).map(message => [message.id, message]);
+        } else {
+            return this.getChannelHistory(location);
+        }
     }
 
     async getMessage(message_id) {
