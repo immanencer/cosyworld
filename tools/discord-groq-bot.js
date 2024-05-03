@@ -13,7 +13,7 @@ class DiscordOllamaBot extends DiscordBot {
     }
 
     async initialize() {
-        await this.aiServiceManager.useService('ollama');
+        await this.aiServiceManager.useService('groq');
         await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt });
 
         console.log('🎮 🤖 Discord Ollama Bot Initialized');

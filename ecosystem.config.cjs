@@ -20,5 +20,8 @@ module.exports ={
   },{
     name   : "steamclock",
     script : "./agents/steamclock.js"
+  },{
+    name   : "ghost",
+    script : "./agents/ghost.js"
   }]
 }

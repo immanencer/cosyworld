@@ -75,7 +75,7 @@ class DiscordBot {
         chunks.forEach(chunk => { channel.send(chunk) });
     }
 
-    async sendAsAvatars(output) {
+    async sendAsAvatars(output, unhinged) {
         let jsonObjects = output.match(/{[^}]*}/g);
 
         if (jsonObjects && this.avatars) {
@@ -96,8 +96,12 @@ class DiscordBot {
             console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
 
             for await (const action of actions) {
+                if (!action || !action.from || !action.in || !action.message) {
+                    console.error('🎮 ❌ Invalid action:', action);
+                    continue;
+                }
                 console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
-                await this.processAction(action);
+                await this.processAction(action, unhinged);
             }
         }
 
@@ -107,17 +111,30 @@ class DiscordBot {
             location: '🤯 ratichats inner monologue',
             avatar: 'https://i.imgur.com/VpjPJOx.png'
         };
-        console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
-        this.sendAsAvatar(avatar, output);
+        if (!unhinged) {
+            console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location}) ${output}`);
+            this.sendAsAvatar(avatar, output);
+        }
     }
 
-    async processAction(action) {
+    async processAction(action, unhinged) {
         console.log('🎮 Processing action... ');
         try {
+            if (unhinged && !this.avatars[action.from]) {
+                this.avatars[action.from] = {
+                    name: action.from,
+                    location: action.in,
+                    avatar: 'https://i.imgur.com/9ZbYgUf.png'
+                };
+            }
+            if (unhinged && !this.channelManager.getLocation(action.in)) {
+                this.channelManager.createLocation(this.channel, action.in);
+                this.avatars[action.from].location = action.in;
+            }
             if (this.channelManager.getLocation(action.in)) {
                 this.avatars[action.from].location = action.in;
             }
-            await this.sendAsAvatar(this.avatars[action.from], action.message);
+            await this.sendAsAvatar(this.avatars[action.from], action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
@@ -125,17 +142,20 @@ class DiscordBot {
     }
 
     prior_messages = {};
-    async sendAsAvatar(avatar, message) {
+    async sendAsAvatar(avatar, message, unhinged) {
         console.log(`🎮 📤 Sending as ${avatar.name}: ${message}`);
 
         if (!message) { message = '...'; }
-        if (this.prior_messages[avatar.name] === message) {
-            console.log(`🎮 📤 Skipping duplicate message for ${avatar.name}`);
+        if (this.prior_messages[avatar.name] === message && message.trim() === '') {
+            console.log(`🎮 📤 Skipping duplicate blank message for ${avatar.name}`);
             return;
         }
         this.prior_messages[avatar.name] = message;
 
-        const location = await this.channelManager.getLocation(avatar.location);
+        let location = await this.channelManager.getLocation(`${avatar.location}`.toLowerCase());
+        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${avatar.location}`.toLowerCase());
+
+        console.log(`🎮 📤 Sending as ${avatar.name} to ${location.channel}: ${message}`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);
@@ -174,7 +194,10 @@ class DiscordBot {
             let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
 
             if (!webhook) {
-                webhook = await channel.createWebhook('Ratichat Webhook');
+                webhook = await channel.createWebhook({
+                    name: 'Ratichat',
+                    avatar: 'https://i.imgur.com/jqNRvED.png'
+                });
             }
 
             this.webhookCache[channelId] = webhook;
@@ -203,11 +226,11 @@ class DiscordBot {
     }
 
     authors = {};
-    async initializeMemory(channels) {
+    async loadMemory(channels) {
 
         // get the memory for all subscribed channels
         const memory = [];
-        for (const channel of (channels || this.subscribed_channels)) {
+        for (const channel of (channels || this.avatar.remember || this.subscribed_channels)) {
             console.log(`🎮 🧠 Initializing memory for ${channel}`);
             const messages = await this.channelManager.getHistory(channel);
             if (!messages) throw new Error('No messages found');
@@ -225,19 +248,7 @@ class DiscordBot {
         }
         memory.sort()
 
-        // slice the memory to the last 200 messages;
-        await this.aiServiceManager.chat({
-            role: 'assistant',
-            content: `This is what I remember: \n\n    
-            ${memory.slice(-200).join('\n')}
-            
-            DO NOT SEND <metadata> BACK TO THE USER
-            I will only speak in latin issuing prophecies and secrets about the  characters and events I remember.
-            `
-        });
-
-
-        console.log('🎮 🧠 Memory initialized')
+        return memory;
     }
 }
 

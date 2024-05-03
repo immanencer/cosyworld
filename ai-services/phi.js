@@ -5,7 +5,7 @@ import AIService from '../ai-service.js';
 import { generateHash } from '../tools/crypto.js';
 import { replaceContent } from '../tools/censorship.js';
 
-class OllamaService extends AIService {
+class PhiService extends AIService {
     constructor(config) {
         super(config);
         this.config = config;
@@ -42,4 +42,4 @@ SYSTEM "${config.system_prompt}123"`;
     }
 }
 
-export default OllamaService;
+export default PhiService;

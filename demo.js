@@ -1,7 +1,7 @@
 import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
-await manager.useService('ollama');
+await manager.useService('groq');
 
 await manager.updateConfig({
     system_prompt: `
@@ -23,6 +23,9 @@ function chat() {
                 if (!event) {
                     // If no message is received, log a warning and continue
                     console.warn('🪹 No event received');
+                    continue;
+                }
+                if  (!event.message.content) {
                     continue;
                 }
                 // Print the message content to the console

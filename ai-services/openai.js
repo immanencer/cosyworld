@@ -28,4 +28,4 @@ class OAIService extends AIService {
     }
 }
 
-export default OllamaService;
+export default OAIService;

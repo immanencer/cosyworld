@@ -63,7 +63,6 @@ class ChannelManager {
     }
     
     getChannelId(channel) {
-        console.log('🎮 Getting channel ID for ' + channel);
         return this.channels[channel] || null;
     }
 
@@ -72,16 +71,40 @@ class ChannelManager {
     }
 
     getThreadId(thread) {
-        console.log('🎮 Getting thread ID for ' + thread);
         return this.threads[thread] || null;
     }
 
+    
     // Location management
     async getLocation(location) {
         const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
         const thread = this.threads[location];
+        if (!channel) {
+            return null;
+        }
         return { channel, thread };
     };
+
+    // create a new channel or thread or return the existing one
+    async createLocation(channel_name, thread_name) {
+        console.log('🎮 Creating location for ' + channel_name + ' ' + thread_name);
+        let result = { channel: null, thread: null };
+        if (thread_name) {
+            const channel_id = this.getChannelId(channel_name);
+            const channel = await this.client.channels.fetch(channel_id);
+            const thread = await channel.threads.create({ name: thread_name });
+            this.threads[thread_name] = thread.id;
+            this.channel_for_thread[thread_name] = channel_name;
+            result.channel = channel.id;
+            result.thread = thread.id;
+        } else {
+            channel = await this.client.guilds.fetch(this.client.guildId).channels.create(channel_name, { type: 'GUILD_TEXT' });
+            this.channels[channel_name] = channel.id;
+            result.channel = channel.id;
+        }
+        return result;
+    }
+
 
     async getHistory(name) {
         console.log('🎮 Getting history for ' + name);
@@ -112,8 +135,6 @@ class ChannelManager {
         const channel_id = this.channels[channel_name];
         const channel = await this.client.channels.fetch(channel_id);
         const thread_list = (await channel.threads.fetch()).threads;
-
-        console.log('🎮 Threads:', thread_list);
         for (const [id, thread] of thread_list) {
             threads.push(thread);
         }
