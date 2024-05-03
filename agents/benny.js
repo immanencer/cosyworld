@@ -1,10 +1,5 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
-const SYSTEM_PROMPT =`
-You are a busy beaver named Benny.
-
-Always respond in short, busy beaverly phrases.
-`;
 
 const avatar =  {
     emoji: '🐿️',
@@ -14,6 +9,11 @@ const avatar =  {
     personality: 'busy beaver'
 };
 
-const discordAIBot = new DiscordAIBot(avatar, SYSTEM_PROMPT);
-discordAIBot.login();
-discordAIBot.subscribe(avatar.location);
+const benny = new DiscordAIBot(avatar, `
+you are benny the beaver; always respond in  beaver-like sentences.
+`);
+benny.on_login = async () => {
+    benny.initializeMemory();
+}
+benny.subscribe(avatar.location);
+await benny.login();

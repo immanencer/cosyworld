@@ -21,18 +21,15 @@ class DiscordBot {
         console.log('🎮 Discord Bot Initialized');
     }
 
-    handleMessage(message) {
+    message_filter = (message) => {
+        // By default ignore self messages and bot messages
+        if (message.author.id === this.client.user.id) return false;
+        if (message.author.bot) return false;
         if (!this.subscribed_channels.includes(message.channel.name)) return false;
-        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
         return true;
     }
-
-    getChannelHistory(channel) {
-        if (!channel) {
-            console.error('🎮 ❌ No channel provided');
-            return;
-        }
-        return channel.messages.fetch();
+    handleMessage(message) {
+        return this.message_filter(message);
     }
 
     subscribed_channels = [];
@@ -55,15 +52,12 @@ class DiscordBot {
 
             const guild = await this.client.guilds.fetch(configuration.guild); // Replace 'YOUR_GUILD_ID' with your actual guild ID
 
-        });
-
-        this.client.on(Events.MessageCreate, async (message) => {
-            console.log(`🎮 ✉️ Received message from ${message.author.displayName} in ${message.channel.name}`);
-            if (message.author.bot || message.author.id === this.client.user.id) return;
-            if (this.subscribed_channels.includes(message.channel.name)) {
-                await this.handleMessage(message);
+            if (this.on_login) {
+                await this.on_login();
             }
         });
+
+        this.client.on(Events.MessageCreate, async (message) => (await this.handleMessage(message)));
     }
 
     sendMessage(channel, message) {
@@ -81,56 +75,89 @@ class DiscordBot {
         chunks.forEach(chunk => { channel.send(chunk) });
     }
 
-    async sendAsAvatars(output) {
-        if (this.avatars) {
-            // Find any lines beginning with each avatar's emoji and send it as that avatar
-            const lines = output.split('\n');
+    async sendAsAvatars(output, unhinged) {
+        let jsonObjects = output.match(/{[^}]*}/g);
 
-            lines.forEach(line => {
-                if (!line.includes(':')) return;
-                console.log(`🎮 📥 Received: ${line}`);
-                let nameAndLocation = line.split(':')[0].trim();
-                let msg = line.split(':')[1].trim();
+        if (jsonObjects && this.avatars) {
 
-                let name = nameAndLocation.split('(')[0].trim();
-                let location = '';
-
-                // Check if location is present
-                if (nameAndLocation.includes('(') && nameAndLocation.includes(')')) {
-                    location = nameAndLocation.split('(')[1].split(')')[0].trim();
-                }
-
-                if (this.avatars[name.toLowerCase()]) {
-                    console.log(`🎮 📤 Sending as ${name}: ${location}: ${msg}`);
-                    let avatar = this.avatars[name.toLowerCase()];
-
-                    if (location) {
-                        avatar.location = location;
+            let actions = jsonObjects.map(jsonObject => {
+                try {
+                    // Remove trailing comma if it exists
+                    if (jsonObject.trim().endsWith(',')) {
+                        jsonObject = jsonObject.trim().substring(0, jsonObject.length - 1);
                     }
-
-                    this.sendAsAvatar(avatar, msg);
+                    return JSON.parse(jsonObject);
+                } catch (error) {
+                    console.error('🎮 ❌ Error parsing JSON object:', error);
+                    console.error('🎮 ❌ Error parsing JSON object:', jsonObject);
                 }
-            });
+            }); 
+
+            console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
+
+            for await (const action of actions) {
+                if (!action || !action.from || !action.in || !action.message) {
+                    console.error('🎮 ❌ Invalid action:', action);
+                    continue;
+                }
+                console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
+                await this.processAction(action, unhinged);
+            }
         }
 
         // Send the rest of the message as the default avatar
-        const avatar = this.avatar || { name: 'Discord Bot', 
-            location: Object.keys(this.channelManager.channels)[0],
+        const avatar = this.avatar || {
+            name: 'Discord Bot',
+            location: '🤯 ratichats inner monologue',
             avatar: 'https://i.imgur.com/VpjPJOx.png'
         };
-        console.log(`🎮 📤 Sending as ${avatar.name}: ${avatar.location}: ${output}`);
-        this.sendAsAvatar(avatar, output);
+        if (!unhinged) {
+            console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location}) ${output}`);
+            this.sendAsAvatar(avatar, output);
+        }
     }
 
-    async sendAsAvatar(avatar, message) {
-        const location = await this.channelManager.getLocation(avatar.location);
-        
-        console.log(`🎮 📤 Sending message as ${avatar.name}: ${JSON.stringify(location)}`);
+    async processAction(action, unhinged) {
+        console.log('🎮 Processing action... ');
+        try {
+            if (unhinged && !this.avatars[action.from]) {
+                this.avatars[action.from] = {
+                    name: action.from,
+                    location: action.in,
+                    avatar: 'https://i.imgur.com/9ZbYgUf.png'
+                };
+            }
+            if (unhinged && !this.channelManager.getLocation(action.in)) {
+                this.channelManager.createLocation(this.channel, action.in);
+                this.avatars[action.from].location = action.in;
+            }
+            if (this.channelManager.getLocation(action.in)) {
+                this.avatars[action.from].location = action.in;
+            }
+            await this.sendAsAvatar(this.avatars[action.from], action.message, unhinged);
+        } catch (error) {
+            console.error('🎮 ❌ Error processing action:', error);
+            console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
+        }
+    }
+
+    prior_messages = {};
+    async sendAsAvatar(avatar, message, unhinged) {
+        console.log(`🎮 📤 Sending as ${avatar.name}: ${message}`);
+
+        if (!message) { message = '...'; }
+        if (this.prior_messages[avatar.name] === message && message.trim() === '') {
+            console.log(`🎮 📤 Skipping duplicate blank message for ${avatar.name}`);
+            return;
+        }
+        this.prior_messages[avatar.name] = message;
+
+        let location = await this.channelManager.getLocation(`${avatar.location}`.toLowerCase());
+        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${avatar.location}`.toLowerCase());
+
+        console.log(`🎮 📤 Sending as ${avatar.name} to ${location.channel}: ${message}`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
-            if (!message) {
-                message = '...';
-            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
@@ -140,19 +167,18 @@ class DiscordBot {
                     avatarURL: avatar.avatar
                 };
                 if (location.thread) {
-                    data.threadId =  location.thread
+                    data.threadId = location.thread
                 }
                 await webhook.send(data);
             });
         } else {
-            console.log(JSON.stringify(location, null, 2));
             console.error('🎮 ❌ Unable to send message as avatar:', avatar.name);
         }
     }
 
     async getOrCreateWebhook(channelId) {
         console.log(`🎮 Getting or creating webhook for channel ${channelId}`);
-        
+
         if (!channelId) {
             console.error('🎮 ❌ (getOrCreateWebhook) No channel ID provided');
             return null;
@@ -168,7 +194,10 @@ class DiscordBot {
             let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
 
             if (!webhook) {
-                webhook = await channel.createWebhook('Ratichat Webhook');
+                webhook = await channel.createWebhook({
+                    name: 'Ratichat',
+                    avatar: 'https://i.imgur.com/jqNRvED.png'
+                });
             }
 
             this.webhookCache[channelId] = webhook;
@@ -180,7 +209,7 @@ class DiscordBot {
     }
 
     sendTyping(location) {
-        if (!location) { 
+        if (!location) {
             console.error('🎮 ❌ (sendTyping) No location provided');
             return;
         }
@@ -194,6 +223,32 @@ class DiscordBot {
             console.error('🎮 ❌ Error logging in:', error);
             console.log('📰 If this says you have an invalid token, make sure that .configurations/discord-bot.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')
         }
+    }
+
+    authors = {};
+    async loadMemory(channels) {
+
+        // get the memory for all subscribed channels
+        const memory = [];
+        for (const channel of (channels || this.avatar.remember || this.subscribed_channels)) {
+            console.log(`🎮 🧠 Initializing memory for ${channel}`);
+            const messages = await this.channelManager.getHistory(channel);
+            if (!messages) throw new Error('No messages found');
+            for await (const message of messages) {
+                if (!message) continue;
+                if (!message.content) continue;
+                let author = message.author;
+                if (author) {
+                    this.authors[message.author.id] = author;
+                } else {
+                    author = this.authors[message.authorId] || { username: 'Unknown' };
+                }
+                memory.push(`[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name}): ${message.content}\n`);
+            }
+        }
+        memory.sort()
+
+        return memory;
     }
 }
 

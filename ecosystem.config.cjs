@@ -11,5 +11,17 @@ module.exports ={
   },{
     name   : "toad",
     script : "./agents/toad.js"
+  },{
+    name   : "librarian",
+    script : "./agents/librarian.js"
+  },{
+    name   : "remy",
+    script : "./agents/remy.js"
+  },{
+    name   : "steamclock",
+    script : "./agents/steamclock.js"
+  },{
+    name   : "ghost",
+    script : "./agents/ghost.js"
   }]
 }

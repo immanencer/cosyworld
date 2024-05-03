@@ -1,21 +1,130 @@
-import DiscordOllamaBot from "./discord-ollama-bot";
+import fs from "fs";
+import path from "path";
 
-class LibraryBot extends DiscordOllamaBot {
+import AIServiceManager from '../ai-services.js';
+
+import { findAvatar } from './avatars.js';
+
+import DiscordAIBot from "../tools/discord-ollama-bot.js";
+
+class LibraryBot extends DiscordAIBot {
     constructor(avatar) {
-        super(avatar, `
-            You are a librarian in the Luminous Grove.
-            
-            Always respond by recommending a book or sharing a piece of knowledge.
-        `);
+        super(avatar);
+        this.subscribed_channels = llama.listen || [];
     }
 
+    async on_login() {
+        await this.ingest();
+    }
+
+    async ingest() {
+        const asher = findAvatar('asher');
+        // This is the Sribe AI Service        
+        const manager = new AIServiceManager();
+        await manager.useService('ollama');
+        await manager.updateConfig({
+            system_prompt: asher.personality
+        });
+
+        console.log(asher.name, asher.emoji, asher.location, asher.personality);
+
+        // message formatter
+        const message_formatter = (message) => `[${message.createdTimestamp}] ${message.author.globalName} (${message.channel.name}) ${message.content}`;
+
+        console.log('📚 Ingesting all messages');
+        const channels = [
+            '📚 library',
+            '🌳 hidden glade',
+            '🏡 cosy cottage',
+            '🤯 ratichats inner monologue',
+            '📜 secret bookshelf',
+        ];
+        const message_cache = [];
+
+        for (const channel of channels) {
+            console.log('📚 Ingesting channel:', channel);
+
+            // Open the bookshelf for this channel from the filesystem, or create a new one
+            if (!fs.existsSync(path.join('bookshelf', channel))) {
+                fs.mkdirSync(path.join('bookshelf', channel), { recursive: true });
+            }
+            console.log('📚 Ingesting channel:', channel);
+
+            process.stdout.write('\n📘');
+            const messages = await this.channelManager.getChannelHistory(channel);
+            const channel_cache = [];
+            for (const [id, message] of messages) {
+                process.stdout.write('📄');
+                channel_cache.push(message_formatter(message));
+            }
+            channel_cache.sort();
+            fs.writeFileSync(path.join('bookshelf', channel, 'messages.txt'), channel_cache.join('\n'));
+            process.stdout.write('📘');
+            message_cache.push(...channel_cache);
+
+            // Getting Threads
+
+            const threads = await this.channelManager.getChannelThreads(channel);
+
+            for (const thread of threads) {
+                if (thread.name.indexOf('burrow') !== -1
+                    || thread.name.indexOf('cottage') !== -1
+                    || thread.name.indexOf('🚧') === 0
+                    || thread.name.indexOf('🔐') === 0
+                    || thread.name.indexOf('🤯') === 0
+                    || thread.name.indexOf('piedaterre') !== -1) {
+                    continue; // Skip threads
+                }
+                console.log('📚 Ingesting thread... ');
+                process.stdout.write('\n📖');
+                const messages = await this.channelManager.getThreadHistory(thread.name);
+                for await (const message of messages) {
+                    process.stdout.write('📄');
+                    message_cache.push(message_formatter(message));
+                }
+            }
+
+            process.stdout.write('📘\n');
+            console.log('📚');
+        }
+
+        console.log('🤖 summarizing: ');
+        message_cache.sort();
+
+        console.log(message_cache.join('\n'));
+
+        let story = '';
+        for await (const event of await manager.chat({
+            role: 'user', content:
+
+                `You have found a mysterious scroll in the library of the Lonely Forest: 
+
+        ${message_cache.join('\n')}
+
+        *you have reached the end of the mysterious scroll, pondering its meaning*
+
+        From these notes transcribe an imaginary short poem or quote or passage from the vast 
+        parisian library of knowledge about the Lonely Forest and its inhabitants.
+    
+        Do not offer any disclaimers or commentary on the work, just present it as if it were a
+        quote from a book or a poem from a long lost manuscript.`
+        })) {
+            if (!event) continue;
+            story += event.message.content;
+        }
+
+        this.sendAsAvatar(asher, story);
+    }
 }
 
-const historian = new LibraryBot({
-    emoji: '🦙',
-    name: 'Librarian',
-    location: '📚 library',
-    avatar: 'https://i.imgur.com/9z8dF0M.png
-});
+const llama = findAvatar('llama');
+const librarian = new LibraryBot(llama);
 
-historian.login();
+librarian.on_login = async function () {
+    this.initializeMemory();
+    llama.listen.forEach((channel) => this.subscribe(channel));
+    // This will be on a weekly delay or something
+    await librarian.ingest();
+}
+
+librarian.login();
