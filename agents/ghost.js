@@ -113,7 +113,7 @@ ghost.on_login = async () => {
         ghost.sendAsAvatars(response, true);
         mansion_rooms.forEach(room => ghost.subscribe(room));
 
-        setTimeout(sendCreeperMessage, 1000 * 60 * Math.floor(Math.random() * 5));
+        setTimeout(sendCreeperMessage, 1000 * 60 * Math.floor(Math.random() * 5000));
     }
 
     await sendCreeperMessage();
