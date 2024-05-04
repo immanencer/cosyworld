@@ -20,7 +20,7 @@ class AIServiceManager {
 
         for (const file of files) {
             const serviceName = file.replace('.js', '');
-            console.debug(`Initializing service '${serviceName}'`);
+            console.log(`🤖 Initializing service '${serviceName}'`);
             try {
                 await this.loadService(serviceName, servicesPath, file);
             } catch (error) {

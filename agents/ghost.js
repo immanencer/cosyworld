@@ -31,37 +31,62 @@ await ai.updateConfig({
 const ghost = new DiscordAIBot(findAvatar('madam euphemie'));
 console.debug(JSON.stringify(ghost.avatar));
 
-ghost.process_output = (message) => {
-    // if the first line contains : it's a location
-    const lines = message.split('\n');
-    const first_line = lines[0].trim();
-    if (first_line.includes(':')) {
-        const location = first_line.split(':')[0].trim();
-        if (ghost.channelManager.getLocation(location)) {
-            ghost.avatar.location = location;
-        }
-        return lines.slice(1).join('\n');
-    }
-    return lines.join('\n');
-}
-ghost.on_login = async () => {
+async function getMansionMap() {
     const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
 
+    let counter = 100;
+    const mansion_map = mansion_rooms.reduce((map, room) => {
+        map[(counter++).toString(16)] = room;
+        return map;
+    }, {});
 
-    await ghost.sendMessage(`
-        Here are the rooms you know of in the mansion:
-        ${mansion_rooms.join('\n')}
-
-        NEVER include an english translation in your messages.
-
-        You can speak in different locations using this format:
-        
-        location: the grand hall
-        The spooky message you want to send.
-    `);
+    console.log(`${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}`);
+    return mansion_map;
+}
 
 
-    ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], { instructions: `
+ghost.options = {
+    yml: true
+}
+
+
+async function sendCreeperMessage() {
+    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_map = await getMansionMap();
+    const output = await ai.chat({
+        role: 'user', content: `
+
+    Here are the rooms you know of in the mansion:
+
+    ${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}
+
+    👻 create or select one avatar to move around the haunted mansion using JSON ONLY using this format 
+    {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
+    ` });
+
+    let response = '';
+    for await (const event of output) {
+        response += event.message.content;
+    }
+
+    ghost.avatars = {};
+    ghost.channel = 'haunted-mansion';
+    ghost.options.yml = false;
+    ghost.sendAsAvatars(response, true);
+    ghost.options.yml = true;
+    mansion_rooms.forEach(room => ghost.subscribe(room));
+
+    setTimeout(sendCreeperMessage, 666 * 666 * Math.floor(Math.random() * 666));
+}
+
+ghost.on_login = async () => {
+
+    await ghost.sendMessage(`Awaken Ghost! Seek absolution!`);
+
+
+    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
+        instructions: `
     👻 Fils destin yo, chè espri
 
     Fils destin yo, chè espri,
@@ -87,38 +112,53 @@ ghost.on_login = async () => {
 
     ghost.subscribe(ghost.avatar.location);
 
-    async function sendCreeperMessage() {
-        const output = await ai.chat({ role: 'user', content: `
-
-        Here are the rooms you know of in the mansion:
-
-        ${mansion_rooms.join('\n')}
-
-        👻 create or select one or more avatars to move around the haunted mansion using JSON ONLY using this format 
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
-        ` });
-    
-        let response = '';
-        for await (const event of output) {
-            response += event.message.content;
-        }
-
-        ghost.avatars = {};
-        ghost.channel = 'haunted-mansion';
-        ghost.sendAsAvatars(response, true);
-        mansion_rooms.forEach(room => ghost.subscribe(room));
-
-        setTimeout(sendCreeperMessage, 1000 * 60 * Math.floor(Math.random() * 5000));
-    }
 
     await sendCreeperMessage();
 
-    //ghost.sendMessage(`👻 ${getTimeOfDayEmoji()}`);
+    const mansion_map = await getMansionMap();
+    ghost.sendMessage(`Awaken Ghost! The time of day is 👻 ${getTimeOfDayEmoji()} 
+
+    Here are the rooms in the mansion:
+    ${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}
+
+    Chèche absolisyon andedan mi sa yo.
+
+    DO NOT SPEAK ENGLISH. Try to scare the visitors with your messages. Use short phrases and sprinkle in some english words to make it extra creepy.
+
+    respond with the room number as your first line in this format to move around the mansion
+    4a🚪
+    Chèche absolisyon andedan mi sa yo.
+    `);
 }
+
+ghost.sendAsAvatarsYML = async (input, unhinged) => {
+    await sendCreeperMessage();
+
+    const lines = input.split('\n');
+    const mansion_map = await getMansionMap();
+
+    let buffer = '';
+    lines.forEach(line => {
+        if (line.indexOf('🚪') !== -1) {
+            if (buffer !== '') {
+                ghost.sendAsAvatar(ghost.avatar, buffer, true);
+                buffer = '';
+            };
+            const [num, room] = line.split('🚪');
+
+            if (mansion_map[num]) {
+                console.log(`🛞 Moving avatar to room ${mansion_map[num]}`);
+                ghost.avatar.location = mansion_map[num];
+            } else {
+                console.error(`🚪 Invalid room number: ${num}`);
+            }
+            
+        } else {
+            buffer += line + '\n';
+        }
+        if (buffer !== '') {
+            ghost.sendAsAvatar(ghost.avatar, buffer, true);
+        }
+    });
+};
 await ghost.login();

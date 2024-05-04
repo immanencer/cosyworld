@@ -88,11 +88,6 @@ If you encounter an error stating that you have an invalid token, check that the
 
 This framework is currently tailored for use with OLLAMA. Adjustments or expansions to include additional AI services like Replicate may require further modifications to ensure compatibility.
 
-
-# License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 # Acknowledgments
 
 Created by Jonathan Beckwith for Cenetex Inc.
@@ -104,3 +99,11 @@ Created by Jonathan Beckwith for Cenetex Inc.
 - [Discord.js](https://discord.js.org/)
 - [MIT License](https://opensource.org/licenses/MIT)
 ```
+
+# License
+
+The code in this project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+cosyworld © 2024 by Jonathan Beckwith is licensed under CC BY 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/
+
+Licensing claims for external media (imgur links) are the responsibility of the original creators and are not covered by this statement.

@@ -59,7 +59,11 @@ class ChannelManager {
 
     // Channel and thread management
     async getChannels() {
-        return Object.keys(this.channels);
+        return Object.keys(this.channels).filter(channel => {
+            if (channel.indexOf('🚧') === 0) return false;
+            if (channel.indexOf('🥩') === 0) return false;
+            return true;
+        });
     }
     
     getChannelId(channel) {
@@ -170,6 +174,44 @@ class ChannelManager {
         console.log('🎮 Getting message ' + message_id);
         const message = await this.client.messages.fetch(message_id);
         return message;
+    }
+
+    // return all channels and threads in the guild
+    async getChannelMap() {
+        const channel_map = {};
+        for (const channel of await this.getChannels()) {
+            channel_map[channel] = [];
+            const threads = await this.getThreads(channel.name);
+            for (const thread of threads) {
+                channel_map[channel].push(thread);
+            }
+        }
+        return channel_map;
+    }
+
+    // Return all channels and "doors" (threads) in the guild
+    async getChannelMapPrompt() {
+        let prompt = "Here's a map of all the areas and their rooms:\n\n";
+        const channels = await this.getChannels(); // Assuming this method fetches all channels
+
+        for (const channel of channels) {
+            prompt += `${channel}\n`; // Each channel is referred to as a corridor
+            const threads = await this.getChannelThreads(channel); // Assuming getThreads fetches threads by channel ID
+            
+            if (threads.length === 0) {
+                continue; // Skip to the next channel if there are no threads
+            } else {
+                for (const thread of threads) {
+                    if (!typeof thread === 'string') {
+                        console.error('🎮 ⚠️ Invalid thread name:', JSON.stringify(thread, null, 2));
+                        continue; // Skip to the next thread if the thread is not a string
+                    }
+                    prompt += `🚪${thread.name}\n`; // Each thread is referred to as a door
+                }
+            }
+            prompt += "\n"; // Add a newline for better separation between channels
+        }
+        return prompt;
     }
 }
 

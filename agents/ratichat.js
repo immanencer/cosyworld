@@ -51,7 +51,7 @@ your avatars maintain balance in the woods`;
 const ratichat = new DiscordAIBot({
     emoji: '🌳',
     name: '"Old Oak Tree',
-    location: '🤯 ratichats inner monologue',
+    location: '🌰',
     avatar: 'https://i.imgur.com/jqNRvED.png',
     personality: 'wise and ancient silent guardian of the forest'
 }, SYSTEM_PROMPT);
