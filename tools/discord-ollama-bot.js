@@ -1,16 +1,16 @@
-import { findAvatar } from '../agents/avatars.js';
+import { findSoul } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from '../ai-services.js';
-import AvatarManager from './avatar-manager.js';
+import SoulManager from './soul-manager.js';
 
 class DiscordOllamaBot extends DiscordBot {
-    constructor(avatar, systemPrompt) {
+    constructor(soul, systemPrompt) {
         super();
-        this.avatarManager = new AvatarManager(avatar);
-        this.avatar = this.avatarManager.getAvatar();
+        this.soulManager = new SoulManager(soul);
+        this.soul = this.soulManager.getSoul();
 
-        this.system_prompt = systemPrompt || this.avatar.personality;
+        this.system_prompt = systemPrompt || this.soul.personality;
         this.aiServiceManager = new AIServiceManager();
     }
 
@@ -35,7 +35,7 @@ class DiscordOllamaBot extends DiscordBot {
             console.debug('Message filtered out by base class');
             return;
         }
-        if (message.author.displayName === this.avatar.name) {
+        if (message.author.displayName === this.soul.name) {
             console.debug('Ignoring message from self');
             return;
         }
@@ -99,7 +99,7 @@ class DiscordOllamaBot extends DiscordBot {
 
         await this.aiServiceManager.chat({ role: 'assistant', content: output });
 
-        await this.sendAsAvatars(output);
+        await this.sendAsSouls(output);
     }
 
     async initializeMemory(memories, options = { slice: 200, instructions: '' }) {
@@ -110,6 +110,8 @@ class DiscordOllamaBot extends DiscordBot {
             role: 'assistant',
             content: `This is what I remember: \n\n    
             ${memory.slice(-200).join('\n')}
+            
+            ${this.response_instructions || ''}
             `
         });
 

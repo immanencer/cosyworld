@@ -10,7 +10,7 @@ class AIService {
         throw new Error('complete method must be implemented');
     }
 
-    chat(input) {
+    async chat(input) {
         throw new Error('chat method must be implemented');
     }
 

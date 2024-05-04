@@ -3,7 +3,7 @@ import DiscordAIBot from '../tools/discord-ollama-bot.js'
 const steam_clock = {
     name: 'Steam Clock',
     emoji: '🕰️',
-    avatar: 'https://i.imgur.com/Mn5Xx6H.png',
+    soul: 'https://i.imgur.com/Mn5Xx6H.png',
     location: '🌳 hidden glade',
     personality: 'only says tick, tock, and ominous prophecies in latin'
 };

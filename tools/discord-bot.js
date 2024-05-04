@@ -5,18 +5,10 @@ import ChannelManager from './discord-channel-manager.js';
 import c from '../configuration.js';
 const configuration = c('discord-bot');
 import { chunkText } from './chunk-text.js';
-import { findAvatar } from '../agents/avatars.js';
+import { findSoul } from '../agents/souls.js';
 
 import { parseYaml } from '../tools/parseYaml.js';
-
-// Helper function to find the key of the avatar matching the action's sender
-function findAvatarKeyByName(avatars, name) {
-    const avatarKey = Object.keys(avatars).find(key =>
-        avatars[key].name.toLowerCase().includes(name.toLowerCase())
-    );
-    return avatarKey || null; // Return null if no matching avatar is found
-}
-
+import SoulManager from './soul-manager.js';
 
 class DiscordBot {
     options = {
@@ -72,6 +64,14 @@ class DiscordBot {
     }
 
     async handleMessage(message) {
+        this.subscribed_channels = this.soul.listen;
+        if (this.souls) {
+            this.subscribed_channels = [
+                ...this.soul.listen,
+                ...Object.values(this.souls).map(soul => soul.location)
+            ];
+        }
+ 
         if (this.message_filter(message)) {
             return true;
         } else {
@@ -111,6 +111,7 @@ class DiscordBot {
                 await this.clientReadyHandler();
             } catch (error) {
                 console.error(`🎮 ❌ Error during ClientReady event: ${error}`);
+                throw error;
             }
         });
 
@@ -156,16 +157,16 @@ class DiscordBot {
         }
     }
 
-    async sendAsAvatarsYML(output, unhinged) {
-        console.log('🎮 📤 Sending as avatars YML');
+    async sendAsSoulsYML(output, unhinged) {
+        console.log('🎮 📤 Sending as souls YML');
     
         // Match YAML objects, assuming they are separated in the output in a specific way
         let yamlObjects = output.split('---').map(part => part.trim()).filter(part => part);
     
-        if (yamlObjects && this.avatars) {
+        if (yamlObjects && this.souls) {
             let actions = yamlObjects.map(yamlObject => {
                 try {
-                    return parseYaml(yamlObject);
+                    return parseYaml(yamlObject)[0];
                 } catch (error) {
                     console.error('🎮 ❌ Error parsing YAML object:', error);
                     console.error('🎮 ❌ Error parsing YAML object:', yamlObject);
@@ -174,14 +175,14 @@ class DiscordBot {
     
             if (actions.length === 0) {
                 console.warn('🎮 ⚠️ No actions found in output:', output);
-                const avatar = this.avatar || findAvatar();
-                console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
-                return this.sendAsAvatar(avatar, output);
+                const soul = this.soul || findSoul();
+                console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
+                return this.sendAsSoul(soul, output);
             }
     
-            console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
+            console.log(`🎮 📤 Sending ${actions.length} action: ${JSON.stringify(actions)}`)
     
-            for await (const action of actions) {
+            for (const action of actions) {
                 if (!action || !action.from || !action.in || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
                     continue;
@@ -190,26 +191,21 @@ class DiscordBot {
                 await this.processAction(action, unhinged);
             }
     
-            if (this.avatars_moved) {
-                this.avatars_moved(Object.values(this.avatars));
+            if (this.souls_moved) {
+                this.souls_moved(Object.values(this.souls));
             }
         }
-    
-        // Send the rest of the message as the default avatar
-        const avatar = this.avatar || findAvatar();
-        console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
-        return this.sendAsAvatar(avatar, output);
+        return this.sendAsSoul(this.soul, output);
     }
     
-
-    async sendAsAvatars(output, unhinged) {
+    async sendAsSouls(output, unhinged) {
         if (this.options.yml) {
-            console.log('🎮 📤 Sending as avatars YML');
-            return this.sendAsAvatarsYML(output, unhinged);
+            console.log('🎮 📤 Sending as souls YML');
+            return this.sendAsSoulsYML(output, unhinged);
         }
         let jsonObjects = output.match(/{[^}]*}/g);
 
-        if (jsonObjects && this.avatars) {
+        if (jsonObjects && this.souls) {
 
             let actions = jsonObjects.map(jsonObject => {
                 try {
@@ -225,11 +221,11 @@ class DiscordBot {
             });
 
             if (actions.length === 0) {
-                console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
-                return this.sendAsAvatar(avatar, output);
+                console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
+                return this.sendAsSoul(soul, output);
             }
 
-            console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
+            console.log(`🎮 📤 Sending as souls: ${actions.length}`)
 
             for await (const action of actions) {
                 if (!action || !action.from || !action.in || !action.message) {
@@ -240,29 +236,29 @@ class DiscordBot {
                 await this.processAction(action, unhinged);
             }
 
-            if (this.avatars_moved) {
-                this.avatars_moved(Object.values(this.avatars));
+            if (this.souls_moved) {
+                this.souls_moved(Object.values(this.souls));
             }
         }
 
-        // Send the rest of the message as the default avatar
-        const avatar = this.avatar || {
+        // Send the rest of the message as the default soul
+        const soul = this.soul || {
             name: 'Discord Bot',
             location: '🤯 ratichats inner monologue',
-            avatar: 'https://i.imgur.com/VpjPJOx.png'
+            soul: 'https://i.imgur.com/VpjPJOx.png'
         };
 
         if (!unhinged) {
-            console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
-            return this.sendAsAvatar(avatar, output);
+            console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
+            return this.sendAsSoul(soul, output);
         }
     }
 
     async processAction(action, unhinged) {
         console.log('🎮 Processing action... ');
         try {
-            if (unhinged && !this.avatars[action.from]) {
-                this.avatars[action.from] = {
+            if (unhinged && !this.souls[action.from]) {
+                this.souls[action.from] = {
                     name: action.from,
                     location: action.in,
                     avatar: 'https://i.imgur.com/9ZbYgUf.png'
@@ -273,13 +269,8 @@ class DiscordBot {
             }
             if (this.channelManager.getLocation(action.in)) {
             }
-            const avatarKey = findAvatarKeyByName(this.avatars, action.from);
-            if (avatarKey) {
-                this.avatars[avatarKey].location = action.in;
-            } else {
-                console.error(`Avatar not found for name: ${action.from}`);
-            }
-            await this.sendAsAvatar(this.avatars[avatarKey], action.message, unhinged);
+            const soul = new SoulManager(action.from).getSoul();
+            await this.sendAsSoul(soul, action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
@@ -287,15 +278,15 @@ class DiscordBot {
     }
 
     prior_messages = {};
-    async sendAsAvatar(avatar, message, unhinged) {
-        console.log(`🎮 📤 Sending message as ${avatar.name} (${avatar.location})`);
+    async sendAsSoul(soul, message, unhinged) {
+        console.log(`🎮 📤 Sending message as ${soul.name} (${soul.location})`);
 
         if (!message) { message = '...'; }
 
-        let location = await this.channelManager.getLocation(`${avatar.location}`.toLowerCase());
-        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${avatar.location}`.toLowerCase());
+        let location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
+        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${soul.location}`.toLowerCase());
 
-        console.log(`🎮 📤 Sending as ${avatar.name} (${location.channel})`);
+        console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);
@@ -303,8 +294,8 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: avatar.name + ' ' + (avatar.emoji || ''),
-                    avatarURL: avatar.avatar
+                    username: soul.name + ' ' + (soul.emoji || ''),
+                    avatarURL: soul.avatar
                 };
                 if (location.thread) {
                     data.threadId = location.thread
@@ -312,7 +303,7 @@ class DiscordBot {
                 await webhook.send(data);
             });
         } else {
-            console.error('🎮 ❌ Unable to send message as avatar:', avatar.name);
+            console.error('🎮 ❌ Unable to send message as soul:', soul.name);
         }
     }
 
@@ -370,7 +361,7 @@ class DiscordBot {
 
         // get the memory for all subscribed channels
         const memory = [];
-        for (const channel of (channels || this.avatar.remember || this.subscribed_channels)) {
+        for (const channel of (channels || this.soul.remember || this.subscribed_channels)) {
             console.log(`🎮 🧠 Initializing memory for ${channel}`);
             const messages = await this.channelManager.getHistory(channel);
             if (!messages) throw new Error('No messages found');

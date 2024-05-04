@@ -3,13 +3,13 @@ import path from "path";
 
 import AIServiceManager from '../ai-services.js';
 
-import { findAvatar } from './avatars.js';
+import { findSoul } from './souls.js';
 
 import DiscordAIBot from "../tools/discord-ollama-bot.js";
 
 class LibraryBot extends DiscordAIBot {
-    constructor(avatar) {
-        super(avatar);
+    constructor(soul) {
+        super(soul);
         this.subscribed_channels = llama.listen || [];
     }
 
@@ -18,7 +18,7 @@ class LibraryBot extends DiscordAIBot {
     }
 
     async ingest() {
-        const asher = findAvatar('asher');
+        const asher = findSoul('asher');
         // This is the Sribe AI Service        
         const manager = new AIServiceManager();
         await manager.useService('ollama');
@@ -109,11 +109,11 @@ class LibraryBot extends DiscordAIBot {
             story += event.message.content;
         }
 
-        this.sendAsAvatar(asher, story);
+        this.sendAsSoul(asher, story);
     }
 }
 
-const llama = findAvatar('llama');
+const llama = findSoul('llama');
 const librarian = new LibraryBot(llama);
 
 librarian.on_login = async function () {

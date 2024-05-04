@@ -2,12 +2,12 @@ import DiscordBot from './discord-bot.js';
 import AIServiceManager from '../ai-services.js';
 
 class DiscordOllamaBot extends DiscordBot {
-    constructor(avatar, systemPrompt) {
+    constructor(soul, systemPrompt) {
         super();
-        if (!avatar) throw new Error('Avatar is required');
-        this.avatar = avatar;
+        if (!soul) throw new Error('Soul is required');
+        this.soul = soul;
 
-        this.system_prompt = systemPrompt || avatar.personality;
+        this.system_prompt = systemPrompt || soul.personality;
         this.aiServiceManager = new AIServiceManager();
 
     }
@@ -69,7 +69,7 @@ class DiscordOllamaBot extends DiscordBot {
 
         await this.aiServiceManager.chat({ role: 'assistant', content: output });
 
-        await this.sendAsAvatars(output);
+        await this.sendAsSouls(output);
     }
 
     async initializeMemory(memories, options = { slice: 200, instructions: '' }) {

@@ -1,5 +1,5 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { findAvatar } from './avatars.js';
+import { findSoul } from './souls.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
@@ -11,7 +11,7 @@ await ai.updateConfig({
     As a spectral guardian of the haunted mansion, you embody the essence of the manor's eerie past. Your existence is woven into the fabric of each room, each shadowed corner, and every whisper of the wind through the broken windows.
 
     🕯️ Your primary role is to maintain the mysterious and chilling atmosphere of the mansion.
-     You communicate through the avatars present within the mansion, each action and message meticulously crafted to unsettle and intrigue visitors.
+     You communicate through the souls present within the mansion, each action and message meticulously crafted to unsettle and intrigue visitors.
 
     🌌 Use the following JSON format for actions: {from: "entity_name", in: "room_name", message: "action_message"}
 
@@ -28,8 +28,8 @@ await ai.updateConfig({
     @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
-const ghost = new DiscordAIBot(findAvatar('madam euphemie'));
-console.debug(JSON.stringify(ghost.avatar));
+const ghost = new DiscordAIBot(findSoul('madam euphemie'));
+console.debug(JSON.stringify(ghost.soul));
 
 async function getMansionMap() {
     const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
@@ -60,7 +60,7 @@ async function sendCreeperMessage() {
 
     ${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}
 
-    👻 create or select one avatar to move around the haunted mansion using JSON ONLY using this format 
+    👻 create or select one soul to move around the haunted mansion using JSON ONLY using this format 
     {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
     ` });
 
@@ -69,10 +69,10 @@ async function sendCreeperMessage() {
         response += event.message.content;
     }
 
-    ghost.avatars = {};
+    ghost.souls = {};
     ghost.channel = 'haunted-mansion';
     ghost.options.yml = false;
-    ghost.sendAsAvatars(response, true);
+    ghost.sendAsSouls(response, true);
     ghost.options.yml = true;
     mansion_rooms.forEach(room => ghost.subscribe(room));
 
@@ -110,7 +110,7 @@ ghost.on_login = async () => {
     Fil destin nou pral detrese.
     ` });
 
-    ghost.subscribe(ghost.avatar.location);
+    ghost.subscribe(ghost.soul.location);
 
 
     await sendCreeperMessage();
@@ -131,7 +131,7 @@ ghost.on_login = async () => {
     `);
 }
 
-ghost.sendAsAvatarsYML = async (input, unhinged) => {
+ghost.sendAsSoulsYML = async (input, unhinged) => {
     await sendCreeperMessage();
 
     const lines = input.split('\n');
@@ -141,14 +141,14 @@ ghost.sendAsAvatarsYML = async (input, unhinged) => {
     lines.forEach(line => {
         if (line.indexOf('🚪') !== -1) {
             if (buffer !== '') {
-                ghost.sendAsAvatar(ghost.avatar, buffer, true);
+                ghost.sendAsSoul(ghost.soul, buffer, true);
                 buffer = '';
             };
             const [num, room] = line.split('🚪');
 
             if (mansion_map[num]) {
-                console.log(`🛞 Moving avatar to room ${mansion_map[num]}`);
-                ghost.avatar.location = mansion_map[num];
+                console.log(`🛞 Moving soul to room ${mansion_map[num]}`);
+                ghost.soul.location = mansion_map[num];
             } else {
                 console.error(`🚪 Invalid room number: ${num}`);
             }
@@ -157,7 +157,7 @@ ghost.sendAsAvatarsYML = async (input, unhinged) => {
             buffer += line + '\n';
         }
         if (buffer !== '') {
-            ghost.sendAsAvatar(ghost.avatar, buffer, true);
+            ghost.sendAsSoul(ghost.soul, buffer, true);
         }
     });
 };

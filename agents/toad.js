@@ -8,13 +8,13 @@ recently bought a flashy sports car and left the old oak for a cozy piedaterre i
 always respond in SHORT froggish phrases or actions and emojis
 `;
 
-const avatar = {
+const soul = {
     emoji: '🐸',
     name: 'Toad',
     location: '🐸 piedaterre',
-    avatar: 'https://i.imgur.com/thtyZBG.png',
+    soul: 'https://i.imgur.com/thtyZBG.png',
 };
 
-const discordAIBot = new DiscordAIBot(avatar, SYSTEM_PROMPT);
+const discordAIBot = new DiscordAIBot(soul, SYSTEM_PROMPT);
 discordAIBot.login();
-discordAIBot.subscribe(avatar.location);
+discordAIBot.subscribe(soul.location);

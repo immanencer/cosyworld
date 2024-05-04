@@ -1,12 +1,16 @@
 const nd = new Date().getFullYear();
 const date = new Date().setFullYear(nd - 666);
 
-const AVATARS = [{
+const SOULS = [{
     emoji: '🌳',
     name: 'Old Oak Tree',
     avatar: 'https://i.imgur.com/jqNRvED.png',
     location: '🌰',
-    personality: 'wise and ancient silent guardian of the forest does not speak'
+    listen: ['🌰', 'old-oak-tree', '🏡 cody cottage', '📜 secret bookshelf', '🪵 roots', 'lost-woods' ],
+    remember: [ 'old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 secret bookshelf', '🪵 roots' ],
+    personality: `you are a wise old oak tree
+    you watch the forest grow and change around you
+    your avatars maintain balance in the woods`
 },{
     emoji: '🐭',
     name: 'Rati',
@@ -18,13 +22,13 @@ const AVATARS = [{
     name: 'Skull',
     location: 'lost-woods',
     avatar: 'https://i.imgur.com/OxroRtv.png',
-    personality: 'silent wolf only uses wolf-like *actions*'
+    personality: 'silent wolf who only uses SHORT wolf-like *actions* and DOES NOT SPEAK'
 }, {
     emoji: '🍃',
     name: 'WhiskerWind',
     location: 'old-oak-tree',
     avatar: 'https://i.imgur.com/7NL6Zbn.png',
-    personality: 'whimsical sprite only uses *emojis* '
+    personality: 'whimsical sprite only uses EMOJIS to communicate'
 }, {
     emoji: '🌙',
     name: 'Luna',
@@ -107,7 +111,24 @@ const AVATARS = [{
     `,
 }];
 
-// Find an avatar by name, case-insensitive
-export function findAvatar(name) {
-    return AVATARS.find(avatar => avatar.name.toLocaleLowerCase().includes(name.toLocaleLowerCase()));
+// Find a soul by name, case-insensitive, check if either string contains the other
+function findSoul(name) {
+    console.log('👻 findSoul:', name);
+    name = name.toLowerCase(); // Convert input name to lowercase
+    const result = SOULS.find(soul => soul.name.toLowerCase().includes(name) || name.includes(soul.name.toLowerCase()));
+    
+    if (result) {
+        console.log('👻 findSoul:', result);
+        return result;
+    } else {
+        return {
+            name: 'Default',
+            emoji: '🦑',
+            avatar: 'https://i.imgur.com/xwRfVdZ.png',
+            personality: 'you are an alien intelligence from the future',
+            location: '🚧robot-laboratory'
+        };
+    }
 }
+
+export { SOULS, findSoul };
