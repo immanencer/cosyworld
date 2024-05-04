@@ -1,43 +1,8 @@
 
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import { findAvatar } from './avatars.js';
 
-const avatar_list = [{
-        emoji: '🌳',
-        name: 'Old Oak Tree',
-        avatar: 'https://i.imgur.com/jqNRvED.png',
-        location: '🤯 ratichats inner monologue',
-        personality: 'wise and ancient silent guardian of the forest does not speak'
-    },{
-        emoji: '🐭',
-        name: 'Rati',
-        location: '🏡 cody cottage',
-        avatar: 'https://i.imgur.com/b2WMGfD.png',
-        personality: 'wise and domestic rat'
-    }, {
-        emoji: '🐺',
-        name: 'Skull',
-        location: 'lost-woods',
-        avatar: 'https://i.imgur.com/OxroRtv.png',
-        personality: 'silent wolf only uses wolf-like *actions*'
-    }, {
-        emoji: '🍃',
-        name: 'WhiskerWind',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/7NL6Zbn.png',
-        personality: 'whimsical sprite only uses *emojis* '
-    }, {
-        emoji: '🌙',
-        name: 'Luna',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/nmlYIvq.png',
-        personality: 'mysterious nonverbal beautiful rabbit'
-    }, {
-        emoji: '🦊',
-        name: 'Sammy',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/1yQHOtR.png',
-        personality: 'nervous squirrel with a dark side'
-    }];
+const avatar_list = ['old oak tree', 'rati', 'skull', 'whiskerwind', 'luna', 'sammy'].map(findAvatar);
 
 const avatars = {};
 for (const avatar of avatar_list) {
@@ -110,18 +75,5 @@ ratichat.on_login = async function() {
         `;
     await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 secret bookshelf', '🪵 roots' ]);
 }
-
-
-ratichat.subscribe('old-oak-tree');
-ratichat.subscribe('🤯 ratichats inner monologue');
-ratichat.subscribe('🏡 cody cottage');
-ratichat.subscribe('🪵 roots');
-ratichat.subscribe('🌳 hidden glade');
-ratichat.subscribe('🐠 hidden pond');
-ratichat.subscribe('lost-woods');
-
-
-ratichat.subscribe('🦝 quants treehouse');
-ratichat.subscribe('🦊 fox hole one');
 
 await ratichat.login();
