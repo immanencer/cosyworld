@@ -33,7 +33,6 @@ function chat() {
                 process.stdout.write(event.message.content);
                 // Add the message content to the output
                 output += event.message.content;
-
             }
             // Send the output to the chat function and
             await manager.chat({ role: "assistant", content: output });
