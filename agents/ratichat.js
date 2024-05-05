@@ -1,19 +1,38 @@
 
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { findSoul } from './souls.js';
+import { soulseek } from './souls.js';
 
-const soul_list = ['rati', 'skull', 'whiskerwind', 'luna', 'sammy'].map(findSoul);
+const soul_list = ['rati', 'skull', 'whiskerwind', 'luna', 'sammy'].map(soulseek);
 
 const souls = {};
 for (const soul of soul_list) {
     souls[soul.name + ' ' + soul.emoji] = soul;
 }
 
-const ratichat = new DiscordAIBot(findSoul('old oak tree'));
+const ratichat = new DiscordAIBot(soulseek('old oak tree'));
 
 ratichat.souls = souls;
 ratichat.options.yml = true;
 console.log(JSON.stringify(ratichat.souls, null, 2));
+
+import AIServiceManager from '../ai-services.js';
+const ai = new AIServiceManager();
+await ai.useService('phi');
+await ai.updateConfig({ system_prompt: `
+you are expert proofreader corrector of YAML syntax errors
+you must only return the corrected YAML object
+`});
+
+ratichat.preprocess_response = async (response) => {
+    const valid_avatars = Object.keys(souls).map(soul => soul.toLowerCase());
+    const valid_locations = ratichat.channelManager.getChannelMapPrompt().split('\n').map(location => location.trim().toLowerCase());
+    console.log('🎮🦙 Preprocessing response:', response);
+    return await ai.chat(response + `
+    ---
+    Valid Avatars: ${valid_avatars.join(', ')}
+    Valid Locations: ${valid_locations.join(', ')}
+    `);
+}
 
 ratichat.on_login = async function() {
     ratichat.aiServiceManager.chat({role: 'system', content: `

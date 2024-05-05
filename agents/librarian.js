@@ -3,7 +3,7 @@ import path from "path";
 
 import AIServiceManager from '../ai-services.js';
 
-import { findSoul } from './souls.js';
+import { soulseek } from './souls.js';
 import { replaceContent } from "../tools/censorship.js";
 import DiscordAIBot from "../tools/discord-ollama-bot.js";
 
@@ -12,7 +12,7 @@ librarian.on_login = async () => librarian.sendAsSoul(...(await ingest()));
 librarian.login();
 
 async function ingest() {
-    const asher = findSoul('asher');
+    const asher = soulseek('asher');
     // This is the Sribe AI Service        
     const manager = new AIServiceManager();
     await manager.useService('ollama');

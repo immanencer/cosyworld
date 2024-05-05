@@ -5,7 +5,7 @@ import ChannelManager from './discord-channel-manager.js';
 import c from '../configuration.js';
 const configuration = c('discord-bot');
 import { chunkText } from './chunk-text.js';
-import { findSoul } from '../agents/souls.js';
+import { soulseek } from '../agents/souls.js';
 
 import { parseYaml } from '../tools/parseYaml.js';
 import SoulManager from './soul-manager.js';
@@ -176,6 +176,13 @@ class DiscordBot {
 
     async sendAsSoulsYML(output, unhinged) {
         console.log('🎮 📤 Sending as souls YML');
+        if (this.preprocess_output) {
+            try {
+                output = await this.preprocess_output(output);
+            } catch (error) {
+                console.error('🎮 ❌ Error in preprocess_output:', error);
+            }
+        }
 
         // Match YAML objects, assuming they are separated in the output in a specific way
         let yamlObjects = output.split('---').map(part => part.trim()).filter(part => part);
@@ -192,7 +199,7 @@ class DiscordBot {
 
             if (actions.length === 0) {
                 console.warn('🎮 ⚠️ No actions found in output:', output);
-                const soul = this.soul || findSoul();
+                const soul = this.soul || soulseek();
                 console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
                 return this.sendAsSoul(soul, output);
             }
@@ -216,7 +223,7 @@ class DiscordBot {
 
     async sendAsSouls(output, unhinged, zombie) {
         // Send the rest of the message as the default soul
-        const soul = this.soul || findSoul(zombie);
+        const soul = this.soul || soulseek(zombie);
 
         if (this.options.yml) {
             console.log('🎮 📤 Sending as souls YML');

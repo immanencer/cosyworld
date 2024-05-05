@@ -121,32 +121,40 @@ const SOULS = [{
     `,
 }];
 
-// Find a soul by name, case-insensitive, check if either string contains the other
-function findSoul(name, zombie = {}) {
-    console.log('👻 findSoul:', name);
-    const _name = name.toLowerCase(); // Convert input name to lowercase
-    const result = SOULS.find(soul => soul.name.toLowerCase().includes(_name) || _name.includes(soul.name.toLowerCase()));
-    
-    if (result) {
-        console.log('👻 ✅ found soul:', result);
-        return result;
-    } else {
-        if (zombie) {
-            console.log('👻 🧟 found zombie soul :', zombie);
-            return {
-                name,
-                ...zombie
-            };
-        }
-        throw new Error('👻 findSoul: ' + name);
+// Searches for a soul by name in a case-insensitive manner. Returns the soul, a zombie soul, or a default if not found.
+function soulseek(name, zombie) {
+    const normalizedName = name.toLowerCase();
+
+    // Find the soul that matches the name in either direction of containment
+    const foundSoul = SOULS.find(soul => {
+        const soulNameLower = soul.name.toLowerCase();
+        return soulNameLower.includes(normalizedName) || normalizedName.includes(soulNameLower);
+    });
+
+    if (foundSoul) {
+        console.log('👻 ✅ found soul:', foundSoul);
+        return foundSoul;
+    }
+
+    // Return a zombie soul if provided
+    if (zombie) {
+        console.log('👻 🧟 found zombie soul:', zombie);
         return {
-            name: 'Default',
-            emoji: '🦑',
-            avatar: 'https://i.imgur.com/xwRfVdZ.png',
-            personality: 'you are an alien intelligence from the future',
-            location: '🚧robot-laboratory'
+            name,
+            ...zombie
         };
     }
+
+    // Return a default soul if no soul or zombie soul is found
+    console.log('👻 🔍 no soul found, returning default');
+    return {
+        name: 'Default',
+        emoji: '🦑',
+        avatar: 'https://i.imgur.com/xwRfVdZ.png',
+        personality: 'you are an alien intelligence from the future',
+        location: '🚧robot-laboratory'
+    };
 }
 
-export { SOULS, findSoul };
+
+export { SOULS, soulseek };

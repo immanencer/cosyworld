@@ -1,4 +1,4 @@
-import { findSoul } from '../agents/souls.js';
+import { soulseek } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from '../ai-services.js';

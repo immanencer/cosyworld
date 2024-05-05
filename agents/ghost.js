@@ -1,5 +1,5 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { findSoul } from './souls.js';
+import { soulseek } from './souls.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
@@ -28,7 +28,7 @@ await ai.updateConfig({
     @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
-const ghost = new DiscordAIBot(findSoul('madam euphemie'));
+const ghost = new DiscordAIBot(soulseek('madam euphemie'));
 console.debug(JSON.stringify(ghost.soul));
 
 async function getMansionMap() {
