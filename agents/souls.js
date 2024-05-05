@@ -6,7 +6,7 @@ const SOULS = [{
     name: 'Old Oak Tree',
     avatar: 'https://i.imgur.com/jqNRvED.png',
     location: '🌰',
-    listen: ['🌰', 'old-oak-tree', '🏡 cody cottage', '📜 bookshelf', '🪵 roots', 'lost-woods' ],
+    listen: ['🌰', 'old-oak-tree', '🏡 cody cottage', '📜 bookshelf', '🪵 roots', 'lost-woods', '🌳 hidden glade' ],
     remember: [ 'old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 bookshelf', '🪵 roots' ],
     personality: `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
     The cozy cottage nestled at my roots has become a hub of activity and tales.

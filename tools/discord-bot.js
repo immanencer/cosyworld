@@ -315,8 +315,8 @@ class DiscordBot {
                 this.channelManager.createLocation(this.channel, action.in);
             }
             if (this.channelManager.getLocation(action.in)) {
-                const soul = new SoulManager(action.from, { ...zombie, location: action.in }).getSoul();
-                await this.sendAsSoul(soul, action.message, unhinged);
+                const soul = new SoulManager(action.from, { ...zombie, location: action.in });
+                await this.sendAsSoul(soul.get(), action.message, unhinged);
             }
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
@@ -331,7 +331,10 @@ class DiscordBot {
         if (!message) { message = '...'; }
 
         let location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
-        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${soul.location}`.toLowerCase());
+        if (!location) {
+            await this.channelManager.createLocation('haunted-mansion', `${soul.location}`.toLowerCase());
+            location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
+        }
 
         console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
         const webhook = await this.getOrCreateWebhook(location.channel);

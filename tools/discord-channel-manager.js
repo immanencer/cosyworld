@@ -65,11 +65,13 @@ class ChannelManager {
         });
     }
     
-    fuzzyMatchChannel(channel_name) {
-        const channel = this.getChannels().find(c => (
+    async fuzzyMatchChannel(channel_name) {
+        const channel = (await this.getChannels()).find(c => (
             c.toLowerCase().includes(channel_name.toLowerCase())
-            || channel_name.toLowerCase().includes(c.toLowerCase())
-        ));
+            || channel_name.toLowerCase().includes(c.toLowerCase()
+            || c.toLowerCase().replace(/-/g, ' ').includes(channel_name.toLowerCase()
+            || channel_name.toLowerCase().replace(/-/g, ' ').includes(c.toLowerCase())
+        ))));
         return channel || null;
     }
 
@@ -96,7 +98,7 @@ class ChannelManager {
     
     // Location management
     async getLocation(location) {
-        const channel = this.getChannelId(this.getChannelForThread(location) || location);
+        const channel = this.getChannelId((await this.fuzzyMatchChannel(this.getChannelForThread(location) || location)));
         const thread = this.thread_id[location];
         if (!channel) {
             console.error('🎮 ❌ Invalid location ' + location);
