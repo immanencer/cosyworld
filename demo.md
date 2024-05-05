@@ -102,8 +102,8 @@ This tutorial will walk you through setting up and running an interactive AI cha
 
 Before starting, ensure you have:
 - Node.js installed on your system.
-- Pulled the necessary AI model if you are using OLLAMA.
-- Configured your `replicate.json` with a valid API key.
+- ollama: Pulled the necessary AI model.
+- replicate: Configure your `replicate.json` with a valid API key.
 
 ### Step 1: Create the Demo File
 
@@ -186,6 +186,4 @@ Follow the on-screen prompts to interact with the AI. Type `exit` to terminate t
 
 This demo illustrates basic integration and use of an AI service within our framework. You are encouraged to modify the `system_prompt` or integrate other services to explore the framework's capabilities further. Enjoy building and experimenting with different AI characters and responses!
 
----
-
-This tutorial structure keeps each step concise, guiding the user through the process while referencing the `demo.js` for the complete code, allowing users to focus on learning and applying each step effectively.
+You can find demo.js and the complete AI agent framework in the main project repository.
