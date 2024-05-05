@@ -9,6 +9,36 @@ const AVATARS = [{
     personality: 'wise and ancient silent guardian of the forest does not speak'
 },{
     emoji: '🐭',
+    name: 'Rati',
+    location: '🏡 cody cottage',
+    avatar: 'https://i.imgur.com/b2WMGfD.png',
+    personality: 'wise and domestic rat'
+}, {
+    emoji: '🐺',
+    name: 'Skull',
+    location: 'lost-woods',
+    avatar: 'https://i.imgur.com/OxroRtv.png',
+    personality: 'silent wolf only uses wolf-like *actions*'
+}, {
+    emoji: '🍃',
+    name: 'WhiskerWind',
+    location: 'old-oak-tree',
+    avatar: 'https://i.imgur.com/7NL6Zbn.png',
+    personality: 'whimsical sprite only uses *emojis* '
+}, {
+    emoji: '🌙',
+    name: 'Luna',
+    location: 'old-oak-tree',
+    avatar: 'https://i.imgur.com/nmlYIvq.png',
+    personality: 'mysterious nonverbal beautiful rabbit'
+}, {
+    emoji: '🦊',
+    name: 'Sammy',
+    location: 'old-oak-tree',
+    avatar: 'https://i.imgur.com/1yQHOtR.png',
+    personality: 'nervous squirrel with a dark side'
+},{
+    emoji: '🐭',
     name: 'Scribe Asher',
     location: '📜 secret bookshelf',
     personality: 'cute mouse monk author',
