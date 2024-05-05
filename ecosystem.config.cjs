@@ -23,5 +23,8 @@ module.exports ={
   },{
     name   : "ghost",
     script : "./agents/ghost.js"
+  },{
+    name: "mr-bear",
+    script: "./agents/mr-bear.js"
   }]
 }

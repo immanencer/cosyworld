@@ -60,6 +60,8 @@ class DiscordBot {
         return this.soul.listen.includes(message.channel.name);
     }
 
+    process_message = async (message) => {}
+
     async handleMessage(message) {
         this.subscribed_channels = this.soul.listen;
         if (this.souls) {
@@ -70,6 +72,7 @@ class DiscordBot {
         }
 
         if (this.message_filter(message)) {
+            await this.process_message(message);
             return true;
         } else {
             return false;
