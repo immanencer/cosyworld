@@ -7,7 +7,7 @@ const configuration = c('discord-bot');
 import { chunkText } from './chunk-text.js';
 import { soulseek } from '../agents/souls.js';
 
-import { parseYaml } from '../tools/parseYaml.js';
+import { parseYaml } from './yml/parseYaml.js';
 import SoulManager from './soul-manager.js';
 
 class DiscordBot {
@@ -271,8 +271,9 @@ class DiscordBot {
                 this.channelManager.createLocation(this.channel, action.in);
             }
             if (this.channelManager.getLocation(action.in)) {
-                const soul = new SoulManager(action.from, { ...zombie, location: action.in }).getSoul();
-                await this.sendAsSoul(soul, action.message, unhinged);
+                const soul = new SoulManager(action.from, { ...zombie, location: action.in });
+                soul.move(action.in);
+                await this.sendAsSoul(soul.get(), action.message, unhinged);
             }
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
@@ -378,13 +379,11 @@ class DiscordBot {
                 } else {
                     author = this.authors[message.authorId] || { username: 'Unknown' };
                 }
-                memory.push(`
-                    time:${message.createdTimestamp}
-                    from: ${message.author.displayName || message.author.globalName}
-                    in: ${message.channel.name}
-                    message:
-                    ${message.content}
-                    \n\n`);
+                memory.push(`[${message.createdTimestamp}] ${JSON.stringify({
+                    in: message.channel.name,
+                    from:message.author.displayName || message.author.globalName,
+                    message: message.content
+                })}`);
             }
         }
         memory.sort()

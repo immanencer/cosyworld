@@ -32,7 +32,7 @@ const ghost = new DiscordAIBot(soulseek('madam euphemie'));
 console.debug(JSON.stringify(ghost.soul));
 
 async function getMansionMap() {
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
 
     let counter = 100;
     const mansion_map = mansion_rooms.reduce((map, room) => {
@@ -51,7 +51,7 @@ ghost.options = {
 
 
 async function sendCreeperMessage() {
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
     const output = await ai.chat({
         role: 'user', content: `
@@ -87,7 +87,7 @@ ghost.on_login = async () => {
     await ghost.sendMessage(`Awaken Ghost! Seek absolution!`);
 
 
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     ghost.soul.listen = ['haunted-mansion', ...mansion_rooms];
     ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
         instructions: `

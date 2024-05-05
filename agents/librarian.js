@@ -59,7 +59,7 @@ async function ingest() {
 
         // Getting Threads
         if (librarian.channelManager.getChannelId(channel)) {
-            const threads = await librarian.channelManager.getChannelThreads(channel);
+            const threads = await librarian.channelManager.getThreadsForChannel(channel);
 
             for (const thread of threads) {
                 console.log('📚 Ingesting thread... ');

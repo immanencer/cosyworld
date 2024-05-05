@@ -1,10 +1,10 @@
 // File: SoulManager.js
 
-import { soulseek } from '../agents/souls.js';
+import { soulseek, soulupdate } from '../agents/souls.js';
 
 class SoulManager {
     constructor(soul, zombie) {
-        if (typeof soul === 'string') soul = this.soulseek(soul, zombie);
+        if (typeof soul === 'string') soul = soulseek(soul, zombie);
         if (!soul) console.warn('🚨 Soul not found:', soul);
         this.defaultSoul = soul || {
             name: 'Default',
@@ -16,7 +16,7 @@ class SoulManager {
         this.soul = this.defaultSoul;
     }
 
-    soulseek(soulName, zombie) {
+    seek(soulName, zombie) {
         if (typeof soulName === 'string') {
             const foundSoul = soulseek(soulName, zombie);
             return foundSoul || this.defaultSoul;
@@ -24,12 +24,12 @@ class SoulManager {
         return this.defaultSoul;
     }
 
-    getSoul() {
-        return this.soul;
+    move(location) {
+        this.soul.location = location;
+        soulupdate(this.soul);
     }
-
-    updateSoul(soulName) {
-        this.soul = this.soulseek(soulName);
+    get() {
+        return this.soul;
     }
 }
 

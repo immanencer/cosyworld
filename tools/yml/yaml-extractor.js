@@ -17,10 +17,12 @@ function extractYAMLContent(text) {
   if (matches.length === 0) {
     console.log('⚠️ No YAML blocks found in the input text');
 
+    // We can add additional fallback methods here to handle more complex cases
+    // In fact the custom implementation here passes more specific tests than the JSYAML_* implementations
+    // additional test cases should be added to further validate the custom implementation against more complex yaml blocks
     const altMatches = [
       extractMultipleYAMLContent_Normalize,
-      JSYAML_ADVANCED,
-      JSYAML_BASIC,
+      JSYAML_ADVANCED, JSYAML_BASIC,
     ];
 
     for (const altMatch of altMatches) {
@@ -100,4 +102,4 @@ function JSYAML_ADVANCED(text) {
   return results;
 }
 
-  export { extractYAMLContent };
+  export { extractYAMLContent, JSYAML_ADVANCED, JSYAML_BASIC, extractMultipleYAMLContent_Normalize};

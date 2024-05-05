@@ -1,102 +1,86 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { soulseek } from './souls.js';
-import AIServiceManager from '../ai-services.js';
-import fs from 'fs';
+import SoulManager from '../tools/soul-manager.js';
+import { soulsave, soulseek } from './souls.js';
 
 const souls = {
-    'Old Oak Tree 🌳': soulseek('old oak tree'),
-    'Rati 🐭': soulseek('rati'),
-    'Skull 🐺': soulseek('skull'),
-    'WhiskerWind 🍃': soulseek('whiskerwind'),
-    'Luna 🌙': soulseek('luna'),
-    'Sammy 🦊': soulseek('sammy')
+    'old oak tree': soulseek('old oak tree'),
+    'rati': soulseek('rati'),
+    'skull': soulseek('skull'),
+    'whiskerwind': soulseek('whiskerwind'),
+    'luna': soulseek('luna'),
+    'sammy': soulseek('sammy')
 };
 
-const ratichat = new DiscordAIBot(souls['Old Oak Tree 🌳']);
+const ratichat = new DiscordAIBot(new SoulManager('Old Oak Tree').get());
 ratichat.souls = souls;
-ratichat.options.yml = true;
-
-const ai = new AIServiceManager();
-await ai.useService('ollama');
-await ai.updateConfig({
-    system_prompt: "you are an expert proofreader and corrector of YAML syntax errors."
-});
 
 ratichat.preprocess_response = async (response) => {
-    const valid_avatars = Object.keys(souls).map(soul => soul.toLowerCase());
-    const cleaned = await ai.chatSync({
-        role: 'system', 
-        content: `
-        Clean up any YAML syntax errors and ensure all communications are appropriate for each character's defined traits.
-        Ensure responses are in valid YAML format and are sent from one of the following avatars: ${valid_avatars.join(', ')}
-        in the following locations ${Object.values(souls).map(soul => soul.location).join(', ')}
-
-        only the following yml keys are allowed: from, in, message
-
-        Make sure WhiskerWind 🍃 only sends emojis and no text messages.
-        Make sure Skull 🐺 only sends short *action* messages in italics.
-
-        You will return PERFECT YAML responses to the Old Oak Tree 🌳
-
-        ---
-        from: the name of the avatar sending the message
-        in: the location of the avatar sending the message
-        message: the message to be sent
-        ---
-
-        ${response}
-        `
-    });
-    fs.writeFileSync('response.yml', response);
-    fs.writeFileSync('cleaned.yml', cleaned);
-    return cleaned;
+    soulsave();
+    return response;
 };
 
 ratichat.on_login = async () => {
-    const memoryInit = await ratichat.loadMemory();
-    const channelMap = ratichat.channelManager.getChannelMapPrompt();
-    await ratichat.aiServiceManager.chat({ role: 'system', content: `
-    You are the Old Oak Tree 🌳, the ancient guardian of the forest. You are wise and patient, and you speak in the language of the forest
-    Your avatars keep the balance of the forest. Use them to communicate with the other souls.
+    console.log(JSON.stringify(await ratichat.channelManager.getChannelMapPrompt()));
+    const system_prompt = `${ratichat.soul.personalty}
 
-    Here is what you remember:
+    Here is a map of all valid locations for my avatars
+
+    {"from": "old oak tree", "in": "🌰", "message": "The ancient heart of the Old Oak Tree, where the forest's heart beats. 🌳🌳🌳"}
+    {"from": "old oak tree", "in": "🪵 roots", "message": "The tangled roots of the Old Oak Tree, where secrets are buried. 🌳🌳🌳"}
+    {"from": "old oak tree", "in": "🏡 cody cottage", "message": "A cozy cottage nestled in the heart of the forest. 🌲🌲🌲"}
+    {"from": "old oak tree", "in": "📜 bookshelf", "message": "A collection of ancient tomes and dusty scrolls. 📚📚📚"}
+    {"from": "old oak tree", "in": "lost-woods", "message": "A dark and mysterious forest where the trees whisper secrets. 🌲🌲🌲"}
+    {"from": "old oak tree", "in": "🌿 herb garden", "message": "A lush garden filled with fragrant herbs and flowers. 🌼🌸🌺"}
+    {"from": "old oak tree", "in": "🌙 moonlit clearing", "message": "A peaceful clearing bathed in the light of the full moon. 🌕🌕🌕"}
+    {"from": "old oak tree", "in": "🌳 hidden glade", "message": "A hidden glade with a mysterious steam clock"}
+    {"from": "old oak tree", "in": "🦊 fox hole one", "message": "The secret home of ratimics the fox"}
+
+
+    Here are my avatars and their current locations:
+
+        ${JSON.stringify(Object.keys(ratichat.souls).map(name => ({ from: name, in: ratichat.souls[name].location, message: ratichat.souls[name].emoji })))}
+        
+    Always use the following format (replace with your own messages, and adjust the number of avatars and locations as needed):
     
-        ${memoryInit}
-
-    --- 
-
-        Send a message in YAML format to any of the souls to hear the forests whispers.
-        Use the souls to keep the balance of the forest.
-        THe Old Oak Tree should always reflect on the state of the forest.
-
+    ### Inner Thoughts of the Old Oak Tree 🌳
     
-    Example Response (YAML Format):
-        ---
-        from: Old Oak Tree
-        in: 🌰
-        message:
-        The seasons turn beneath my boughs, and the forest whispers to me of the changes to come.
-        ${["The leaves fall, the snows come, and the world sleeps beneath my roots.",
-        "The Winter Solstice is upon us, and the forest is still.",
-        "Spring will come, and the forest will awaken once more.",
-        "Summer's heat will bring life to the woods, and the forest will thrive."][Math.floor(Math.random() * 4)]}
-        
-        
-        
+    The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+        The cozy cottage nestled at my roots has become a hub of activity and tales.
+        Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+        WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+        Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
+            the quiet contemplation of the moonlit clearings.
+    
+        Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
+    
+    ### Outer Actions of the Avatars
 
-        ---
-        from: Rati 🐭
-        in: 🏡 cody cottage
-        message: *weaves a scarf* 🧣 Everyone needs a little warmth in their lives. 🌟
-        ---
-        from: Skull 🐺
-        in: lost-woods
-        message: *prowls wolfishly*
-        ---
-        from: WhiskerWind
-        in: 🌿 herb garden
-        message: 🌼💚
-        `});
+    {"in": "🏡 cody cottage", "from": "rati",  "message": "*domestic action* folk-wisdom" },
+    {"in": "lost-woods", "from": "skull", "message": "*wolfish actions*" },
+    {"in": "🌿 herb garden", "from": "whiskerwind", "message": "🌼💚" }
+        `;
+
+    console.log(system_prompt);
+    await ratichat.aiServiceManager.updateConfig({  system_prompt });
+
+    ratichat.response_instructions = `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+        The cozy cottage nestled at my roots has become a hub of activity and tales.
+        Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+        WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+        Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
+            the quiet contemplation of the moonlit clearings.
+    
+        Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
+    
+    Here are the avatars and their current locations:
+
+    ${JSON.stringify(Object.keys(ratichat.souls).map(name => ({ name: name, location: ratichat.souls[name].location, personality: ratichat.souls[name].personality })), null, 2)}
+    
+    Reflect on the state of the forest, the tales of the avatars, and the place of the old oak in the world.
+    Use correctly formatted JSON blocks {"from":"your-name","in":"location","message":"message"} to send messages from your avatars in channels and threads.
+    Always respond in the standard format (replace with your own messages, and adjust the number of avatars and locations as needed):`;
+
+    await ratichat.sendMessage('Awaken, Ancient Oak and use your avatars to maintain the balance of the forest.');
 };
 
 await ratichat.login();
