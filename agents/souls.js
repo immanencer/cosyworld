@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-const filePath = './.configuration/souls.json';
+const filePath = './.configurations/souls.json';
 
 const SOULS = (await soulload(filePath) || await soulload('./souls.json'));
 if (!SOULS) {
@@ -10,10 +10,10 @@ async function soulload(path) {
     try {
         const data = await fs.readFile(path, 'utf8'); // Read the file
         const souls = JSON.parse(data); // Parse the JSON string back into an array
-        console.log('Souls data loaded successfully.');
+        console.log('✅ Souls data loaded successfully.');
         return souls;
     } catch (error) {
-        console.error('Failed to load souls data:', error);
+        console.error('💀 Failed to load souls data:', error);
         return null;
     }
 }
