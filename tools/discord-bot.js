@@ -78,8 +78,13 @@ class DiscordBot {
             return false;
         }
     }
-    handleMessage(message) {
-        return this.message_filter(message);
+
+    async handleMessage(message) {
+        if (this.message_filter(message)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     subscribed_channels = [];
@@ -245,6 +250,10 @@ class DiscordBot {
             if (this.souls_moved) {
                 this.souls_moved(Object.values(this.souls));
             }
+
+            if (this.avatars_moved) {
+                this.avatars_moved(Object.values(this.avatars));
+            }
         }
 
         if (!unhinged) {
@@ -265,12 +274,16 @@ class DiscordBot {
             }
             if (unhinged && !this.channelManager.getLocation(action.in)) {
                 this.channelManager.createLocation(this.channel, action.in);
-                this.avatars[action.from].location = action.in;
             }
             if (this.channelManager.getLocation(action.in)) {
-                this.avatars[action.from].location = action.in;
             }
-            await this.sendAsAvatar(this.avatars[action.from], action.message, unhinged);
+            const avatarKey = findAvatarKeyByName(this.avatars, action.from);
+            if (avatarKey) {
+                this.avatars[avatarKey].location = action.in;
+            } else {
+                console.error(`Avatar not found for name: ${action.from}`);
+            }
+            await this.sendAsAvatar(this.avatars[avatarKey], action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
