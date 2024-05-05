@@ -79,7 +79,6 @@ class DiscordBot {
         }
     }
     handleMessage(message) {
-        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
         return this.message_filter(message);
     }
 
@@ -257,6 +256,9 @@ class DiscordBot {
     async processAction(action) {
         console.log('🎮 Processing action... ');
         try {
+            if (this.channelManager.getLocation(action.in)) {
+                this.avatars[action.from].location = action.in;
+            }
             await this.sendAsAvatar(this.avatars[action.from], action.message);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
