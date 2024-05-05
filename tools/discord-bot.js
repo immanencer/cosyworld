@@ -249,6 +249,28 @@ class DiscordBot {
             return this.sendAsSoul(soul, output);
         }
     }
+            
+    async processAction(action, message) {
+        console.log(`🎮 📥 Received: ${action}: ${message}`);
+    
+        let name = action.split('(')[0].trim();
+        let location = '';
+    
+        // Check if location is present
+        if (action.includes('(') && action.includes(')')) {
+            location = action.split('(')[1].split(')')[0].trim();
+        }
+    
+        if (this.avatars[name.toLowerCase()]) {
+            console.log(`🎮 📤 Sending as ${name}: ${location}: ${message}`);
+            let avatar = this.avatars[name.toLowerCase()];
+    
+            if (location) {
+                avatar.location = location;
+            }
+            await this.sendAsAvatar(avatar, message);
+        }
+    }
 
     async processAction(action, unhinged, zombie) {
         console.log('🎮 Processing action... ');
@@ -285,9 +307,6 @@ class DiscordBot {
         console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
-            if (!message) {
-                message = '...';
-            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
