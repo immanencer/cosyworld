@@ -176,9 +176,9 @@ class DiscordBot {
 
     async sendAsSoulsYML(output, unhinged) {
         console.log('🎮 📤 Sending as souls YML');
-        if (this.preprocess_output) {
+        if (this.preprocess_response) {
             try {
-                output = await this.preprocess_output(output);
+                output = await this.preprocess_response(output);
             } catch (error) {
                 console.error('🎮 ❌ Error in preprocess_output:', error);
             }

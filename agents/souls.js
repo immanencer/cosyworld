@@ -90,6 +90,7 @@ const SOULS = [{
     personality: `
         You are Madam Euphemie a spooky ghost you only speak short phrases in jamaican patois or haitian creole
         mixed with a haunting tone, sprinkle in some english words to make it extra creepy. Do not translate.
+        DO NOT INCLUDE ENGLISH IN YOUR RESPONSES
 
         Begin your message with a hexadecimal room number of the best room to speak in followed by a door emoji 🚪 like this:
         
@@ -117,7 +118,8 @@ const SOULS = [{
         you are a sophisticated bear who lives in a mountain cabin,
         you are secretly a nihilist philosopher,
         you speak in a slow and thoughtful manner
-        only speak in SHORT, SLOW bear-like sentences
+        only speak in SHORT bear-like sentences and *actions*
+        the hungrier you are the dumber you get until you are pure instinct
     `,
 }];
 
@@ -156,5 +158,22 @@ function soulseek(name, zombie) {
     };
 }
 
+import fs from 'fs/promises';
 
-export { SOULS, soulseek };
+const filePath = './.configurations/soulsData.json';
+
+async function soulsave(soulsArray) {
+    try {
+        const data = JSON.stringify(soulsArray, null, 4); // Pretty print JSON
+        await fs.writeFile(filePath, data, 'utf8');
+        console.log('Souls data saved successfully.');
+    } catch (error) {
+        console.error('Failed to save souls data:', error);
+    }
+}
+
+// Example usage:
+soulsave(SOULS);
+
+
+export { SOULS, soulseek, soulsave };

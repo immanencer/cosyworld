@@ -32,11 +32,17 @@ async function loadFoodData() {
 
 // Save the food count data to the filesystem
 async function saveFoodData() {
+
+    // reduce all food counts by 20%
+    for (const [key, value] of bear.foodCount.entries()) {
+        bear.foodCount.set(key, Math.ceil(value * 0.8));
+    }
+
     try {
         // create the path if it doesn't exist
         await fs.mkdir(dataPath.split('/').slice(0, -1).join('/'), { recursive: true });
 
-        const data = JSON.stringify(Array.from(bear.foodCount.entries()));
+        const data = JSON.stringify(Array.from(bear.foodCount.entries()), null, 2);
         await fs.writeFile(dataPath, data, 'utf8');
     } catch (error) {
         console.log('Failed to save food data:', error);
@@ -51,15 +57,19 @@ bear.onLogin = async () => {
 };
 
 bear.process_message = async (message) => {
+    await loadFoodData(); // Load the food count data when processing a message
     const content = message.content;
     const authorId = message.author.displayName || message.author.username || message.author.id;
-    
-    let foodGiven = false;
 
+    let foodGiven = false;
+    let foodCounts = [];
+
+    // Process each character and update the count if it's a food emoji
     for (const char of content) {
         if (foodEmojis.has(char)) {
             let foodReceived = bear.foodCount.get(`${authorId}#${char}`) || 0;
             bear.foodCount.set(`${authorId}#${char}`, ++foodReceived);
+            foodCounts.push({ char, count: foodReceived });
             foodGiven = true;
         }
     }
@@ -68,16 +78,27 @@ bear.process_message = async (message) => {
         await saveFoodData();  // Save data whenever it is updated
     }
 
+    // Sort the food counts in ascending order of count
+    foodCounts.sort((a, b) => a.count - b.count);
+
+    // Select the bottom half of the food items, based on frequency
+    let bottomHalfFoodCounts = foodCounts.slice(0, Math.ceil(foodCounts.length / 2));
+
+    // Construct a response detailing which food items were less frequent
     bear.response_instructions = `
-        🐻 Mr. Bear has received ${foodGiven ? 'your food' : 'no food'}.
+        🐻 Mr. Bear has received ${foodGiven ? 'food' : 'no food'}.
         
         Here is a summary of the food Mr. Bear has received from each user:
-        ${Array.from(bear.foodCount.keys()).map(key => `${key.split('#')[0]}: ${bear.foodCount.get(key)}`).join('\n')}
+        ${Array.from(bear.foodCount.entries()).map(([key, value]) => `${key.split('#')[0]}: ${value}`).join('\n')}
+
+        You are particularly interested in these less common food items: ${bottomHalfFoodCounts.map(item => `${item.char}`).join(' ')}
+        Do not mention these numbers directly.
     `;
 
     console.log(bear.response_instructions);
 
-    return true; // Do not stop other message filters from running
+    return true; // Indicate that the message has been processed
 };
+
 
 bear.login();
