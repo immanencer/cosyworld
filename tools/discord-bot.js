@@ -285,6 +285,9 @@ class DiscordBot {
         console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
+            if (!message) {
+                message = '...';
+            }
             let chunks = chunkText(message);
             chunks.forEach(async chunk => {
                 if (chunk.trim() === '') return;
