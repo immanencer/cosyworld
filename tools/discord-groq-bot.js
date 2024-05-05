@@ -24,7 +24,7 @@ class DiscordOllamaBot extends DiscordBot {
     async handleMessage(message) {
         if (!super.handleMessage(message)) return;
         const formatted_message = JSON.stringify({
-            from: message.author.displayName,
+            from: message.author.displayName || message.author.displayName || message.author.username || message.author.id,
             in: message.channel.name,
             message: message.content
         })
