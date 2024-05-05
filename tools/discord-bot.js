@@ -78,6 +78,10 @@ class DiscordBot {
             return false;
         }
     }
+    handleMessage(message) {
+        console.log(`🎮 📥 Received message from ${message.author.displayName} in ${message.channel.name}`);
+        return this.message_filter(message);
+    }
 
     subscribed_channels = [];
     subscribe(channelName) {
@@ -249,26 +253,14 @@ class DiscordBot {
             return this.sendAsSoul(soul, output);
         }
     }
-            
-    async processAction(action, message) {
-        console.log(`🎮 📥 Received: ${action}: ${message}`);
-    
-        let name = action.split('(')[0].trim();
-        let location = '';
-    
-        // Check if location is present
-        if (action.includes('(') && action.includes(')')) {
-            location = action.split('(')[1].split(')')[0].trim();
-        }
-    
-        if (this.avatars[name.toLowerCase()]) {
-            console.log(`🎮 📤 Sending as ${name}: ${location}: ${message}`);
-            let avatar = this.avatars[name.toLowerCase()];
-    
-            if (location) {
-                avatar.location = location;
-            }
-            await this.sendAsAvatar(avatar, message);
+
+    async processAction(action) {
+        console.log('🎮 Processing action... ');
+        try {
+            await this.sendAsAvatar(this.avatars[action.from], action.message);
+        } catch (error) {
+            console.error('🎮 ❌ Error processing action:', error);
+            console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
         }
     }
 
