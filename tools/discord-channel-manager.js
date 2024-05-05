@@ -82,7 +82,7 @@ class ChannelManager {
     }
 
     async getThreads() {
-        return Object.keys(this.threads);
+        return Object.keys(this.thread_id);
     }
 
     getThreadId(thread) {
