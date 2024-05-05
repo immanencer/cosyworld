@@ -1,4 +1,8 @@
 class AIService {
+    constructor(config) {
+        
+        this.config = config;
+    }
     updateConfig(config) {
         this.config = { ...this.config, ...config };
     }
