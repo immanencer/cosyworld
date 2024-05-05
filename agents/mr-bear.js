@@ -1,7 +1,7 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 import fs from 'fs/promises';  // Using the promises API for async operations
 
-const bear = new DiscordAIBot('mr bear');
+const bear = new DiscordAIBot('kierkegaard');
 const dataPath = './.state/mr-bear/foodCountData.json';  // Path to the data file
 
 // Define a set of food emojis that the bear likes
@@ -66,7 +66,7 @@ function determineHungerLevel(foodDataArray) {
     const iqr = q3 - q1; // Interquartile range
 
     // Assessing hunger level
-    if (totalFoodItems < 10) return "Desperate for more food";
+    if (totalFoodItems < 20) return "Desperate for more food";
     if (iqr < 5 && median < 20) return "Needs more diverse food";
     if (uniqueFoodTypes < 5) return "Diet lacks variety";
     if (totalFoodItems > 100) return "Well-fed but check for too much of the same type";
@@ -107,7 +107,7 @@ bear.process_message = async (message) => {
 
     bear.sendMessage({
         role: 'assistant',
-        content: `I smell my prey: ${message.content}`,
+        content: `I smell my prey: ${author}. I must hunt them down.`,
     })
   }
 

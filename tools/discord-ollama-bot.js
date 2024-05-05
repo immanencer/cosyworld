@@ -1,7 +1,7 @@
 import { soulseek } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from './ai-services.js';
 import SoulManager from './soul-manager.js';
 
 class DiscordOllamaBot extends DiscordBot {
@@ -20,7 +20,7 @@ class DiscordOllamaBot extends DiscordBot {
 
     async initialize() {
         await this.aiServiceManager.useService('ollama');
-        await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt });
+        this.soul.model = (await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt })).substring(0, 8);
         console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 

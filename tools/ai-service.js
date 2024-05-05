@@ -5,6 +5,7 @@ class AIService {
     }
     updateConfig(config) {
         this.config = { ...this.config, ...config };
+        this.model = this.config.model;
     }
     handleStream(prompt) {
         throw new Error('handleStream method must be implemented');

@@ -1,4 +1,4 @@
-import c from '../configuration.js';
+import c from '../tools/configuration.js';
 const config = c('censorship');
 
 export function replaceContent(content) {

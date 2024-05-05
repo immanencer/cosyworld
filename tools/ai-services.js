@@ -45,7 +45,7 @@ class AIServiceManager {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
-        await this.currentService.updateConfig(config);
+        return await this.currentService.updateConfig(config);
     }
 
     async useService(serviceName) {

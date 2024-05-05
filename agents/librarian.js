@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from '../tools/ai-services.js';
 
 import { soulseek } from './souls.js';
 import { replaceContent } from "../tools/censorship.js";

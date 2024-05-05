@@ -2,8 +2,9 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import ChannelManager from './discord-channel-manager.js';
 
-import c from '../configuration.js';
+import c from '../tools/configuration.js';
 const configuration = c('discord-bot');
+
 import { chunkText } from './chunk-text.js';
 import { soulseek } from '../agents/souls.js';
 
@@ -345,7 +346,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: soul.name + ' ' + (soul.emoji || ''),
+                    username: soul.name + ' ' + (soul.emoji || '' +  (soul.model || '')),
                     avatarURL: soul.avatar
                 };
                 if (location.thread) {

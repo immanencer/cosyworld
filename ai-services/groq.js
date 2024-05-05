@@ -1,5 +1,5 @@
 import { Groq } from 'groq-sdk';
-import c from "../configuration.js";
+import c from "../tools/configuration.js";
 const configuration = c('groq', {
     apiKey: "YOUR_API_KEY",
 });

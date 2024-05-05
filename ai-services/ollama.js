@@ -1,6 +1,6 @@
 import ollama from 'ollama';
 
-import AIService from '../ai-service.js';
+import AIService from '../tools/ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
 import { replaceContent } from '../tools/censorship.js';
@@ -20,6 +20,7 @@ SYSTEM "${config.system_prompt || 'you are an alien intelligence from the future
         this.model = generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
         await ollama.create({ model: this.model, modelfile, options: { num_ctx: 2048 * 2 }});
+        return this.model;
     }
 
     messages = [];
