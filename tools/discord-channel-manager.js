@@ -78,12 +78,17 @@ class ChannelManager {
         return this.threads[thread] || null;
     }
 
+    getChannelForThread(thread) {
+        return this.channel_for_thread[thread] || null;
+    }
+
     
     // Location management
     async getLocation(location) {
-        const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
+        const channel = this.getChannelId(this.getChannelForThread(location) || location);
         const thread = this.threads[location];
         if (!channel) {
+            console.error('🎮 ❌ Invalid location ' + location);
             return null;
         }
         return { channel, thread };

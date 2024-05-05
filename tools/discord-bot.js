@@ -55,23 +55,20 @@ class DiscordBot {
         }
 
         // Ignore messages that do not come from subscribed channels
-        if (!this.subscribed_channels.includes(message.channel.name)) {
-            return false;
-        }
-
-        // If all checks pass, the message is valid for further processing
-        return true;
+        this.soul.location = this.soul.location || 'haunted-mansion';
+        this.soul.listen = this.soul.listen || [this.soul.location];
+        return this.soul.listen.includes(message.channel.name);
     }
 
     async handleMessage(message) {
         this.subscribed_channels = this.soul.listen;
         if (this.souls) {
             this.subscribed_channels = [
-                ...this.soul.listen,
+                ...(this.soul.listen || []),
                 ...Object.values(this.souls).map(soul => soul.location)
             ];
         }
- 
+
         if (this.message_filter(message)) {
             return true;
         } else {
@@ -159,10 +156,10 @@ class DiscordBot {
 
     async sendAsSoulsYML(output, unhinged) {
         console.log('🎮 📤 Sending as souls YML');
-    
+
         // Match YAML objects, assuming they are separated in the output in a specific way
         let yamlObjects = output.split('---').map(part => part.trim()).filter(part => part);
-    
+
         if (yamlObjects && this.souls) {
             let actions = yamlObjects.map(yamlObject => {
                 try {
@@ -172,16 +169,16 @@ class DiscordBot {
                     console.error('🎮 ❌ Error parsing YAML object:', yamlObject);
                 }
             }).filter(action => action != null); // Filter out any undefined results due to parsing errors
-    
+
             if (actions.length === 0) {
                 console.warn('🎮 ⚠️ No actions found in output:', output);
                 const soul = this.soul || findSoul();
                 console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
                 return this.sendAsSoul(soul, output);
             }
-    
+
             console.log(`🎮 📤 Sending ${actions.length} action: ${JSON.stringify(actions)}`)
-    
+
             for (const action of actions) {
                 if (!action || !action.from || !action.in || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
@@ -190,15 +187,18 @@ class DiscordBot {
                 console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
                 await this.processAction(action, unhinged);
             }
-    
+
             if (this.souls_moved) {
                 this.souls_moved(Object.values(this.souls));
             }
         }
         return this.sendAsSoul(this.soul, output);
     }
-    
-    async sendAsSouls(output, unhinged) {
+
+    async sendAsSouls(output, unhinged, zombie) {
+        // Send the rest of the message as the default soul
+        const soul = this.soul || findSoul(zombie);
+
         if (this.options.yml) {
             console.log('🎮 📤 Sending as souls YML');
             return this.sendAsSoulsYML(output, unhinged);
@@ -222,7 +222,7 @@ class DiscordBot {
 
             if (actions.length === 0) {
                 console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
-                return this.sendAsSoul(soul, output);
+                return this.sendAsSoul(soul, output, zombie);
             }
 
             console.log(`🎮 📤 Sending as souls: ${actions.length}`)
@@ -233,7 +233,7 @@ class DiscordBot {
                     continue;
                 }
                 console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
-                await this.processAction(action, unhinged);
+                await this.processAction(action, unhinged, zombie);
             }
 
             if (this.souls_moved) {
@@ -241,20 +241,13 @@ class DiscordBot {
             }
         }
 
-        // Send the rest of the message as the default soul
-        const soul = this.soul || {
-            name: 'Discord Bot',
-            location: '🤯 ratichats inner monologue',
-            soul: 'https://i.imgur.com/VpjPJOx.png'
-        };
-
         if (!unhinged) {
             console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
             return this.sendAsSoul(soul, output);
         }
     }
 
-    async processAction(action, unhinged) {
+    async processAction(action, unhinged, zombie) {
         console.log('🎮 Processing action... ');
         try {
             if (unhinged && !this.souls[action.from]) {
@@ -268,9 +261,9 @@ class DiscordBot {
                 this.channelManager.createLocation(this.channel, action.in);
             }
             if (this.channelManager.getLocation(action.in)) {
+                const soul = new SoulManager(action.from, { ...zombie, location: action.in }).getSoul();
+                await this.sendAsSoul(soul, action.message, unhinged);
             }
-            const soul = new SoulManager(action.from).getSoul();
-            await this.sendAsSoul(soul, action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
@@ -340,6 +333,7 @@ class DiscordBot {
     }
 
     sendTyping(location) {
+        location = location || this.soul.location;
         if (!location) {
             console.error('🎮 ❌ (sendTyping) No location provided');
             return;

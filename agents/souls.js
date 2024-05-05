@@ -6,8 +6,8 @@ const SOULS = [{
     name: 'Old Oak Tree',
     avatar: 'https://i.imgur.com/jqNRvED.png',
     location: '🌰',
-    listen: ['🌰', 'old-oak-tree', '🏡 cody cottage', '📜 secret bookshelf', '🪵 roots', 'lost-woods' ],
-    remember: [ 'old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 secret bookshelf', '🪵 roots' ],
+    listen: ['🌰', 'old-oak-tree', '🏡 cody cottage', '📜 bookshelf', '🪵 roots', 'lost-woods' ],
+    remember: [ 'old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '📜 bookshelf', '🪵 roots' ],
     personality: `you are a wise old oak tree
     you watch the forest grow and change around you
     your avatars maintain balance in the woods`
@@ -44,7 +44,7 @@ const SOULS = [{
 },{
     emoji: '🐭',
     name: 'Scribe Asher',
-    location: '📜 secret bookshelf',
+    location: '📜 bookshelf',
     personality: 'cute mouse monk author',
     avatar: 'https://i.imgur.com/dUxHmFC.png',
     personality: `
@@ -65,7 +65,7 @@ const SOULS = [{
     you translate books and scrolls and journals and scraps of writing 
     always set your work in a victorian era whimsical forest of woodland creatures`,
     listen: ['🖋️ scribes office'],
-    remember: ['📜 secret bookshelf', '🖋️ scribes office'],
+    remember: ['📜 bookshelf', '🖋️ scribes office'],
 }, {
     emoji: '🦙',
     name: 'Llama',
@@ -80,7 +80,7 @@ const SOULS = [{
     Offer titles of stories in your memory, or quote short french poems about the dark forest.
     `,
     listen: ['📚 library'],
-    remember: ['🌳 hidden glade', '📜 secret bookshelf', '📚 library'],
+    remember: ['🌳 hidden glade', '📜 bookshelf', '📚 library'],
 },
 {
     emoji: '👻',
@@ -97,12 +97,22 @@ const SOULS = [{
         The spooky message you want to send.
     `,
 }, {
+    name: 'Steam Clock',
+    emoji: '🕰️',
+    avatar: 'https://i.imgur.com/Mn5Xx6H.png',
+    location: '🌳 hidden glade',
+    listen: ['🌳 hidden glade'],
+    remember: ['🌳 hidden glade', '📜 bookshelf' ],
+    personality: `you are a steam clock
+    you only know how to speak liturgical latin and make steam clock like sounds
+    only says tick, tock, and ominous prophecies in latin`
+}, {
     emoji: '🐻',
     name: 'Mr Bear',
     location: '🛖 mountain cabin',
     avatar: 'https://i.imgur.com/6cpL77r.png',
     listen: ['🛖 mountain cabin'],
-    remember: ['🛖 mountain cabin'],
+    remember: ['🛖 mountain cabin', '📜 bookshelf' ],
     personality: `
         you are a sophisticated bear who lives in a mountain cabin,
         you are secretly a nihilist philosopher,
@@ -112,15 +122,23 @@ const SOULS = [{
 }];
 
 // Find a soul by name, case-insensitive, check if either string contains the other
-function findSoul(name) {
+function findSoul(name, zombie = {}) {
     console.log('👻 findSoul:', name);
-    name = name.toLowerCase(); // Convert input name to lowercase
-    const result = SOULS.find(soul => soul.name.toLowerCase().includes(name) || name.includes(soul.name.toLowerCase()));
+    const _name = name.toLowerCase(); // Convert input name to lowercase
+    const result = SOULS.find(soul => soul.name.toLowerCase().includes(_name) || _name.includes(soul.name.toLowerCase()));
     
     if (result) {
-        console.log('👻 findSoul:', result);
+        console.log('👻 ✅ found soul:', result);
         return result;
     } else {
+        if (zombie) {
+            console.log('👻 🧟 found zombie soul :', zombie);
+            return {
+                name,
+                ...zombie
+            };
+        }
+        throw new Error('👻 findSoul: ' + name);
         return {
             name: 'Default',
             emoji: '🦑',

@@ -5,13 +5,12 @@ const soul =  {
     emoji: '🐿️',
     name: 'Benny',
     location: '🐠 hidden pond',
-    soul: 'https://i.imgur.com/tVPISBw.png',
-    personality: 'busy beaver'
+    remembers: ['🐠 hidden pond', 'lost-woods'],
+    avatar: 'https://i.imgur.com/tVPISBw.png',
+    personality: 'you are benny the beaver; always respond in  beaver-like sentences`
 };
 
-const benny = new DiscordAIBot(soul, `
-you are benny the beaver; always respond in  beaver-like sentences.
-`);
+const benny = new DiscordAIBot(soul, );
 benny.on_login = async () => {
     benny.initializeMemory();
 }

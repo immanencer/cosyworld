@@ -72,7 +72,10 @@ async function sendCreeperMessage() {
     ghost.souls = {};
     ghost.channel = 'haunted-mansion';
     ghost.options.yml = false;
-    ghost.sendAsSouls(response, true);
+    ghost.sendAsSouls(response, true, {
+        emoji: '👻',
+        avatar: 'https://i.imgur.com/t3n4ING.png',
+    });
     ghost.options.yml = true;
     mansion_rooms.forEach(room => ghost.subscribe(room));
 
@@ -85,6 +88,7 @@ ghost.on_login = async () => {
 
 
     const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    ghost.soul.listen = ['haunted-mansion', ...mansion_rooms];
     ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
         instructions: `
     👻 Fils destin yo, chè espri

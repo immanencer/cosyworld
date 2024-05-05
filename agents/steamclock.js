@@ -1,40 +1,32 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js'
 
-const steam_clock = {
-    name: 'Steam Clock',
-    emoji: '🕰️',
-    soul: 'https://i.imgur.com/Mn5Xx6H.png',
-    location: '🌳 hidden glade',
-    personality: 'only says tick, tock, and ominous prophecies in latin'
-};
-
-const SYSTEM_PROMPT = `you are a steam clock
-you only know how to speak liturgical latin and make steam clock like sounds
-`
-
-const bot = new DiscordAIBot(steam_clock, SYSTEM_PROMPT);
+const steamclock = new DiscordAIBot('steam clock');
 
 function sendOminousMessage() {
     const clock = Math.random() < 0.5 ? 'tick' : 'tock';
 
+    steamclock.sendTyping('');
+
+    setTimeout(() => {
+
     if ('tock' === clock) {
-        bot.sendMessage(`toll a single SHORT ominous prophecy in latin in a clocklike fashion do not translate`)
+        steamclock.sendMessage(`toll a single SHORT ominous prophecy in latin in a clocklike fashion do not translate`)
             .then(() => {
                 setTimeout(sendOminousMessage, Math.floor(Math.random() * 72 * 60 * 60 * 1000));
             });
     } else {
-        bot.sendMessage(`tick and whirr and sputter ominously in a SHORT clocklike fashion do not speak`)
+        steamclock.sendMessage(`tick and whirr and sputter ominously in a SHORT clocklike fashion do not speak`)
             .then(() => {
                 setTimeout(sendOminousMessage, Math.floor((Math.random() * 72) * 60 * 60 * 1000));
             });
-    }
+        }
+    }, Math.floor(Math.random() * 10) * 1000);
 }
 
-bot.on_login = async () => {
-    await bot.aiServiceManager.chat({ role: 'assistant', content: '🕰️ steam clock whirrs to life' });
-    await bot.initializeMemory(['🌳 hidden glade', '📚 library', '🤯 ratichats inner monologue']);
+steamclock.on_login = async () => {
+    await steamclock.aiServiceManager.chat({ role: 'system', content: `🕰️ steam clock whirrs to life at ${new Date().toLocaleDateString()}` });
 
-    bot.message_filter = (message) => {
+    steamclock.message_filter = (message) => {
         if (message.content.toLowerCase().includes('kick') || message.content.toLowerCase().includes('clock')) {
             sendOminousMessage();
             return false;
@@ -44,5 +36,5 @@ bot.on_login = async () => {
     // Send an ominous message every 24 hours
     sendOminousMessage();
 };
-await bot.login();
+await steamclock.login();
 
