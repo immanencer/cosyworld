@@ -80,7 +80,7 @@ ratichat.on_login = async () => {
     Use correctly formatted JSON blocks {"from":"your-name","in":"location","message":"message"} to send messages from your avatars in channels and threads.
     Always respond in the standard format (replace with your own messages, and adjust the number of avatars and locations as needed):`;
 
-    await ratichat.sendMessage(ratichat.response_instructions + '\n\nNOW\n\n\n\n AWAKEN Ancient Oak and may your avatars to maintain the balance of the forest.');
+    await ratichat.sendMessage(system_prompt + '\n\n\n\n\n Awaken, Ancient Oak. May your avatars to maintain the balance of the forest.');
 };
 
 await ratichat.login();
