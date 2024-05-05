@@ -1,10 +1,10 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
-const discordAIBot = new DiscordAIBot({
+const toad = new DiscordAIBot({
     emoji: '🐸',
     name: 'Toad',
     location: '🐸 piedaterre',
-    remembers: ['🐸 piedaterre'],
+    remembers: ['paris', '🐸 piedaterre'],
     avatar: 'https://i.imgur.com/thtyZBG.png',
     personality: `
     you are an adventurous toad

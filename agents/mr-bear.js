@@ -25,19 +25,56 @@ async function loadFoodData() {
     try {
         const data = await fs.readFile(dataPath, 'utf8');
         bear.foodCount = new Map(JSON.parse(data));
+        // Reduce all food counts by 20% to simulate decay
+        for (const [key, value] of bear.foodCount.entries()) {
+            bear.foodCount.set(key, Math.floor(value * 0.888));
+        }
+        saveFoodData();  // Save the data back to the filesystem to update the decayed values
     } catch (error) {
         console.log('Failed to read food data from file, starting fresh:', error);
     }
+    return bear.foodCount;
+}
+
+// Determine hunger level based on food data
+function determineHungerLevel(foodDataArray) {
+
+    // Create a Map to hold the counts of each emoji
+    const emojiFoodCount = new Map();
+
+    // Iterate over each item in the array
+    for (const [key, count] of foodDataArray) {
+        // Extract the emoji from the key (last character of the string)
+        const emoji = key.slice(-2); // Using -2 in case of surrogate pairs (for complete Unicode characters)
+
+        // Get the current count for this emoji, or initialize to 0 if it doesn't exist yet
+        const currentCount = emojiFoodCount.get(emoji) || 0;
+
+        // Add the count from the current item to the total count in the Map
+        emojiFoodCount.set(emoji, currentCount + count);
+    }
+
+    const counts = Array.from(emojiFoodCount.values());
+    const totalFoodItems = counts.reduce((acc, count) => acc + count, 0);
+    const uniqueFoodTypes = emojiFoodCount.size;
+
+    // Calculate median and interquartile range
+    counts.sort((a, b) => a - b);
+    const median = counts[Math.floor(counts.length / 2)];
+    const q1 = counts[Math.floor(counts.length / 4)];
+    const q3 = counts[Math.floor(3 * counts.length / 4)];
+    const iqr = q3 - q1; // Interquartile range
+
+    // Assessing hunger level
+    if (totalFoodItems < 10) return "Desperate for more food";
+    if (iqr < 5 && median < 20) return "Needs more diverse food";
+    if (uniqueFoodTypes < 5) return "Diet lacks variety";
+    if (totalFoodItems > 100) return "Well-fed but check for too much of the same type";
+    return "Balanced and healthy";
 }
 
 // Save the food count data to the filesystem
 async function saveFoodData() {
-
-    // reduce all food counts by 20%
-    for (const [key, value] of bear.foodCount.entries()) {
-        bear.foodCount.set(key, Math.ceil(value * 0.8));
-    }
-
     try {
         // create the path if it doesn't exist
         await fs.mkdir(dataPath.split('/').slice(0, -1).join('/'), { recursive: true });
@@ -57,16 +94,24 @@ bear.onLogin = async () => {
 };
 
 bear.process_message = async (message) => {
-    await loadFoodData(); // Load the food count data when processing a message
+    console.log('Processing message:', message.content); // Log the incoming message for debugging
+
+    const foodCount = await loadFoodData(); // Ensure food data is loaded before processing
     const content = message.content;
     const authorId = message.author.displayName || message.author.username || message.author.id;
 
     let foodGiven = false;
     let foodCounts = [];
 
-    // Process each character and update the count if it's a food emoji
     for (const char of content) {
         if (foodEmojis.has(char)) {
+            // ignore if it is common food emoji
+            if (bear.mostCommonFoods?.has && bear.mostCommonFoods.has(char)) {
+                console.warn(`🐻 Ignoring common food emoji: ${char}`);
+                continue;
+            }
+
+            console.log(`Found food emoji: ${char}`); // Log found food emojis
             let foodReceived = bear.foodCount.get(`${authorId}#${char}`) || 0;
             bear.foodCount.set(`${authorId}#${char}`, ++foodReceived);
             foodCounts.push({ char, count: foodReceived });
@@ -75,24 +120,22 @@ bear.process_message = async (message) => {
     }
 
     if (foodGiven) {
-        await saveFoodData();  // Save data whenever it is updated
+        console.log('Food given, saving data.');
+        await saveFoodData(); // Save data whenever it is updated
     }
 
-    // Sort the food counts in ascending order of count
-    foodCounts.sort((a, b) => a.count - b.count);
+    // Sort food counts by count in descending order and take the top half
+    foodCounts.sort((a, b) => b.count - a.count);
+    bear.mostCommonFoods = foodCounts.slice(0, Math.ceil(foodCounts.length / 2));
 
-    // Select the bottom half of the food items, based on frequency
-    let bottomHalfFoodCounts = foodCounts.slice(0, Math.ceil(foodCounts.length / 2));
-
-    // Construct a response detailing which food items were less frequent
+    // Construct a response detailing Mr. Bear's hunger and the most common food items
     bear.response_instructions = `
-        🐻 Mr. Bear has received ${foodGiven ? 'food' : 'no food'}.
+        You have received ${foodGiven ? 'food' : 'no food'}.
         
-        Here is a summary of the food Mr. Bear has received from each user:
-        ${Array.from(bear.foodCount.entries()).map(([key, value]) => `${key.split('#')[0]}: ${value}`).join('\n')}
-
-        You are particularly interested in these less common food items: ${bottomHalfFoodCounts.map(item => `${item.char}`).join(' ')}
-        Do not mention these numbers directly.
+        
+        You feel ${determineHungerLevel(foodCount)}, do not mention this directly.
+        If you are hungry you become more bestial and cunning.
+        If you are full you become increasingly sophisticated and philosophical.
     `;
 
     console.log(bear.response_instructions);
