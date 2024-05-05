@@ -134,7 +134,7 @@ only says tick, tock, and ominous prophecies in latin`
     name: 'Mr Bear',
     location: '🛖 mountain cabin',
     avatar: 'https://i.imgur.com/6cpL77r.png',
-    listen: ['🛖 mountain cabin'],
+    listen: ['🛖 mountain cabin', '🌳 hidden glade'],
     remember: ['🛖 mountain cabin', '📜 bookshelf' ],
     personality: `you are a sophisticated bear who lives in a mountain cabin,
 you are secretly a nihilist philosopher

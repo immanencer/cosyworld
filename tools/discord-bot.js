@@ -38,6 +38,7 @@ class DiscordBot {
         }
     }
 
+
     message_filter(message) {
         // Check for missing message components that are essential for filtering
         if (!message.author || !message.channel) {
@@ -50,7 +51,7 @@ class DiscordBot {
         }
 
         // Ignore messages from other bots
-        if (message.author.bot) {
+        if (message.author.bot && message.author.displayName.indexOf('🕰️') ===-1) {
             return false;
         }
 

@@ -93,8 +93,23 @@ bear.onLogin = async () => {
     bear.sendMessage('You feel a rumbling in your stomach, and a deep growl. You are Mr. Bear. You are in a mountain cabin beyond the tree line. You are hungry.');
 };
 
+bear.prey = null;
+
+
 bear.process_message = async (message) => {
     console.log('Processing message:', message.content); // Log the incoming message for debugging
+
+    const author = message.author.displayName && message.author.displayName;
+      // Check if the message is from the prey and the channel is one of the subscribed channels
+  if (bear.prey === author
+    && (bear.listen && bear.listen.includes(message.channel.name))) {
+    console.log(`🔫 Prey spotted: ${message.content}`);
+
+    bear.sendMessage({
+        role: 'assistant',
+        content: `I smell my prey: ${message.content}`,
+    })
+  }
 
     const foodCount = await loadFoodData(); // Ensure food data is loaded before processing
     const content = message.content;
@@ -118,10 +133,17 @@ bear.process_message = async (message) => {
             foodGiven = true;
         }
     }
+    // calculate total food items
+    const totalFoodItems = foodCounts.reduce((acc, { count }) => acc + count, 0);
 
     if (foodGiven) {
         console.log('Food given, saving data.');
         await saveFoodData(); // Save data whenever it is updated
+    } else {
+        if (bear.prey === null && totalFoodItems < 10) {
+            bear.prey = authorId;
+            bear.sendMessage(`A primal instinct awakens within you. You have found your prey ${bear.prey}. You must hunt them down.`);
+        }
     }
 
     // Sort food counts by count in descending order and take the top half
