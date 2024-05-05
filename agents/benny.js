@@ -1,19 +1,14 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 
-const avatar =  {
+const soul =  {
     emoji: '🐿️',
     name: 'Benny',
     location: '🐠 hidden pond',
+    remembers: ['🐠 hidden pond'],
     avatar: 'https://i.imgur.com/tVPISBw.png',
-    personality: 'busy beaver'
+    personality: `you are benny the beaver; always respond in  beaver-like sentences`
 };
 
-const benny = new DiscordAIBot(avatar, `
-you are benny the beaver; always respond in  beaver-like sentences.
-`);
-benny.on_login = async () => {
-    benny.initializeMemory();
-}
-benny.subscribe(avatar.location);
+const benny = new DiscordAIBot(soul);
 await benny.login();

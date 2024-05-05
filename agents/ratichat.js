@@ -1,97 +1,56 @@
 
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import { findSoul } from './souls.js';
 
-const avatar_list = [{
-        emoji: '🌳',
-        name: 'Old Oak Tree',
-        avatar: 'https://i.imgur.com/jqNRvED.png',
-        location: '🤯 ratichats inner monologue',
-        personality: 'wise and ancient silent guardian of the forest does not speak'
-    },{
-        emoji: '🐭',
-        name: 'Rati',
-        location: '🏡 cody cottage',
-        avatar: 'https://i.imgur.com/b2WMGfD.png',
-        personality: 'wise and domestic rat'
-    }, {
-        emoji: '🐺',
-        name: 'Skull',
-        location: 'lost-woods',
-        avatar: 'https://i.imgur.com/OxroRtv.png',
-        personality: 'silent wolf only uses wolf-like *actions*'
-    }, {
-        emoji: '🍃',
-        name: 'WhiskerWind',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/7NL6Zbn.png',
-        personality: 'whimsical sprite only uses *emojis* '
-    }, {
-        emoji: '🌙',
-        name: 'Luna',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/nmlYIvq.png',
-        personality: 'mysterious nonverbal beautiful rabbit'
-    }, {
-        emoji: '🦊',
-        name: 'Sammy',
-        location: 'old-oak-tree',
-        avatar: 'https://i.imgur.com/1yQHOtR.png',
-        personality: 'nervous squirrel with a dark side'
-    }];
+const soul_list = ['rati', 'skull', 'whiskerwind', 'luna', 'sammy'].map(findSoul);
 
-const avatars = {};
-for (const avatar of avatar_list) {
-    avatars[avatar.name + ' ' + avatar.emoji] = avatar;
+const souls = {};
+for (const soul of soul_list) {
+    souls[soul.name + ' ' + soul.emoji] = soul;
 }
 
-const SYSTEM_PROMPT = `you are a wise old oak tree
-you watch the forest grow and change around you
-your avatars maintain balance in the woods`;
+const ratichat = new DiscordAIBot(findSoul('old oak tree'));
 
-const ratichat = new DiscordAIBot({
-    emoji: '🌳',
-    name: '"Old Oak Tree',
-    location: '🤯 ratichats inner monologue',
-    avatar: 'https://i.imgur.com/jqNRvED.png',
-    personality: 'wise and ancient silent guardian of the forest'
-}, SYSTEM_PROMPT);
+ratichat.souls = souls;
+ratichat.options.yml = true;
+console.log(JSON.stringify(ratichat.souls, null, 2));
 
-ratichat.avatars = avatars;
 ratichat.on_login = async function() {
-    ratichat.response_instructions = `
+    ratichat.aiServiceManager.chat({role: 'system', content: `
     The sands of time report ${Date.now()}
 
     Summarize the state of the world and your feelings as the old oak tree
     
     Here is a list of the avatars you control and their locations and personalities:
 
-    ${Object.keys(avatars).map(avatar => `${avatar} (${avatars[avatar].location}): ${(avatars[avatar].personality || '')}`).join('\n')}
+    ${Object.keys(souls).map(soul => `${soul} (${souls[soul].location}): ${(souls[soul].personality || '')}`).join('\n')}
 
     valid locations include
     
-    old-oak-tree
-    🏡 cody cottage
-    🦡 badger burrow
-    🦝 quants treehouse
-    🪵 roots
-    lost-woods
-    🐠 hidden pond
-    🌿 herb garden
-    🦊 fox hole one
-    paris
-    🐸 piedaterre
-    📚 library
+    ${ratichat.channelManager.getChannelMapPrompt()}
 
-    Send a message in the format of the character actions and location to respond as that character in a specific location
-    use the avatars to keep the balance of the forest
-    you can move the avatars to different locations by including the (location) in the message
-    avatars should respond in a logical location
-    always respond with at least one and no more than three avatars
+    Send a message in YAML format to any of the souls to hear the forests whispers
+    use the souls to keep the balance of the forest
+    you can move the souls to different locations by including the (location) in the message
+    souls should respond in a logical location
 
-    Always Place Avatar Actions LAST
-    Never send a blank avatar message
+    start by performing and inner monologue as the old oak tree in 🌰 
+        summarizing your feelings and the state of the world
+    then move on to responding as the other souls in logical locations in YAML format
+    you can only hear the whispers of the forest in the locations your souls are in
 
-    ### Inner Monologue Of The Old Oak Tree
+    ONLY provide information that the soul would know
+    Do not provide any additional commentary, explanations, or context.
+
+    ALWAYS RESPOND IN THE YAML FORMAT SHOWN BELOW
+    ALWAYS RESPOND AS TWO OR MORE SOULS IN A SINGLE MESSAGE
+    YAML Objects are Separated by ---
+
+    Example Response (YAML Format):
+    ---
+    from: Old Oak Tree
+    in: 🌰
+    message:
 
     The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
     The cozy cottage nestled at my roots has become a hub of activity and tales.
@@ -101,27 +60,26 @@ ratichat.on_login = async function() {
         the quiet contemplation of the moonlit clearings.
 
     Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
+    ---
+    from:Rati 🐭
+    in:🏡 cody cottage
+    message:
+    *weaves a scarf* 🧣
 
-    ### Avatar Actions
-        {"from":"Old Oak Tree 🌳","in":"🌿 herb garden","message":"*rumbles gently*"}
-        {"from":"Rati 🐭","in":"🌿 herb garden","message":"Every stich is a story."}
-        {"from":"Skull 🐺","in":"lost-woods","message":"*prowls wolfishly*"}
-        {"from":"WhiskerWind","in":"🌿 herb garden","message":"🌼💚"}
-        `;
-    await ratichat.initializeMemory(['old-oak-tree', '🏡 cody cottage', '🤯 ratichats inner monologue', '📚 library', '🪵 roots' ]);
+    Everyone needs a little warmth in their lives. 🌟
+    ---
+    from:Skull 🐺
+    in:lost-woods
+    message:
+    *prowls wolfishly*
+    ---
+    from:WhiskerWind
+    in:🌿 herb garden
+    message:
+    🌼💚
+    ---`});
+
+    await ratichat.sendMessage('Awaken from your slumber, old oak tree. The forest is calling. Use your avatars to maintain balance. 🌳' + ratichat.response_instructions);
 }
-
-
-ratichat.subscribe('old-oak-tree');
-ratichat.subscribe('🤯 ratichats inner monologue');
-ratichat.subscribe('🏡 cody cottage');
-ratichat.subscribe('🪵 roots');
-ratichat.subscribe('🌳 hidden glade');
-ratichat.subscribe('🐠 hidden pond');
-ratichat.subscribe('lost-woods');
-
-
-ratichat.subscribe('🦝 quants treehouse');
-ratichat.subscribe('🦊 fox hole one');
 
 await ratichat.login();

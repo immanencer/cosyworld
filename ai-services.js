@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { type } from 'os';
 import path from 'path';
 
 const ROOT_PATH = path.resolve('.');
@@ -20,7 +21,7 @@ class AIServiceManager {
 
         for (const file of files) {
             const serviceName = file.replace('.js', '');
-            console.debug(`Initializing service '${serviceName}'`);
+            console.log(`🤖 Initializing service '${serviceName}'`);
             try {
                 await this.loadService(serviceName, servicesPath, file);
             } catch (error) {
@@ -62,7 +63,38 @@ class AIServiceManager {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
+        if (!message || !message.content || !message.role) {
+            throw new Error('No message content provided: ' + JSON.stringify(message, null, 2));
+        }
         return this.currentService.chat(message);
+    }
+
+
+    async chatSync(input) {
+        let output = '';
+        if (typeof input === 'string') {
+            input = { role: "user", content: input }
+        }
+        if (!input || !input.content || !input.role) {
+            throw new Error('No message content provided: ' + JSON.stringify(input));
+        }
+        // Loop through the messages received from the chat function
+        for await (const event of await this.chat(input)) {
+            if (!event) {
+                // If no message is received, log a warning and continue
+                console.warn('🪹 No event received');
+                continue;
+            }
+            if  (!event.message.content) {
+                continue;
+            }
+            // Print the message content to the console
+            //process.stdout.write(event.message.content);
+            // Add the message content to the output
+            output += event.message.content;
+
+        }
+        return output;
     }
 
     async complete(prompt) {

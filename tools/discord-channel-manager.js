@@ -59,7 +59,11 @@ class ChannelManager {
 
     // Channel and thread management
     async getChannels() {
-        return Object.keys(this.channels);
+        return Object.keys(this.channels).filter(channel => {
+            if (channel.indexOf('🚧') === 0) return false;
+            if (channel.indexOf('🥩') === 0) return false;
+            return true;
+        });
     }
     
     getChannelId(channel) {
@@ -74,12 +78,17 @@ class ChannelManager {
         return this.threads[thread] || null;
     }
 
+    getChannelForThread(thread) {
+        return this.channel_for_thread[thread] || null;
+    }
+
     
     // Location management
     async getLocation(location) {
-        const channel = this.getChannelId(location) || this.getChannelId(this.channel_for_thread[location]);
+        const channel = this.getChannelId(this.getChannelForThread(location) || location);
         const thread = this.threads[location];
         if (!channel) {
+            console.error('🎮 ❌ Invalid location ' + location);
             return null;
         }
         return { channel, thread };
@@ -120,7 +129,10 @@ class ChannelManager {
     async getChannelHistory(channel_name) {
         const messages = [];
         const channel_id = this.getChannelId(channel_name);
-        console.log('🎮 Getting history for ' + channel_name);
+        if (!channel_id) {
+            throw new Error('🎮 ❌ Invalid channel name ' + channel_name);
+        }
+        console.log('🎮 Getting channel history for ' + channel_name);
         const channel = await this.client.channels.fetch(channel_id);
         const history = await channel.messages.fetch({ limit: 100 });
         for (const message of history) {
@@ -132,7 +144,7 @@ class ChannelManager {
     async getChannelThreads(channel_name) {
         console.log('🎮 Getting threads for ' + channel_name);
         const threads = [];
-        const channel_id = this.channels[channel_name];
+        const channel_id = this.getChannelId(channel_name);
         const channel = await this.client.channels.fetch(channel_id);
         const thread_list = (await channel.threads.fetch()).threads;
         for (const [id, thread] of thread_list) {
@@ -154,10 +166,57 @@ class ChannelManager {
         return messages.reverse();
     }
 
+    async getChannelOrThreadHistory(location) {
+        console.log('🎮 Getting channel or thread history for ' + location);
+        if (this.threads[location]) {
+            return (await this.getThreadHistory(location)).map(message => [message.id, message]);
+        } else {
+            return this.getChannelHistory(location);
+        }
+    }
+
     async getMessage(message_id) {
         console.log('🎮 Getting message ' + message_id);
         const message = await this.client.messages.fetch(message_id);
         return message;
+    }
+
+    // return all channels and threads in the guild
+    async getChannelMap() {
+        const channel_map = {};
+        for (const channel of await this.getChannels()) {
+            channel_map[channel] = [];
+            const threads = await this.getThreads(channel.name);
+            for (const thread of threads) {
+                channel_map[channel].push(thread);
+            }
+        }
+        return channel_map;
+    }
+
+    // Return all channels and "doors" (threads) in the guild
+    async getChannelMapPrompt() {
+        let prompt = "Here's a map of all the areas and their rooms:\n\n";
+        const channels = await this.getChannels(); // Assuming this method fetches all channels
+
+        for (const channel of channels) {
+            prompt += `${channel}\n`; // Each channel is referred to as a corridor
+            const threads = await this.getChannelThreads(channel); // Assuming getThreads fetches threads by channel ID
+            
+            if (threads.length === 0) {
+                continue; // Skip to the next channel if there are no threads
+            } else {
+                for (const thread of threads) {
+                    if (!typeof thread === 'string') {
+                        console.error('🎮 ⚠️ Invalid thread name:', JSON.stringify(thread, null, 2));
+                        continue; // Skip to the next thread if the thread is not a string
+                    }
+                    prompt += `🚪${thread.name}\n`; // Each thread is referred to as a door
+                }
+            }
+            prompt += "\n"; // Add a newline for better separation between channels
+        }
+        return prompt;
     }
 }
 
