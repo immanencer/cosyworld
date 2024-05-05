@@ -89,6 +89,7 @@ class DiscordBot {
         }
 
         if (this.message_filter(message)) {
+            await this.process_message(message);
             return true;
         } else {
             return false;
