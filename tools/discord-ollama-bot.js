@@ -127,6 +127,8 @@ class DiscordOllamaBot extends DiscordBot {
             role: 'assistant',
             content: `This is what I remember: \n\n    
             ${memory.slice(-200).join('\n')}
+            
+            ${this.response_instructions || ''}
             `
         });
 

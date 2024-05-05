@@ -80,6 +80,14 @@ class DiscordBot {
     }
 
     async handleMessage(message) {
+        this.subscribed_channels = this.soul.listen;
+        if (this.souls) {
+            this.subscribed_channels = [
+                ...this.soul.listen,
+                ...Object.values(this.souls).map(soul => soul.location)
+            ];
+        }
+ 
         if (this.message_filter(message)) {
             return true;
         } else {
@@ -198,7 +206,6 @@ class DiscordBot {
                 console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
                 await this.processAction(action, unhinged);
             }
-
             if (this.souls_moved) {
                 this.souls_moved(Object.values(this.souls));
             }
@@ -251,8 +258,8 @@ class DiscordBot {
                 this.souls_moved(Object.values(this.souls));
             }
 
-            if (this.avatars_moved) {
-                this.avatars_moved(Object.values(this.avatars));
+            if (this.souls_moved) {
+                this.souls_moved(Object.values(this.souls));
             }
         }
 
@@ -265,8 +272,8 @@ class DiscordBot {
     async processAction(action, unhinged) {
         console.log('🎮 Processing action... ');
         try {
-            if (unhinged && !this.avatars[action.from]) {
-                this.avatars[action.from] = {
+            if (unhinged && !this.souls[action.from]) {
+                this.souls[action.from] = {
                     name: action.from,
                     location: action.in,
                     avatar: 'https://i.imgur.com/9ZbYgUf.png'
@@ -277,13 +284,8 @@ class DiscordBot {
             }
             if (this.channelManager.getLocation(action.in)) {
             }
-            const avatarKey = findAvatarKeyByName(this.avatars, action.from);
-            if (avatarKey) {
-                this.avatars[avatarKey].location = action.in;
-            } else {
-                console.error(`Avatar not found for name: ${action.from}`);
-            }
-            await this.sendAsAvatar(this.avatars[avatarKey], action.message, unhinged);
+            const soul = new SoulManager(action.from).getSoul();
+            await this.sendAsSoul(soul, action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
