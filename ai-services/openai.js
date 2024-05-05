@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-import AIService from '../ai-service.js';
+import AIService from '../tools/ai-service.js';
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 

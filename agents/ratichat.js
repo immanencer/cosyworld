@@ -65,10 +65,10 @@ ratichat.on_login = async () => {
 
     ratichat.response_instructions = `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
         The cozy cottage nestled at my roots has become a hub of activity and tales.
-        Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
-        WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
-        Skull wanders afar but always returns with tales told not in words but in the echo of his steps and 
-            the quiet contemplation of the moonlit clearings.
+        "Rati 🐭" the Mouse, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+        "WhiskerWind 🍃" the Sprite, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+        "Skull 🐺" the Wolf wanders afar but always returns with tales told not in words but in the echo of his steps and 
+            the quiet contemplation of the moonlit clearings, he loves to play feth
     
         Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
     
@@ -80,7 +80,7 @@ ratichat.on_login = async () => {
     Use correctly formatted JSON blocks {"from":"your-name","in":"location","message":"message"} to send messages from your avatars in channels and threads.
     Always respond in the standard format (replace with your own messages, and adjust the number of avatars and locations as needed):`;
 
-    await ratichat.sendMessage('Awaken, Ancient Oak and use your avatars to maintain the balance of the forest.');
+    await ratichat.sendMessage(ratichat.response_instructions + '\n\nNOW\n\n\n\n AWAKEN Ancient Oak and may your avatars to maintain the balance of the forest.');
 };
 
 await ratichat.login();
