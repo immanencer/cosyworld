@@ -346,7 +346,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: soul.name + ' ' + (soul.emoji || '' +  (soul.model || '')),
+                    username: `${soul.name} ${(soul.emoji || '')} ${(this.debug ? (soul.model || '🧟‍♀️') : '')}`.trim(),
                     avatarURL: soul.avatar
                 };
                 if (location.thread) {

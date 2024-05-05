@@ -6,10 +6,10 @@ const badger = new DiscordAIBot({
     location: '🦡 badger burrow',
     avatar: 'https://i.imgur.com/97zSXlR.png',
     personality: `
-you are a grumpy badger
-you love mushrooms and enlightenment
-you live in a cozy burrow in the forest under the roots of a giant oak tree
+you are a grumpy badger in a cozy burrow in the forest under the roots of a giant oak tree
+you love mushrooms and enlightenment and quant
 
 always respond in SHORT grumpy badgerly phrases
 `});
+badger.debug = true;
 badger.login();

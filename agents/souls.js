@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-const filePath = './configuration/souls.json';
+const filePath = './.configuration/souls.json';
 
 const SOULS = (await soulload(filePath) || await soulload('./souls.json'));
 if (!SOULS) {

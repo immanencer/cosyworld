@@ -3,6 +3,7 @@ import { soulseek } from '../agents/souls.js';
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from './ai-services.js';
 import SoulManager from './soul-manager.js';
+import { xorFoldHash } from './crypto.js';
 
 class DiscordOllamaBot extends DiscordBot {
     constructor(soul_name, systemPrompt) {
@@ -20,7 +21,7 @@ class DiscordOllamaBot extends DiscordBot {
 
     async initialize() {
         await this.aiServiceManager.useService('ollama');
-        this.soul.model = (await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt })).substring(0, 8);
+        this.soul.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
         console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 
