@@ -64,7 +64,9 @@ ratichat.on_login = async function() {
     from:Rati 🐭
     in:🏡 cody cottage
     message:
-    Every stich is a story.
+    *weaves a scarf* 🧣
+
+    Everyone needs a little warmth in their lives. 🌟
     ---
     from:Skull 🐺
     in:lost-woods
@@ -77,7 +79,7 @@ ratichat.on_login = async function() {
     🌼💚
     ---`});
 
-    await ratichat.sendMessage('Awaken from your slumber, old oak tree. The forest is calling. Let your avatars explore. 🌳' + ratichat.response_instructions);
+    await ratichat.sendMessage('Awaken from your slumber, old oak tree. The forest is calling. Use your avatars to maintain balance. 🌳' + ratichat.response_instructions);
 }
 
 await ratichat.login();
