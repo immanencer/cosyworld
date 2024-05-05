@@ -118,6 +118,21 @@ class DiscordOllamaBot extends DiscordBot {
 
         console.log('🎮 🧠 Memory initialized')
     }
+
+    async initializeMemory(memories, options = { slice: 200, instructions: '' }) {
+        const memory = memories || (await this.loadMemory()) || [];
+
+        // slice the memory to the last 200 messages;
+        await this.aiServiceManager.chat({
+            role: 'assistant',
+            content: `This is what I remember: \n\n    
+            ${memory.slice(-200).join('\n')}
+            `
+        });
+
+
+        console.log('🎮 🧠 Memory initialized')
+    }
 }
 
 export default DiscordOllamaBot;

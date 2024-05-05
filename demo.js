@@ -1,7 +1,6 @@
 import AIServiceManager from './ai-services.js';
 
 const manager = new AIServiceManager();
-
 await manager.useService('groq');
 
 await manager.updateConfig({

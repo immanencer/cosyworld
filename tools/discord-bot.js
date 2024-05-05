@@ -253,13 +253,24 @@ class DiscordBot {
         }
     }
 
-    async processAction(action) {
+    async processAction(action, unhinged) {
         console.log('🎮 Processing action... ');
         try {
+            if (unhinged && !this.avatars[action.from]) {
+                this.avatars[action.from] = {
+                    name: action.from,
+                    location: action.in,
+                    avatar: 'https://i.imgur.com/9ZbYgUf.png'
+                };
+            }
+            if (unhinged && !this.channelManager.getLocation(action.in)) {
+                this.channelManager.createLocation(this.channel, action.in);
+                this.avatars[action.from].location = action.in;
+            }
             if (this.channelManager.getLocation(action.in)) {
                 this.avatars[action.from].location = action.in;
             }
-            await this.sendAsAvatar(this.avatars[action.from], action.message);
+            await this.sendAsAvatar(this.avatars[action.from], action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
