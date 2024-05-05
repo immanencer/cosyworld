@@ -1,4 +1,3 @@
-import { discordSort } from 'discord.js';
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 const badger = new DiscordAIBot({

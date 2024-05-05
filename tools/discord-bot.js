@@ -83,11 +83,11 @@ class DiscordBot {
         this.subscribed_channels = this.soul.listen;
         if (this.souls) {
             this.subscribed_channels = [
-                ...this.soul.listen,
+                ...(this.soul.listen || []),
                 ...Object.values(this.souls).map(soul => soul.location)
             ];
         }
- 
+
         if (this.message_filter(message)) {
             return true;
         } else {
@@ -269,7 +269,7 @@ class DiscordBot {
         }
     }
 
-    async processAction(action, unhinged) {
+    async processAction(action, unhinged, zombie) {
         console.log('🎮 Processing action... ');
         try {
             if (unhinged && !this.souls[action.from]) {
@@ -283,9 +283,9 @@ class DiscordBot {
                 this.channelManager.createLocation(this.channel, action.in);
             }
             if (this.channelManager.getLocation(action.in)) {
+                const soul = new SoulManager(action.from, { ...zombie, location: action.in }).getSoul();
+                await this.sendAsSoul(soul, action.message, unhinged);
             }
-            const soul = new SoulManager(action.from).getSoul();
-            await this.sendAsSoul(soul, action.message, unhinged);
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
             console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
