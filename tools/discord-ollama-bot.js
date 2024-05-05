@@ -114,7 +114,7 @@ class DiscordOllamaBot extends DiscordBot {
         await this.aiServiceManager.chat({
             role: 'assistant',
             content: `This is what I remember: \n\n    
-            ${memory.slice(-200).join('\n')}
+            ${memory.slice(-100).join('\n')}
             
             ${this.response_instructions || ''}
             `
