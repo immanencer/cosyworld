@@ -159,9 +159,6 @@ bear.process_message = async (message) => {
         If you are hungry you become more bestial and cunning.
         If you are full you become increasingly sophisticated and philosophical.
     `;
-
-    console.log(bear.response_instructions);
-
     return true; // Indicate that the message has been processed
 };
 

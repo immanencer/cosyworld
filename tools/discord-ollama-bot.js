@@ -71,6 +71,9 @@ class DiscordOllamaBot extends DiscordBot {
         this.message_timeout = setTimeout(() => {
             if (this.message_cache.length > 0) {
                 try {
+                    if (this.response_instructions_function) {
+                        this.response_instructions = this.response_instructions_function();
+                    }
                     this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
                     // Clear the cache after sending
                     this.message_cache = [];
@@ -115,23 +118,6 @@ class DiscordOllamaBot extends DiscordBot {
             role: 'assistant',
             content: `This is what I remember: \n\n    
             ${memory.slice(-100).join('\n')}
-            
-            ${this.response_instructions || ''}
-            `
-        });
-
-
-        console.log('🎮 🧠 Memory initialized')
-    }
-
-    async initializeMemory(memories, options = { slice: 200, instructions: '' }) {
-        const memory = memories || (await this.loadMemory()) || [];
-
-        // slice the memory to the last 200 messages;
-        await this.aiServiceManager.chat({
-            role: 'assistant',
-            content: `This is what I remember: \n\n    
-            ${memory.slice(-200).join('\n')}
             
             ${this.response_instructions || ''}
             `

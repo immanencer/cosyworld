@@ -2,7 +2,7 @@ import Replicate from "replicate";
 
 import AIService from "../tools/ai-service.js";
 import c from "../tools/configuration.js";
-const configuration = c('replicate', {
+const configuration = await c('replicate', {
     token: "YOUR_API_KEY",
     model: "meta/meta-llama-3-70b-instruct",
     options: {

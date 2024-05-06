@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 
 import AIServiceManager from '../tools/ai-services.js';
@@ -10,6 +10,26 @@ import DiscordAIBot from "../tools/discord-ollama-bot.js";
 const librarian = new DiscordAIBot('llama');
 librarian.on_login = async () => librarian.sendAsSoul(...(await ingest()));
 librarian.login();
+
+async function openOrCreateBookshelf(channel) {
+    const sanitizedChannel = channel.replace(/[^\x00-\x7F]/g, "");
+    const directoryPath = path.join('bookshelf', sanitizedChannel);
+
+    try {
+        // Attempt to create the directory
+        await fs.mkdir(directoryPath, { recursive: true });
+        console.log(`Directory created or already exists: ${directoryPath}`);
+    } catch (error) {
+        if (error.code === 'EEXIST') {
+            // Directory already exists, handle as needed
+            console.log(`Directory already exists: ${directoryPath}`);
+        } else {
+            // An error other than "directory already exists" occurred
+            console.error(`Error creating directory at ${directoryPath}: ${error}`);
+            throw error; // Re-throw the error for further handling if necessary
+        }
+    }
+}
 
 async function ingest() {
     const asher = soulseek('asher');
@@ -38,10 +58,7 @@ async function ingest() {
     for (const channel of channels) {
         console.log('📚 Ingesting channel:', channel);
 
-        // Open the bookshelf for this channel from the filesystem, or create a new one
-        if (!fs.existsSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")))) {
-            fs.mkdirSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")), { recursive: true });
-        }
+        openOrCreateBookshelf(channel);
         console.log('📚 Ingesting channel:', channel);
 
         process.stdout.write('\n📘');
@@ -53,7 +70,7 @@ async function ingest() {
             channel_cache.push(message_formatter(message));
         }
         channel_cache.sort();
-        fs.writeFileSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, ""), 'messages.txt'), channel_cache.join('\n'));
+        await fs.writeFile(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, ""), 'messages.txt'), channel_cache.join('\n'));
         process.stdout.write('📘');
         message_cache.push(...channel_cache);
 

@@ -1,6 +1,6 @@
 import { Groq } from 'groq-sdk';
 import c from "../tools/configuration.js";
-const configuration = c('groq', {
+const configuration = await c('groq', {
     apiKey: "YOUR_API_KEY",
 });
 

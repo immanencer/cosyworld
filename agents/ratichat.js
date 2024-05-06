@@ -65,8 +65,11 @@ ratichat.on_login = async () => {
     console.log(system_prompt);
     await ratichat.aiServiceManager.updateConfig({  system_prompt });
 
-    ratichat.response_instructions = `
+    ratichat.response_instructions_function = () => `
     Always use the following format (replace with your own messages, and adjust the number of avatars and locations as needed):
+
+    
+    ${Object.keys(ratichat.souls).map(name => `${name} ${ratichat.souls[name].emoji} (${ratichat.souls[name].location})`).join('\n')}
     
     ### Inner Thoughts of the Old Oak Tree 🌳
     The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
@@ -83,9 +86,8 @@ ratichat.on_login = async () => {
     {"in": "🏡 cody cottage", "from": "rati",  "message": "*domestic action* folk-wisdom" },
     {"in": "lost-woods", "from": "skull", "message": "*wolfish actions*" },
     {"in": "🌿 herb garden", "from": "whiskerwind", "message": "🌼💚" }
-
-
-    `;
+ `;
 };
 
+ratichat.debug = false;
 await ratichat.login();

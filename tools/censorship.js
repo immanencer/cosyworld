@@ -1,5 +1,5 @@
 import c from '../tools/configuration.js';
-const config = c('censorship');
+const config = await c('censorship');
 
 export function replaceContent(content) {
     if (!content) {

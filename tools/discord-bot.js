@@ -3,7 +3,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import ChannelManager from './discord-channel-manager.js';
 
 import c from '../tools/configuration.js';
-const configuration = c('discord-bot');
+const configuration = await c('discord-bot');
 
 import { chunkText } from './chunk-text.js';
 import { soulseek } from '../agents/souls.js';
@@ -11,11 +11,13 @@ import { soulseek } from '../agents/souls.js';
 import { parseYaml } from './yml/parseYaml.js';
 import SoulManager from './soul-manager.js';
 
+import cleanJson from './cleanJson.js';
+
 class DiscordBot {
     options = {
         yml: false
     };
-    constructor(chatBotActions, clientOptions = {}) {
+    constructor(clientOptions = {}) {
         const defaultIntents = [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
@@ -62,8 +64,7 @@ class DiscordBot {
         return this.soul.listen.includes(message.channel.name);
     }
 
-    process_message = async (message) => {}
-
+    process_message = async (message) => message;
     async handleMessage(message) {
         this.subscribed_channels = this.soul.listen;
         if (this.souls) {
@@ -100,7 +101,8 @@ class DiscordBot {
 
     subscribed_channels = [];
     subscribe(channelName) {
-        this.subscribed_channels.push(channelName);
+        this.listen = this.listen || [];
+        this.listen.push(channelName);
         console.log(`🎮 📥 Subscribed to: ${channelName}`);
     }
 
@@ -239,7 +241,7 @@ class DiscordBot {
                 try {
                     // Remove trailing comma if it exists
                     if (jsonObject.trim().endsWith(',')) {
-                        jsonObject = jsonObject.trim().substring(0, jsonObject.length - 1);
+                        jsonObject = cleanJson(jsonObject.trim().substring(0, jsonObject.length - 1));
                     }
                     return JSON.parse(jsonObject);
                 } catch (error) {
@@ -346,7 +348,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: `${soul.name} ${(soul.emoji || '')} ${(this.debug ? (soul.model || '🧟‍♀️') : '')}`.trim(),
+                    username: `${soul.name} ${(soul.emoji || '')} ${(this.debug ? (soul.model || this?.soul?.model || '🧟') : '')}`.trim(),
                     avatarURL: soul.avatar
                 };
                 if (location.thread) {

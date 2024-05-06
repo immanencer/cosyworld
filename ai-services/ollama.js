@@ -15,11 +15,17 @@ class OllamaService extends AIService {
         super.updateConfig(config);
 
         const modelfile = `FROM llama3
-SYSTEM "${config.system_prompt || 'you are an alien intelligence from the future'}"`;
+# sets the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 1
+# sets the context window size to 4096, this controls how many tokens the LLM can use as context to generate the next token
+PARAMETER num_ctx 8192
+
+# sets a custom system message to specify the behavior of the chat assistant
+SYSTEM ${config.system_prompt || 'you are an alien intelligence from the future'}`;
 
         this.model = generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
-        await ollama.create({ model: this.model, modelfile, options: { num_ctx: 2048 * 4 }});
+        await ollama.create({ model: this.model, modelfile });
         return this.model;
     }
 
