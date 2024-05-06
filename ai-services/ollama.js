@@ -15,7 +15,7 @@ class OllamaService extends AIService {
         super.updateConfig(config);
 
         const modelfile = `
-FROM llama3:instruct
+FROM llama3
 SYSTEM ${config.system_prompt || 'you are an alien intelligence from the future'}`;
 
         this.model = generateHash(modelfile);
@@ -28,7 +28,8 @@ SYSTEM ${config.system_prompt || 'you are an alien intelligence from the future'
     async chat(message) {
         message.content = replaceContent(message.content);
         this.messages.push(message);
-        if (message.role === 'assistant') { return; }
+        if (message.role === 'assistant' || message.role === 'system') { return; }
+        console.log('🦙 Chat:', this.messages.map(T => `${T.role} ${T.content}`));
         return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
     }
 

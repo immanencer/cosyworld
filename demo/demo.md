@@ -16,7 +16,7 @@ First, create a file named `demo.js` in your project's root directory. You'll wr
 **Snippet from `demo.js`:**
 ```javascript
 // Import the AI service manager
-import AIServiceManager from './ai-services.js';
+import AIServiceManager from './ai-service-manager.js';
 
 // Initialize and configure the AI service
 const manager = new AIServiceManager();
@@ -112,7 +112,7 @@ First, create a file named `demo.js` in your project's root directory. You'll wr
 **Snippet from `demo.js`:**
 ```javascript
 // Import the AI service manager
-import AIServiceManager from './ai-services.js';
+import AIServiceManager from './ai-service-manager.js';
 
 // Initialize and configure the AI service
 const manager = new AIServiceManager();

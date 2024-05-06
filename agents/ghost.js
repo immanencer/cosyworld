@@ -3,7 +3,7 @@ import { soulseek } from './souls.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
-import AIServiceManager from '../tools/ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 const ai = new AIServiceManager();
 await ai.useService('ollama');
 await ai.updateConfig({

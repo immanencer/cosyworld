@@ -1,4 +1,4 @@
-import AIServiceManager from './ai-services.js';
+import AIServiceManager from './ai-service-manager.js';
 
 const manager = new AIServiceManager();
 await manager.useService('groq');

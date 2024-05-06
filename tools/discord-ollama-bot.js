@@ -1,7 +1,7 @@
 import { soulseek } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from './ai-services.js';
+import AIServiceManager from './ai-service-manager.js';
 import SoulManager from './soul-manager.js';
 import { xorFoldHash } from './crypto.js';
 
@@ -68,11 +68,11 @@ class DiscordOllamaBot extends DiscordBot {
         }
     
         // Set a new timeout to send messages
-        this.message_timeout = setTimeout(() => {
+        this.message_timeout = setTimeout(async () => {
             if (this.message_cache.length > 0) {
                 try {
                     if (this.response_instructions_function) {
-                        this.response_instructions = this.response_instructions_function();
+                        this.response_instructions = (await this.response_instructions_function());
                     }
                     this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
                     // Clear the cache after sending

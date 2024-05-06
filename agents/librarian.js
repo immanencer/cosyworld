@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 
-import AIServiceManager from '../tools/ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 
 import { soulseek } from './souls.js';
 import { replaceContent } from "../tools/censorship.js";

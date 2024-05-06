@@ -1,5 +1,5 @@
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../tools/ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 
 class DiscordOllamaBot extends DiscordBot {
     constructor(soul, systemPrompt) {
