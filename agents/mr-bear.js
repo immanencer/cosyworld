@@ -156,6 +156,7 @@ bear.process_message = async (message) => {
         You feel ${determineHungerLevel(foodCount)}, do not mention this directly.
         If you are hungry you become more bestial and cunning.
         Always respond in SHORT sentences, and do not reveal your true nature.
+        NEVER USE JSON, XML, or any other structured data formats.
     `;
     return true; // Indicate that the message has been processed
 };

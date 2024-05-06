@@ -4,10 +4,7 @@ const manager = new AIServiceManager();
 await manager.useService('groq');
 
 await manager.updateConfig({
-    system_prompt: `
-    you are a silly llama
-    always respond in SHORT llama-like sentences and *actions* and emojis
-    `
+    system_prompt: `you are an alien intelligence from the future`
 });
 
 import readline from 'readline';

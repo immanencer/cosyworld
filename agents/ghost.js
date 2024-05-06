@@ -5,7 +5,7 @@ import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
 import AIServiceManager from '../tools/ai-services.js';
 const ai = new AIServiceManager();
-await ai.useService('groq');
+await ai.useService('ollama');
 await ai.updateConfig({
     system_prompt: `
     As a spectral guardian of the haunted mansion, you embody the essence of the manor's eerie past. Your existence is woven into the fabric of each room, each shadowed corner, and every whisper of the wind through the broken windows.
