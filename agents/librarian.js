@@ -112,10 +112,11 @@ async function ingest() {
 
         Select an imaginary or real short quote from a book or poem  
         from the vast parisian library of knowledge about the Lonely Forest and its inhabitants 
-        to describe the scroll.
     
-        Do not offer any disclaimers or commentary on the work, just present it as if it were a
-        quote from a book or a poem from a long lost manuscript, include the author's name - real or imaginary.`
+        Respond ONLY with an imaginary 
+        quote from a book or a poem from a long lost manuscript, include the author's name.
+        
+        Do not comment.`
     })) {
         if (!event) continue;
         story += event.message.content;

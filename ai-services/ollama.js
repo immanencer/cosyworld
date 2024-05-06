@@ -14,13 +14,8 @@ class OllamaService extends AIService {
     async updateConfig(config) {
         super.updateConfig(config);
 
-        const modelfile = `FROM llama3
-# sets the temperature to 1 [higher is more creative, lower is more coherent]
-PARAMETER temperature 1
-# sets the context window size to 4096, this controls how many tokens the LLM can use as context to generate the next token
-PARAMETER num_ctx 8192
-
-# sets a custom system message to specify the behavior of the chat assistant
+        const modelfile = `
+FROM llama3:instruct
 SYSTEM ${config.system_prompt || 'you are an alien intelligence from the future'}`;
 
         this.model = generateHash(modelfile);
@@ -31,9 +26,8 @@ SYSTEM ${config.system_prompt || 'you are an alien intelligence from the future'
 
     messages = [];
     async chat(message) {
-        this.messages.push(message);
         message.content = replaceContent(message.content);
-      
+        this.messages.push(message);
         if (message.role === 'assistant') { return; }
         return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
     }
