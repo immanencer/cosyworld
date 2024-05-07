@@ -87,8 +87,9 @@ async function saveFoodData() {
     }
 }
 
-await loadFoodData();  // Load the food count data on login
-
+bear.on_login = async () => {
+    await loadFoodData();  // Load the food count data on login
+};
 bear.prey = null;
 bear.process_message = async (message) => {
     console.log('Processing message:', message.content); // Log the incoming message for debugging

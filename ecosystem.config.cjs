@@ -26,5 +26,11 @@ module.exports ={
   },{
     name: "mr-bear",
     script: "./agents/mr-bear.js"
+  },{
+    name: "skull",
+    script: "./agents/wolves/skull.js"
+  },{
+    name: "shadow",
+    script: "./agents/wolves/shadow.js"
   }]
 }

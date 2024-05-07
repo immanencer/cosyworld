@@ -5,7 +5,7 @@ import ChannelManager from './discord-channel-manager.js';
 import c from '../tools/configuration.js';
 const configuration = await c('discord-bot');
 
-import { chunkText } from './chunk-text.js';
+import chunkText from './chunk-text.js';
 import { soulseek } from '../agents/souls.js';
 
 import { parseYaml } from './yml/parseYaml.js';
@@ -297,29 +297,6 @@ class DiscordBot {
             if (this.channelManager.getLocation(action.in)) {
                 const soul = new SoulManager(action.from, { ...zombie, location: action.in });
                 soul.move(action.in);
-                await this.sendAsSoul(soul.get(), action.message, unhinged);
-            }
-        } catch (error) {
-            console.error('🎮 ❌ Error processing action:', error);
-            console.error('🎮 ❌ Error processing action:', JSON.stringify(action, null, 2));
-        }
-    }
-
-    async processAction(action, unhinged, zombie) {
-        console.log('🎮 Processing action... ');
-        try {
-            if (unhinged && !this.souls[action.from]) {
-                this.souls[action.from] = {
-                    name: action.from,
-                    location: action.in,
-                    avatar: 'https://i.imgur.com/9ZbYgUf.png'
-                };
-            }
-            if (unhinged && !this.channelManager.getLocation(action.in)) {
-                this.channelManager.createLocation(this.channel, action.in);
-            }
-            if (this.channelManager.getLocation(action.in)) {
-                const soul = new SoulManager(action.from, { ...zombie, location: action.in });
                 await this.sendAsSoul(soul.get(), action.message, unhinged);
             }
         } catch (error) {

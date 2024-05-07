@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 const filePath = './.state/souls.json';
 
-const SOULS = (await soulload(filePath) || await soulload('./souls.json'));
+const SOULS = (await soulload(filePath) || await soulload('./souls.json') || null);
 if (!SOULS) {
     throw new Error('Failed to load souls data, check the file path and format.');
 }
@@ -11,16 +11,18 @@ async function soulload(path) {
         const data = await fs.readFile(path, 'utf8'); // Read the file
         const souls = JSON.parse(data); // Parse the JSON string back into an array
         console.log('✅ Souls data loaded successfully.');
+        await soulsave(souls);
         return souls;
     } catch (error) {
-        console.error('💀 Failed to load souls data:', error);
+        console.warn('⚠️ Failed to load souls data:', error);
         return null;
     }
 }
 
-async function soulsave() {
+async function soulsave(souls) {
+    if (!souls) return console.error('💀 No souls data to save.');
     try {
-        const data = JSON.stringify(SOULS, null, 4); // Pretty print JSON
+        const data = JSON.stringify(souls, null, 4); // Pretty print JSON
         await fs.writeFile(filePath, data, 'utf8');
         console.log('Souls data saved successfully.');
     } catch (error) {

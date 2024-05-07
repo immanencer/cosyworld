@@ -5,7 +5,8 @@ import ChannelManager from './discord-channel-manager.js';
 import configuration from './configuration.js';
 const config = await configuration('discord-bot');
 
-import ai from './ai-service-manager.js';
+import chunkText from './chunk-text.js';
+import WebhookManager from './discord-webhook-manager.js';
 
 class MinimalistDiscordBot {
     constructor(token) {
@@ -25,37 +26,72 @@ class MinimalistDiscordBot {
 
     setupEventListeners() {
         this.channels = new ChannelManager(this.client);
+        this.webhooks = new WebhookManager(this.channels);
+        this.sendAsSoul = this.webhooks.sendAsSoul.bind(this.webhooks);
 
         this.client.once(Events.ClientReady, async () => {
             console.log(`🎮 Bot is ready! Logged in as ${this.client.user.tag}`);
-                
+
             await this.channels.initialize(config.guild);
             this.onLogin();
 
         });
 
         this.client.on(Events.MessageCreate, (message) => {
-            if (!message.author.bot) { // Ignore messages from bots
-                console.log(`🎮 Message received from ${message.author.tag}: ${message.content}`);
-                this.onMessage(message);
-            }
+            console.log(`🎮 Message received from ${message.author.displayName || message.author.globalName}`);
+            this.onMessage(message);
         });
     }
 
-    onLogin() {
+    async onLogin() {
         console.log('🎮 Handling login...');
-        if (this.on_login) this.on_login();
+        if (this.on_login) await this.on_login();
     }
 
-    onMessage(message) {
-        console.log('🎮 Handling message...');
-        if (this.on_message) this.on_message(message);
+    async onMessage(message) {
+        try {
+            console.log('🎮 Handling message...');
+            if (this.on_message) await this.on_message(message);
+        }
+        catch (error) {
+            console.error('🎮 ❌ Failed to handle messagfe:', error);
+            throw error;
+        }
     }
 
-    login() {
-        this.client.login(this.token).catch(error => {
-            console.error('🎮 Error logging in:', error);
-        });
+    async login() {
+        try {
+            await this.client.login(this.token);
+        }
+        catch (error) {
+            console.error('🎮 ❌ Failed to login:', error);
+            throw error;
+        }
+    }
+
+    async sendMessage(channel, message) {
+        if (!channel) {
+            console.error('🎮 ❌ No channel provided');
+            return;
+        }
+        channel = await this.client.channels.fetch(this.channels.channel_id[channel]);
+
+        if (typeof message !== 'string' || message.trim() === '') {
+            message = '...'; // Default message if input is empty or not a string
+        }
+
+        try {
+            // Splitting the message into manageable chunks
+            const chunks = chunkText(message);
+            for (const chunk of chunks) {
+                if (chunk.trim() !== '') { // Ensuring not to send empty chunks
+                    await channel.send(chunk);
+                }
+            }
+        } catch (error) {
+            console.error(`🎮 ❌ Failed to send message: ${error}`);
+            // Handle the error appropriately, perhaps retrying or notifying an admin
+        }
     }
 }
 

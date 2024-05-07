@@ -66,13 +66,18 @@ class ChannelManager {
     }
     
     async fuzzyMatchChannel(channel_name) {
-        const channel = (await this.getChannels()).find(c => (
-            c.toLowerCase().includes(channel_name.toLowerCase())
-            || channel_name.toLowerCase().includes(c.toLowerCase()
-            || c.toLowerCase().replace(/-/g, ' ').includes(channel_name.toLowerCase()
-            || channel_name.toLowerCase().replace(/-/g, ' ').includes(c.toLowerCase())
-        ))));
-        return channel || null;
+        const channels = await this.getChannels();
+        // Function to normalize channel names by removing spaces and dashes
+        const normalize = name => name.toLowerCase().replace(/[-\s]/g, '');
+    
+        const normalizedInput = normalize(channel_name);
+    
+        const match = channels.find(c => {
+            const normalizedChannel = normalize(c);
+            return normalizedChannel.includes(normalizedInput) || normalizedInput.includes(normalizedChannel);
+        });
+    
+        return match || null;
     }
 
     getChannelId(channel) {

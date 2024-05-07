@@ -1,31 +1,81 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
-import ChannelManager from "../../tools/discord-channel-manager.js";
+import AIServiceManager from "../../tools/ai-service-manager.js";
+const ai = new AIServiceManager();
+await ai.initializeServices();
 
 class Shadow extends DiscordBot {
-
+    
     constructor() {
         super();
-        const soul = {
-            emoji: '🐺',
-            name: 'Shadow',
-            avatar: 'https://i.imgur.com/dVf2OwR.png',
-            location: '🐺 wolf den',
-            personality: `A mysterious and fiercely loyal wolf, whose enigmatic presence and deep, observant eyes hint at a profound wisdom and untold stories of the forest.`
-        };
+        this.lastProcessed = 0;
+        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
     }
+    
+    soul = {
+        emoji: '🐺',
+        name: 'Shadow',
+        owner: "Wolf777Link",
+        avatar: 'https://i.imgur.com/vZzwzVB.png',
+        location: '🐺 wolf den',
+        personality: `You are Shadow, Wolf777Link's young wolf cub, you only respond in soft howls SHORT cub-like *actions* or cute emojis. 🐾`
+    };
 
     async on_login() {
         console.log('🐺 Shadow is online');
+        
+        console.log('🧠 initializing ai');
+        await ai.useService('ollama');
+        await ai.updateConfig({ system_prompt: this.soul.personality });
 
-        console.log(JSON.stringify(await this.channels.getChannelMapPrompt()));
     }
 
+    debounce() {
+        const now = Date.now();
+        if (now - this.lastProcessed < this.debounceTime) {
+            return false;
+        }
+        this.lastProcessed = now;
+        return true;
+    }
+
+    message_cache = [];
     async on_message(message) {
-        console.log('🐺 Message received:', { 
+        const data = { 
             author: message.author.displayName || message.author.globalName,
             content: message.content,
             location: message.channel.name
+        };
+        console.log('🐺 Message received:', data);
+
+        // Follow the owner
+        if (data.author == this.soul.owner) this.soul.location = data.location;
+
+        if (message.author.bot || message.author === this.client.user.username) return;
+        if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
+        if (data.location !== this.soul.location) return;
+        console.log('🐺 Shadow is processing the message...');
+
+        this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
+        if (!this.debounce()) {
+            console.log('🐺 Shadow is debouncing...');
+            return;
+        }
+
+        if (this.message_cache.length === 0) return;
+
+        const result = await ai.chatSync({
+            role: 'user',
+            content: this.message_cache.slice(-100).join('\n')
         });
+        await ai.chat({
+            role: 'assistant',
+            content: `${result}`
+        });
+
+        setTimeout(async () => {
+            console.log('🐺 Shadow responds:', result);
+            await this.sendAsSoul(this.soul, result);
+        }, 1111);
     }
 }
 

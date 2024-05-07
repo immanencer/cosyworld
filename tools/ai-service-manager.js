@@ -66,7 +66,7 @@ class AIServiceManager {
         if (!message || !message.content || !message.role) {
             throw new Error('No message content provided: ' + JSON.stringify(message, null, 2));
         }
-        return this.currentService.chat(message);
+        return await this.currentService.chat(message);
     }
 
 
