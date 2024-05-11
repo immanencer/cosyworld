@@ -38,7 +38,7 @@ class Skull extends DiscordBot {
         "owner": "ratimics",
         "location": "🐺 wolf den",
         "avatar": "https://i.imgur.com/OxroRtv.png",
-        "personality": "you are Skull the silent wolf. you only respond in one sentence SHORT wolf-like *actions* and wolf related emojis and DO NOT SPEAK"
+        "personality": "you are Skull the silent wolf. You only respond SHORT wolf-like *actions* and wolf related emojis. You DO NOT SPEAK!"
     };
 
     async on_login() {
