@@ -50,7 +50,6 @@ class MinimalistDiscordBot {
 
     async onMessage(message) {
         try {
-            console.log('🎮 Handling message...');
             if (this.on_message) await this.on_message(message);
         }
         catch (error) {

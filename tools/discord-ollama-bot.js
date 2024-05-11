@@ -74,7 +74,7 @@ class DiscordOllamaBot extends DiscordBot {
                     if (this.response_instructions_function) {
                         this.response_instructions = (await this.response_instructions_function());
                     }
-                    this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
+                    await this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
                     // Clear the cache after sending
                     this.message_cache = [];
                 } catch (error) {

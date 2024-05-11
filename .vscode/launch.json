@@ -7,11 +7,56 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "ratichat",
+            "name": "👻 ghost",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\ghost.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🪧 demo",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\demo\\demo.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐭 ratichat",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\agents\\ratichat.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐺 skull",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\wolves\\skull.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐸 toad",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\toad.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🦡 badger",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\badger.js"
         }
     ]
 }

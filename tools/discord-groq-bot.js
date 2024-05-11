@@ -1,7 +1,7 @@
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from '../tools/ai-service-manager.js';
 
-class DiscordOllamaBot extends DiscordBot {
+class DiscordGroqBot extends DiscordBot {
     constructor(soul, systemPrompt) {
         super();
         if (!soul) throw new Error('Soul is required');
@@ -88,4 +88,4 @@ class DiscordOllamaBot extends DiscordBot {
     }
 }
 
-export default DiscordOllamaBot;
+export default DiscordGroqBot;

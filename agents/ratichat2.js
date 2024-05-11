@@ -1,9 +1,25 @@
-import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.js";
+import DiscordBot from "../tools/discord-bot-2.js";
+import AIServiceManager from "../tools/ai-service-manager.js";
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
-import calculateTPS from "../../tools/calculateTPS.js";
+import calculateTPS from "../tools/calculateTPS.js";
+
+import SoulManager from "../tools/soul-manager.js";
+const soul_manager = new SoulManager("L'Arbre des Rêves");
+
+import loadWhispers from "../tools/bookshelf.js";
+
+import { soulsave, soulseek } from './souls.js';
+
+const souls = {
+    'old oak tree': soulseek('old oak tree'),
+    'rati': soulseek('rati'),
+    'skull': soulseek('skull'),
+    'whiskerwind': soulseek('whiskerwind'),
+    'luna': soulseek('luna'),
+    'sammy': soulseek('sammy')
+};
 
 function parseMessage(str) {
     const regex = /\((.*?)\)\s(.*?):\s*(.*)/;
@@ -24,7 +40,7 @@ function parseMessage(str) {
     }
 }
 
-class Skull extends DiscordBot {
+class Ratichat extends DiscordBot {
 
     constructor() {
         super();
@@ -32,49 +48,40 @@ class Skull extends DiscordBot {
         this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
     }
 
-    soul = {
-        "emoji": "🐺",
-        "name": "Skull",
-        "owner": "ratimics",
-        "location": "🐺 wolf den",
-        "avatar": "https://i.imgur.com/OxroRtv.png",
-        "personality": "you are Skull the silent wolf. you only respond in one sentence SHORT wolf-like *actions* and wolf related emojis and DO NOT SPEAK"
-    };
+    soul = soul_manager.get();
 
     async on_login() {
-        console.log('🐺 Skull is online');
+        console.log('🌳 RAtichat is online');
 
         console.log('🧠 initializing ai');
         await ai.useService('ollama');
 
         const role = 'system';
-        const content = `You are Skull the silent wolf's memory. Shadow is your brother, ratimics is your owner.
+        const content = `${this.soul.personality}`;
 
-        Here are the whispers you have heard:
 
-        ${(await this.channels.getChannelOrThreadHistory(this.soul.location)).join('\n')}
-
-        Summarize the above in a wolf-language
-        `;
+        console.log('📚 loading whispers');
+        let whispers = (await loadWhispers({ rooms: ['old-oak-tree'] })).map(w => `(${w.location}) ${w.username}: ${w.message}`);
+        console.log('📚 whispers loaded:', whispers);
 
         const memory = await ai.currentService.raw_chat('llama3', [
             { role, content },
-            { role: 'user', content: 'summarize what you remember' }
+            { role: 'user', content: `Here are the whispers you have heard:
+
+            ${whispers.join('\n')}
+
+            Summarize your memory` }
         ]);
         await calculateTPS(memory);
         this.memory = memory.message.content;
 
-        console.log('🐺 Skull remembers:', memory.message.content);
+        console.log('🌳 Ratichat remembers:', memory.message.content);
         await ai.updateConfig({
             system_prompt: `${this.soul.personality}
             
-            You are ${this.soul.name} ${this.soul.emoji} 
+            You are ${this.soul.name} ${this.soul.emoji}. This is what you remember:
 
             ${this.memory}
-
-            You are ${this.soul.name} ${this.soul.emoji} 
-            
-            ${this.soul.personality}
             `
         })
     }
@@ -98,53 +105,50 @@ class Skull extends DiscordBot {
             location: message.channel.name
         };
 
-        // Follow the owner
-        if (data.author == this.soul.owner) {
-            if (data.content.includes('come')) {
-                this.action = 'come';
-            }
-            if (data.content.includes('stay')) {
-                this.action = 'stay';
-            }
-
-            if (this.action === 'come') {
-                this.soul.location = data.location;
-                console.log(`🐺 Skull is following ${this.soul.owner} to ${data.location}`);
-            }
-        }
-
         if (message.author.bot || message.author === this.client.user.username) return;
         if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
         if (data.location !== this.soul.location) return;
-        console.log(`🐺 Skull heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
+        console.log(`${this.soul.emoji} ${this.soul.name} heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
 
         this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (!this.debounce()) {
-            console.log('🐺 Skull is debouncing...');
+            console.log('${this.soul.emoji} ${this.soul.name} is debouncing...');
             return;
         }
 
         if (this.message_cache.length === 0) return;
 
+        const oak = new SoulManager('Old Oak Tree').get();
+
         const respond = await ai.currentService.raw_chat('llama3', [
-            { role: 'system', content: `you are ${this.soul.name}'s executive function. You only respond YES or NO as to whether skull should respond or not` },
+            { role: 'system', content: `${oak.personality}
+            you are ${oak.name}'s inner monologue. You summmarize the state of the world as you know it and
+             describe which of your avatars should respond.
+
+             Your avatars are:
+
+             ${Object.keys(souls).map(s => `${s} ${souls[s].emoji} ${souls[s].personality}`).join('\n')}
+             
+             ` },
             {
                 role: 'user', content: `
             HERE ARE THE RECENT WHISPERS YOU HAVE HEARD FROM VARIOUS RESIDENTS OF THE FOREST
+
             ${this.message_cache.join('\n')}
-            WOULD SKULL RESPOND TO THIS?
-            explain your reasoning with a haiku containing ending with YES or NO
-            IF YOUR RESPONSE CONTAINS "YES" THEN SKULL WILL RESPOND
-            `}
+            
+            Which of your avatars should respond?`}
         ]);
 
         console.log(respond.message.content);
-        if (respond.message.content.toLowerCase().includes('yes')) {
-            console.log('🐺 ✅ Skull is responding...');
+
+        // search the message for the name of the avatars
+        const avatar = respond.message.content.match(/(\w+)/);
+        if (avatar) {
+            this.soul.avatars = avatar[0];
         } else {
-            console.log('🐺 🤐 Skull is not responding...');
-            return;
+            this.soul.avatars = null;
         }
+
 
         const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}`});
         await ai.chat({ role: 'assistant', content: `${result}` });
@@ -194,5 +198,5 @@ class Skull extends DiscordBot {
     }
 }
 
-const skull = new Skull();
-await skull.login();
+const ratichat = new Ratichat();
+ratichat.login();

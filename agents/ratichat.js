@@ -28,10 +28,7 @@ ratichat.on_login = async () => {
 
     ratichat.response_instructions_function = async () => {
         await ratichat.aiServiceManager.chat({
-            role: 'assistant', content: `
-            ${JSON.stringify(ratichat.souls)}
-            {"in": "🌰", "from": "old oak tree", "message": "${`
-### Inner Thoughts of the Old Oak
+            role: 'assistant', content: `Inner Thoughts of the Old Oak
 
 "Rati 🐭" the Mouse, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
 "WhiskerWind 🍃" the Sprite, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
@@ -40,7 +37,12 @@ ratichat.on_login = async () => {
 
 Together, they embody the spirit of the forest;
     a microcosm of life's intricate dance.
-`}"}
+    
+### Forest Whispers
+(each avatar should respond on a new line, only include JSON objects below this line)
+
+--- 
+
 {"in": "🏡 cody cottage", "from": "rati",  "message": "weaves a tapestry of stories, infused with forest magic" },
 {"in": "lost-woods", "from": "skull", "message": "pads silently, ensuring the shadows remain at bay" },
 {"in": "🌿 herb garden", "from": "whiskerwind", "message": "💚🌼 tends to the herbs, nurturing growth and abundance" },

@@ -39,8 +39,6 @@ async function getMansionMap() {
         map[(counter++).toString(16)] = room;
         return map;
     }, {});
-
-    console.log(`${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}`);
     return mansion_map;
 }
 

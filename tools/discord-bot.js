@@ -317,7 +317,7 @@ class DiscordBot {
             location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
         }
 
-        console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
+        console.log(`🎮 📤 Sending as ${soul.name} (${location.channel.name})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);

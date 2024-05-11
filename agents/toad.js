@@ -14,4 +14,4 @@ const toad = new DiscordAIBot({
     always respond in SHORT froggish phrases or actions and emojis
     `
 });
-discordAIBot.login();
+toad.login();

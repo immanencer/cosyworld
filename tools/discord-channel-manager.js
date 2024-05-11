@@ -15,6 +15,7 @@ class ChannelManager {
         for (const [channelId, channel] of channels) {
             if (channel.isTextBased()) {
                 this.channel_id[channel.name] = channelId;
+                if (!channel.threads) continue;
                 // Fetch all active threads in the channel
                 const threads = (await channel.threads.fetch()).threads;
                 for (const [threadId, thread] of threads) {
@@ -168,6 +169,7 @@ class ChannelManager {
         const threads = [];
         const channel_id = this.getChannelId(channel_name);
         const channel = await this.discord_client.channels.fetch(channel_id);
+        if (!channel.isTextBased() || !channel.threads) return [];
         const thread_list = (await channel.threads.fetch()).threads;
         for (const [id, thread] of thread_list) {
             threads.push(thread);

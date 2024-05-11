@@ -32,5 +32,8 @@ module.exports ={
   },{
     name: "shadow",
     script: "./agents/wolves/shadow.js"
-  }]
+  }],
+  restart_delay: 10000, // 10 seconds delay before restarting
+  max_restarts: 3,
+  min_uptime: 25000 // considered successfully started after 5 seconds
 }

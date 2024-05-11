@@ -64,7 +64,8 @@ class AIServiceManager {
             throw new Error('No service selected');
         }
         if (!message || !message.content || !message.role) {
-            throw new Error('No message content provided: ' + JSON.stringify(message, null, 2));
+            console.error('No message content provided: ' + JSON.stringify(message));
+            return;
         }
         return await this.currentService.chat(message);
     }

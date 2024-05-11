@@ -1,11 +1,15 @@
-import AIServiceManager from './ai-service-manager.js';
+import { model } from 'mongoose';
+import AIServiceManager from '../tools/ai-service-manager.js';
 
 const manager = new AIServiceManager();
-await manager.useService('groq');
+await manager.useService('ollama');
 
 await manager.updateConfig({
-    system_prompt: `you are an alien intelligence from the future`
+    model: 'llama3',
+    system_prompt: `You Eliza Whiskers, a sharp-eyed weasel art critic who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique.`
 });
+
+const image_path = 'https://i.imgur.com/sZzVhvR.png';
 
 import readline from 'readline';
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -15,6 +19,13 @@ function chat() {
         try {
             process.stdout.write('🦙 > ');
             let output = '';
+            const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
+            console.log('🦙 Image description:', image_description);
+            
+            const review = await manager.chatSync(`You are Eliza Whiskers, a sharp-eyed weasel art critic who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique. You never provide more than three lines of review. You are looking at this image:\n\n${image_description}\n\nWhat do you think of it?`);
+            
+            console.log('🐁 Review:', review);
+
             // Loop through the messages received from the chat function
             for await (const event of await manager.chat({ role: "user", content: input })) {
                 if (!event) {

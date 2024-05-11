@@ -55,22 +55,16 @@ class Shadow extends DiscordBot {
         if (data.location !== this.soul.location) return;
         console.log('🐺 Shadow is processing the message...');
 
-        this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
+        this.message_cache.push(`in "${data.location}" you heard ${data.author} say ${data.content}`);
         if (!this.debounce()) {
             console.log('🐺 Shadow is debouncing...');
             return;
         }
 
         if (this.message_cache.length === 0) return;
-
-        const result = await ai.chatSync({
-            role: 'user',
-            content: this.message_cache.slice(-100).join('\n')
-        });
-        await ai.chat({
-            role: 'assistant',
-            content: `${result}`
-        });
+        const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });
+        this.message_cache = [];
+        if (result.trim() !== "") await ai.chat({ role: 'assistant', content: `${result}` });
 
         setTimeout(async () => {
             console.log('🐺 Shadow responds:', result);

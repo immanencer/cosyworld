@@ -41,12 +41,12 @@ function soulfind(name) {
 function soulupdate(soul) {
     const index = SOULS.findIndex((s) => s.name === soul.name);
     if (index === -1) {
-        console.error('👻 ❌ soul not found:', soul);
+        console.error('👻 ❌ soul terminated:', soul);
         return;
     }
 
     SOULS[index] = soul;
-    console.log('👻 ✅ soul updated:', soul);
+    console.log('👻 ✅ soul saved:', soul);
     soulsave();
 };
 
