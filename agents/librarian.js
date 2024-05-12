@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import process from "process"; // Add this line
 
 import AIServiceManager from '../tools/ai-service-manager.js';
 
@@ -11,9 +12,10 @@ const librarian = new DiscordAIBot('llama');
 librarian.on_login = async () => librarian.sendAsSoul(...(await ingest()));
 librarian.login();
 
-async function openOrCreateBookshelf(channel) {
-    const sanitizedChannel = channel.replace(/[^\x00-\x7F]/g, "");
-    const directoryPath = path.join('bookshelf', sanitizedChannel);
+import { generateHash, xorFoldHash } from '../tools/crypto.js';
+
+async function openOrCreateBookshelf(book) {
+    const directoryPath = path.join('bookshelf', book);
 
     try {
         // Attempt to create the directory
@@ -58,7 +60,9 @@ async function ingest() {
     for (const channel of channels) {
         console.log('📚 Ingesting channel:', channel);
 
-        openOrCreateBookshelf(channel);
+        const channel_hash = xorFoldHash(generateHash(channel));
+
+        openOrCreateBookshelf(channel_hash);
         console.log('📚 Ingesting channel:', channel);
 
         process.stdout.write('\n📘');
@@ -70,7 +74,7 @@ async function ingest() {
             channel_cache.push(message_formatter(message));
         }
         channel_cache.sort();
-        await fs.writeFile(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, ""), 'messages.txt'), channel_cache.join('\n'));
+        await fs.writeFile(path.join('bookshelf', channel_hash, 'messages.txt'), channel_cache.join('\n'));
         process.stdout.write('📘');
         message_cache.push(...channel_cache);
 

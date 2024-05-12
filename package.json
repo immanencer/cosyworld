@@ -5,7 +5,8 @@
   "main": "ai-service.js",
   "scripts": {
     "test": "jest",
-    "demo": "node ./demo/demo.js"
+    "demo": "node ./demo/demo.js",
+    "prepare": "husky install"
   },
   "type": "module",
   "author": "",
@@ -20,5 +21,13 @@
     "openai": "^4.38.2",
     "replicate": "^0.29.1",
     "sharp": "^0.33.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.2.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-async-await": "^0.0.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "globals": "^15.2.0",
+    "husky": "^9.0.11"
   }
 }

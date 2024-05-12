@@ -32,14 +32,7 @@ const ghost = new DiscordAIBot(soulseek('madam euphemie'));
 console.debug(JSON.stringify(ghost.soul));
 
 async function getMansionMap() {
-    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
-
-    let counter = 100;
-    const mansion_map = mansion_rooms.reduce((map, room) => {
-        map[(counter++).toString(16)] = room;
-        return map;
-    }, {});
-    return mansion_map;
+    return (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
 }
 
 
@@ -56,10 +49,12 @@ async function sendCreeperMessage() {
 
     Here are the rooms you know of in the mansion:
 
-    ${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}
+    ${Object.entries(mansion_map).map(T => `${T}`).join('\n')}
 
-    👻 create or select one soul to move around the haunted mansion using JSON ONLY using this format 
-    {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
+    👻 create or select one or more soul to haunt the mansion
+    Use any language you know to be spooky and mysterious  
+    
+    (🚪 location) Ghost Name: oooOOOooos... soooo spooooooky....
     ` });
 
     let response = '';
@@ -133,7 +128,7 @@ ghost.on_login = async () => {
     `);
 }
 
-ghost.sendAsSoulsYML = async (input, unhinged) => {
+ghost.sendAsSoulsYML = async (input) => {
     await sendCreeperMessage();
 
     const lines = input.split('\n');
@@ -145,8 +140,8 @@ ghost.sendAsSoulsYML = async (input, unhinged) => {
             if (buffer !== '') {
                 ghost.sendAsSoul(ghost.soul, buffer, true);
                 buffer = '';
-            };
-            const [num, room] = line.split('🚪');
+            }
+            const [num] = line.split('🚪');
 
             if (mansion_map[num]) {
                 console.log(`🛞 Moving soul to room ${mansion_map[num]}`);

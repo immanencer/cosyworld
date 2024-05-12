@@ -7,6 +7,24 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐭 ratichat (dev)",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\ratichat2.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐭 ratichat",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\ratichat.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "👻 ghost",
             "skipFiles": [
                 "<node_internals>/**"
@@ -21,15 +39,6 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\demo\\demo.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "🐭 ratichat",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\agents\\ratichat.js"
         },
         {
             "type": "node",
