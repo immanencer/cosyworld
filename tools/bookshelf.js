@@ -4,11 +4,19 @@ import { generateHash, xorFoldHash } from './crypto.js';
 
 export default async function loadWhispers({ rooms }) {
     const whispers = [];
-    // temporarily push the folded hash of each room into the rooms array
-    rooms.push(...rooms.map(room => xorFoldHash(generateHash(room))));
     for (const room of rooms) {
+        console.log('📚 Loading whispers for', room);
+        // deal with emojis in room names
+        const room_hash = xorFoldHash(generateHash(room));
         try {
-            const books = fs.readdir(`./bookshelf/${room}`, { withFileTypes: true, recursive: true});
+            try {
+                await fs.access(`./bookshelf/${room_hash}`);
+            } catch (error) {
+                console.log('Creating shelf for room:', room_hash);
+                await fs.mkdir(`./bookshelf/${room_hash}`); 
+                continue;
+            }
+            const books = await fs.readdir(`./bookshelf/${room_hash}`, { withFileTypes: true, recursive: true});
             for await (const book of await books) {
                 if (!book.isFile()) continue;
                 if (!book.name.endsWith('.txt')) continue;
@@ -40,7 +48,7 @@ export default async function loadWhispers({ rooms }) {
                 }
             }
         } catch (error) {
-            console.error('Failed to load whispers for', room, error);
+            console.error('Failed to load whispers for', room, room_hash, error);
         }
     }
     // Sort the whispers by timestamp

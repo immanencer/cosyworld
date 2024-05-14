@@ -48,9 +48,12 @@ class Shadow extends DiscordBot {
         console.log('🐺 Message received:', data);
 
         // Follow the owner
-        if (data.author == this.soul.owner) this.soul.location = data.location;
+        if (data.author == this.soul.owner && data.location.indexOf('🥩') === -1) this.soul.location = data.location;
 
-        if (message.author.bot || message.author === this.client.user.username) return;
+        if (message.author.bot || message.author === this.client.user.username) { 
+            this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
+            return;
+        }
         if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
         if (data.location !== this.soul.location) return;
         console.log('🐺 Shadow is processing the message...');
@@ -66,10 +69,8 @@ class Shadow extends DiscordBot {
         this.message_cache = [];
         if (result.trim() !== "") await ai.chat({ role: 'assistant', content: `${result}` });
 
-        setTimeout(async () => {
             console.log('🐺 Shadow responds:', result);
             await this.sendAsSoul(this.soul, result);
-        }, 1111);
     }
 }
 

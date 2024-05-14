@@ -7,65 +7,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "🐭 ratichat (dev)",
+            "name": "🕸️ server",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\ratichat2.js"
+            "program": "${workspaceFolder}\\server\\index.mjs"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "🐭 ratichat",
+            "name": "🎮 📡 discord listener",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\ratichat.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "👻 ghost",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\agents\\ghost.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "🪧 demo",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\demo\\demo.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "🐺 skull",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\agents\\wolves\\skull.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "🐸 toad",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\agents\\toad.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "🦡 badger",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\agents\\badger.js"
+            "program": "${workspaceFolder}\\services\\listener.mjs"
         }
     ]
 }

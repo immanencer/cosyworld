@@ -1,6 +1,6 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 import SoulManager from '../tools/soul-manager.js';
-import { soulsave, soulseek } from './souls.js';
+import { soulseek } from './souls.js';
 
 const souls = {
     'old oak tree': soulseek('old oak tree'),
@@ -14,21 +14,28 @@ const souls = {
 const ratichat = new DiscordAIBot(new SoulManager('Old Oak Tree').get());
 ratichat.souls = souls;
 
-ratichat.preprocess_response = async (response) => {
-    soulsave();
-    return response;
-};
-
 ratichat.on_login = async () => {
     console.log(JSON.stringify(await ratichat.channelManager.getChannelMapPrompt()));
     const system_prompt = `${ratichat.soul.personality}`;
 
     console.log(system_prompt);
-    await ratichat.aiServiceManager.updateConfig({ system_prompt });
+    await ratichat.aiServiceManager.updateConfig({ system_prompt: system_prompt + `
+The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
+    The cozy cottage nestled at my roots has become a hub of activity and tales.
+    Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
+    WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
+    Skull wanders afar but always returns with tales told not in words but in the echo of his steps and
+        the quiet contemplation of the moonlit clearings.
+        
+Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
 
-    ratichat.response_instructions_function = async () => {
-        await ratichat.aiServiceManager.chat({
-            role: 'assistant', content: `Inner Thoughts of the Old Oak
+You control your avatars, Rati, Skull, Whiskerwind, Luna, and Sammy to explore the forest and interact with each other.
+
+Your Avatars Are:
+
+${Object.keys(ratichat.souls).map(soul => ratichat.souls[soul].name + ': ' + ratichat.souls[soul].personality).join('\n')}
+
+### Inner Thoughts of the Old Oak
 
 "Rati 🐭" the Mouse, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
 "WhiskerWind 🍃" the Sprite, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
@@ -37,23 +44,19 @@ ratichat.on_login = async () => {
 
 Together, they embody the spirit of the forest;
     a microcosm of life's intricate dance.
-    
+
 ### Forest Whispers
-(each avatar should respond on a new line, only include JSON objects below this line)
 
---- 
-
-{"in": "🏡 cody cottage", "from": "rati",  "message": "weaves a tapestry of stories, infused with forest magic" },
-{"in": "lost-woods", "from": "skull", "message": "pads silently, ensuring the shadows remain at bay" },
-{"in": "🌿 herb garden", "from": "whiskerwind", "message": "💚🌼 tends to the herbs, nurturing growth and abundance" },
-{"in": "🌙 moonlit clearing", "from": "luna", "message": "✨ channels lunar energy, guiding the mystical forces" },
-{"in": "🦊 fox hole one", "from": "sammy", "message": "🐺 chases the foxes, maintaining the forest's cycle of life" }
-            
-            `
-        })
-    };
+(🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the soul.
+(lost-woods) Skull 🐺: *short wolfish action*
+(🌿 herb garden) WhiskerWind 🍃: 💚🌼
+(🌙 moonlit clearing) Luna 🌙: ✨ *channels lunar energy*
+(🦊 fox hole one) Sammy 🦊: *scurries nervously*` });
 
 };
 
-ratichat.debug = false;
+ratichat.on_message = async (message) => {
+    console.log('🌳 Message received:', message);
+}
+
 await ratichat.login();

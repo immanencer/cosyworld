@@ -46,7 +46,7 @@ class WebhookManager {
         try {
             chunkText(message, 2000).forEach(async (chunk) => {
                 await webhook.send({
-                    content: message,
+                    content: chunk,
                     threadId: threadId
                 });
             });
@@ -58,6 +58,10 @@ class WebhookManager {
     async sendAsSoul(soul, message) {
         console.log('🎮 Sending message as soul:', soul.name);
         const location = await this.channelManager.getLocation(soul.location);
+        if (!location) {
+            console.error(`🎮 ❌ Invalid location: ${soul.location}`);
+            return;
+        }
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (!webhook) {
             console.error(`🎮 ❌ Failed to get webhook for channel: ${location.channel}`);

@@ -1,0 +1,64 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #ccc;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
+    background-color: #f0f0f0;
+    margin-right: 20px;
+}
+
+.title {
+    font-size: 24px;
+}
+
+.description {
+    font-size: 16px;
+    color: #666;
+}
+
+.content {
+    padding: 20px;
+}
+
+.chart {
+    width: 100%;
+    height: 300px;
+    background-color: #f9f9f9;
+    margin: 20px 0;
+}
+
+.file-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.file-list th,
+.file-list td {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.file-list th {
+    background-color: #f2f2f2;
+}
+
+.file-list tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.search-input {
+    padding: 8px;
+    width: 100%;
+    margin-bottom: 20px;
+}

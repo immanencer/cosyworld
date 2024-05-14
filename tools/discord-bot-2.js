@@ -53,8 +53,7 @@ class MinimalistDiscordBot {
             if (this.on_message) await this.on_message(message);
         }
         catch (error) {
-            console.error('🎮 ❌ Failed to handle messagfe:', error);
-            throw error;
+            console.error('🎮 ❌ Failed to handle message:', error);
         }
     }
 

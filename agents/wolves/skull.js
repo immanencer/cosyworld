@@ -98,6 +98,10 @@ class Skull extends DiscordBot {
             location: message.channel.name
         };
 
+        // stay out of construction zones
+        if (message.channel.name.indexOf('🚧') === 0) return false;
+        if (message.channel.name.indexOf('🥩') === 0) return false;
+
         // Follow the owner
         if (data.author == this.soul.owner) {
             if (data.content.includes('come')) {
@@ -113,7 +117,10 @@ class Skull extends DiscordBot {
             }
         }
 
-        if (message.author.bot || message.author === this.client.user.username) return;
+        if (message.author.bot || message.author === this.client.user.username) { 
+            this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
+            return;
+        }
         if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
         if (data.location !== this.soul.location) return;
         console.log(`🐺 Skull heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
@@ -146,7 +153,7 @@ class Skull extends DiscordBot {
             return;
         }
 
-        const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}`});
+        const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}` });
         await ai.chat({ role: 'assistant', content: `${result}` });
         this.message_cache = [];
 
@@ -164,12 +171,10 @@ class Skull extends DiscordBot {
                 normalLines.push(line);
             }
         }
-        
+
         // send the normal lines as a message
         if (normalLines.length > 0) {
-            setTimeout(async () => {
-                await this.sendAsSoul(this.soul, `${normalLines.join('\n')}`);
-            }, Math.floor(Math.random() * 1111));
+            await this.sendAsSoul(this.soul, `${normalLines.join('\n')}`);
         }
 
 
@@ -187,9 +192,7 @@ class Skull extends DiscordBot {
                 continue
             }
 
-            setTimeout(async () => {
                 await this.sendAsSoul(this.soul, `🐺 ${parsed.message}`);
-            }, Math.floor(Math.random() * 1111));
         }
     }
 }

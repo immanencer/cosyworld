@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import ChannelManager from './discord-channel-manager.js';
@@ -12,6 +14,8 @@ import { parseYaml } from './yml/parseYaml.js';
 import SoulManager from './soul-manager.js';
 
 import cleanJson from './cleanJson.js';
+
+import { parseEntry } from './parseEntrySimple.mjs';
 
 class DiscordBot {
     options = {
@@ -82,22 +86,22 @@ class DiscordBot {
         }
     }
 
-    async handleMessage(message) {
-        this.subscribed_channels = this.soul.listen;
-        if (this.souls) {
-            this.subscribed_channels = [
-                ...(this.soul.listen || []),
-                ...Object.values(this.souls).map(soul => soul.location)
-            ];
-        }
+    // async handleMessage(message) {
+    //     this.subscribed_channels = this.soul.listen;
+    //     if (this.souls) {
+    //         this.subscribed_channels = [
+    //             ...(this.soul.listen || []),
+    //             ...Object.values(this.souls).map(soul => soul.location)
+    //         ];
+    //     }
 
-        if (this.message_filter(message)) {
-            await this.process_message(message);
-            return true;
-        } else {
-            return false;
-        }
-    }
+    //     if (this.message_filter(message)) {
+    //         await this.process_message(message);
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+    // }
 
     subscribed_channels = [];
     subscribe(channelName) {
@@ -176,6 +180,25 @@ class DiscordBot {
             console.error(`🎮 ❌ Failed to send message: ${error}`);
             // Handle the error appropriately, perhaps retrying or notifying an admin
         }
+    }
+
+    async sendAsSoulsSimple(output, unhinged) {
+        const messages = output.split('\n\n').map(parseEntry);
+
+        if (messages && this.souls) {
+            for (const message of messages) {
+                if (!message || !message.location || !message.name || !message.message) {
+                    console.error('🎮 ❌ Invalid message:', message);
+                    continue;
+                }
+                console.log(`🎮 📥 Processing message from ${message.name} in ${message.location}: ${message.message}`);
+                await this.processMessage(message, unhinged);
+            }
+        }
+
+        // send entire message to log channel
+        console.log(`🎮 📤 Sending as ${this.soul.name} (${this.soul.location})`);
+        return this.sendMessage(this.channel, output);
     }
 
     async sendAsSoulsYML(output, unhinged) {
@@ -306,7 +329,7 @@ class DiscordBot {
     }
 
     prior_messages = {};
-    async sendAsSoul(soul, message, unhinged) {
+    async sendAsSoul(soul, message) {
         console.log(`🎮 📤 Sending message as ${soul.name} (${soul.location})`);
 
         if (!message) { message = '...'; }

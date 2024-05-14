@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Discord Bot API Tester</h1>
+    <select id="action">
+        <option value="sendMessage">Send Message</option>
+        <option value="sendAsSoul">Send As Soul</option>
+    </select>
+    <select id="soulSelect" style="display:none;"></select>
+    <input type="text" id="channelId" placeholder="Channel ID">
+    <textarea id="message" rows="4" placeholder="Message"></textarea>
+    <input type="text" id="threadId" placeholder="Thread ID (optional)">
+    <button onclick="enqueueRequest()">Enqueue Request</button>
+    <button onclick="processQueue()">Process Queue</button>
+    <p id="response"></p>
+</div>
+
+<script>
+    let characters = [];
+
+    async function fetchCharacters() {
+        try {
+            const response = await fetch('http://localhost:3000/souls');
+            characters = await response.json();
+            populateSoulSelect();
+        } catch (error) {
+            console.error('Failed to fetch characters:', error);
+        }
+    }
+
+    function populateSoulSelect() {
+        const soulSelect = document.getElementById('soulSelect');
+        characters.forEach(character => {
+            const option = document.createElement('option');
+            option.value = character.name;
+            option.text = `${character.emoji} ${character.name}`;
+            soulSelect.add(option);
+        });
+    }
+
+    document.getElementById('action').addEventListener('change', function() {
+        const soulSelect = document.getElementById('soulSelect');
+        if (this.value === 'sendAsSoul') {
+            soulSelect.style.display = 'block';
+        } else {
+            soulSelect.style.display = 'none';
+        }
+    });
+
+    async function enqueueRequest() {
+        const action = document.getElementById('action').value;
+        const channelId = document.getElementById('channelId').value;
+        const message = document.getElementById('message').value;
+        const threadId = document.getElementById('threadId').value || null;
+
+        let requestBody;
+
+        if (action === 'sendMessage') {
+            requestBody = {
+                action: 'sendMessage',
+                data: {
+                    channelId: channelId,
+                    message: message,
+                    threadId: threadId
+                }
+            };
+        } else if (action === 'sendAsSoul') {
+            const soulName = document.getElementById('soulSelect').value;
+            const soul = characters.find(character => character.name === soulName);
+            if (!soul) {
+                document.getElementById('response').innerText = 'Selected soul not found';
+                return;
+            }
+            requestBody = {
+                action: 'sendAsSoul',
+                data: {
+                    soul: { ...soul, channelId: channelId, threadId: threadId },
+                    message: message
+                }
+            };
+        }
+
+        const response = await fetch('http://localhost:3000/discord-bot/enqueue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const result = await response.json();
+        document.getElementById('response').innerText = result.message || result.error;
+    }
+
+    async function processQueue() {
+        const response = await fetch('http://localhost:3000/discord-bot/process');
+        const result = await response.json();
+        document.getElementById('response').innerText = result.message || result.error;
+    }
+
+    // Fetch characters on page load
+    fetchCharacters();
+</script>
+
+</body>
+</html>

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "demo": "node ./demo/demo.js",
-    "prepare": "husky install"
+    "server": "node ./server/index.js",
+    "server-dev": "node ./server/index.js"
   },
   "type": "module",
   "author": "",
@@ -16,18 +17,15 @@
     "express": "^4.19.2",
     "groq-sdk": "^0.3.3",
     "js-yaml": "^4.1.0",
-    "mongoose": "^8.3.4",
     "ollama": "^0.5.0",
     "openai": "^4.38.2",
-    "replicate": "^0.29.1",
-    "sharp": "^0.33.3"
+    "replicate": "^0.29.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
     "eslint": "^8.57.0",
     "eslint-plugin-async-await": "^0.0.0",
     "eslint-plugin-promise": "^6.1.1",
-    "globals": "^15.2.0",
-    "husky": "^9.0.11"
+    "globals": "^15.2.0"
   }
 }

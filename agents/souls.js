@@ -51,9 +51,9 @@ function soulupdate(soul) {
 };
 
 // Searches for a soul by name in a case-insensitive manner. Returns the soul, a zombie soul, or a default if not found.
-function soulseek(name, zombie) {
+function soulseek(name,zombie, emoji) {
     // Find the soul that matches the name in either direction of containment
-    const foundSoul = soulfind(name);
+    const foundSoul = soulfind(name) || SOULS.find(soul => soul.emoji === emoji);
 
     if (foundSoul) {
         console.log('👻 ✅ found soul:', foundSoul);
@@ -70,7 +70,7 @@ function soulseek(name, zombie) {
     }
 
     // Return a default soul if no soul or zombie soul is found
-    console.log('👻 🔍 no soul found, returning default');
+    console.log(`👻 🔍 no soul found for ${name}, returning default`);
     return {
         name: 'Default',
         emoji: '🦑',

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Summaries Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+    <script src="main.mjs" type="module" defer></script>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><img src="https://i.imgur.com/dUxHmFC.png" width="100%" height="100%" alt="Logo" /></div>
+        <div>
+            <div class="title">Document Summaries Dashboard</div>
+            <div class="description">Summarizing occult texts with a focus on filtering specific ideas.</div>
+        </div>
+    </div>
+    <div class="content">
+        <div class="chart" id="performanceChartDiv">
+            <!-- Existing HTML content -->
+            <canvas id="performanceChart"></canvas>
+        </div>
+        <input type="text" id="searchInput" placeholder="Search for files..." class="search-input">
+        <table class="file-list" id="summaryTable">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Lines Summarized</th>
+                    <th>TPS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Existing HTML content -->
+            </tbody> 
+        </table>
+    </div>
+</body>
+</html>
