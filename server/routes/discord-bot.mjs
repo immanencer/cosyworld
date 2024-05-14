@@ -1,13 +1,11 @@
+import db from '../../database/index.js';
+const collectionName = 'requests';
+
 import express from 'express';
 
-import { MongoClient } from 'mongodb';
 import { Client, GatewayIntentBits } from 'discord.js';
 
 const app = express.Router();
-
-const mongoUrl = 'mongodb://localhost:27017';
-const dbName = 'discordQueue';
-const collectionName = 'requests';
 
 // Discord Client Setup
 const discordClient = new Client({
@@ -32,20 +30,6 @@ try {
 }
 
 
-// MongoDB Setup
-let db;
-let client = new MongoClient(mongoUrl);
-try {
-    await client.connect();
-    console.log('🎮 Connected to MongoDB');
-    db = client.db(dbName);
-} catch (error) {
-    console.error('🎮 ❌ MongoDB Connection Error:', error);
-}
-
-function isMongoConnected() {
-    return !!db;
-}
 // Middleware
 app.use(express.json());
 
@@ -63,7 +47,7 @@ app.post('/enqueue', async (req, res) => {
 });
 
 app.get('/process', async (req, res) => {
-    if (!isMongoConnected()) {
+    if (!db) {
         return res.status(500).send({ error: 'Database connection error' });
     }
     if (!discordReady) {
@@ -101,7 +85,7 @@ async function processRequest(action, data) {
         console.error('🎮 ❌ Discord client not ready');
         return;
     }
-    if (!isMongoConnected()) {
+    if (!db) {
         console.error('🎮 ❌ MongoDB not connected');
         return;
     }
