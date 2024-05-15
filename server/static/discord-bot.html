@@ -27,7 +27,7 @@
             font-size: 1.5em;
             margin-bottom: 10px;
         }
-        input, textarea, select, button {
+        select, textarea, button {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -49,14 +49,9 @@
 
 <div class="container">
     <h1>Discord Bot API Tester</h1>
-    <select id="action">
-        <option value="sendMessage">Send Message</option>
-        <option value="sendAsSoul">Send As Soul</option>
-    </select>
-    <select id="soulSelect" style="display:none;"></select>
-    <input type="text" id="channelId" placeholder="Channel ID">
+    <select id="soulSelect" title="Select Soul"></select>
+    <select id="locationSelect" title="Select Location"></select>
     <textarea id="message" rows="4" placeholder="Message"></textarea>
-    <input type="text" id="threadId" placeholder="Thread ID (optional)">
     <button onclick="enqueueRequest()">Enqueue Request</button>
     <button onclick="processQueue()">Process Queue</button>
     <p id="response"></p>
@@ -64,6 +59,7 @@
 
 <script>
     let characters = [];
+    let locations = [];
 
     async function fetchCharacters() {
         try {
@@ -72,6 +68,16 @@
             populateSoulSelect();
         } catch (error) {
             console.error('Failed to fetch characters:', error);
+        }
+    }
+
+    async function fetchLocations() {
+        try {
+            const response = await fetch('http://localhost:3000/discord-bot/locations');
+            locations = await response.json();
+            populateLocationSelect();
+        } catch (error) {
+            console.error('Failed to fetch locations:', error);
         }
     }
 
@@ -85,47 +91,39 @@
         });
     }
 
-    document.getElementById('action').addEventListener('change', function() {
-        const soulSelect = document.getElementById('soulSelect');
-        if (this.value === 'sendAsSoul') {
-            soulSelect.style.display = 'block';
-        } else {
-            soulSelect.style.display = 'none';
-        }
-    });
+    function populateLocationSelect() {
+        const locationSelect = document.getElementById('locationSelect');
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.id;
+            option.text = `${location.type === 'thread'? '🧵' : ''} ${location.name}`;
+            locationSelect.add(option);
+        });
+    }
 
     async function enqueueRequest() {
-        const action = document.getElementById('action').value;
-        const channelId = document.getElementById('channelId').value;
-        const message = document.getElementById('message').value;
-        const threadId = document.getElementById('threadId').value || null;
-
-        let requestBody;
-
-        if (action === 'sendMessage') {
-            requestBody = {
-                action: 'sendMessage',
-                data: {
-                    channelId: channelId,
-                    message: message,
-                    threadId: threadId
-                }
-            };
-        } else if (action === 'sendAsSoul') {
-            const soulName = document.getElementById('soulSelect').value;
-            const soul = characters.find(character => character.name === soulName);
-            if (!soul) {
-                document.getElementById('response').innerText = 'Selected soul not found';
-                return;
-            }
-            requestBody = {
-                action: 'sendAsSoul',
-                data: {
-                    soul: { ...soul, channelId: channelId, threadId: threadId },
-                    message: message
-                }
-            };
+        const soulName = document.getElementById('soulSelect').value;
+        const soul = characters.find(character => character.name === soulName);
+        if (!soul) {
+            document.getElementById('response').innerText = 'Selected soul not found';
+            return;
         }
+
+        const locationId = document.getElementById('locationSelect').value;
+        const message = document.getElementById('message').value;
+
+        const location = locations.find(location => location.id === locationId);
+        const requestBody = {
+            action: 'sendAsSoul',
+            data: {
+                soul: { 
+                    ...soul,
+                    channelId: location.parent || location.id,
+                    threadId: location.parent ? location.id : null 
+                },
+                message: message
+            }
+        };
 
         const response = await fetch('http://localhost:3000/discord-bot/enqueue', {
             method: 'POST',
@@ -145,8 +143,9 @@
         document.getElementById('response').innerText = result.message || result.error;
     }
 
-    // Fetch characters on page load
+    // Fetch characters and locations on page load
     fetchCharacters();
+    fetchLocations();
 </script>
 
 </body>

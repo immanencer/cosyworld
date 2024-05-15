@@ -17,11 +17,11 @@ const discordClient = new Client({
 });
 
 import configuration from '../../tools/configuration.js';
-const discordToken = (await configuration('discord-bot')).token;
+const config = await configuration('discord-bot');
 
 let discordReady = false;
 try {
-    await discordClient.login(discordToken);
+    await discordClient.login(config.token);
     console.log('🎮 Bot logged in');
     discordReady = true;
 } catch (error) {
@@ -34,6 +34,59 @@ try {
 app.use(express.json());
 
 // API Routes
+// Route to get the latest 100 messages
+app.get('/messages', async (req, res) => {
+    if (!db) {
+        return res.status(500).send({ error: 'Database connection error' });
+    }
+    try {
+        const messages = await db.collection('messages')
+            .find({})
+            .sort({ createdAt: -1 })
+            .limit(100)
+            .toArray();
+        res.status(200).send(messages);
+    } catch (error) {
+        console.error('🎮 ❌ Failed to fetch messages:', error);
+        res.status(500).send({ error: 'Failed to fetch messages' });
+    }
+});
+
+// Route to get all locations
+app.get('/locations', async (req, res) => {
+    try {
+        const channels = await discordClient.channels.cache;
+        
+        const locations = [];
+
+        for (const [id, channel] of channels) {
+            if (channel.isTextBased() && channel.threads) {
+                console.log('🎮 Channel:', channel.name, id);
+                locations.push({
+                    id: channel.id,
+                    name: channel.name,
+                    type: 'channel'
+                });
+
+                const threads = await channel.threads.fetchActive();
+                threads.threads.forEach(thread => {
+                    locations.push({
+                        name: thread.name,
+                        id: thread.id,
+                        type: 'thread',
+                        parent: channel.id
+                    });
+                });
+            }
+        }
+
+        res.status(200).send(locations);
+    } catch (error) {
+        console.error('🎮 ❌ Failed to fetch locations:', error);
+        res.status(500).send({ error: 'Failed to fetch locations' });
+    }
+});
+
 app.post('/enqueue', async (req, res) => {
     try {
         const { action, data } = req.body;
@@ -129,15 +182,20 @@ async function sendAsSoul(soul, message) {
 }
 
 async function getOrCreateWebhook(channel) {
-    const webhooks = await channel.fetchWebhooks();
-    let webhook = webhooks.find(wh => wh.owner.id === discordClient.user.id);
-    if (!webhook) {
-        webhook = await channel.createWebhook({
-            name: 'Bot Webhook',
-            avatar: 'https://i.imgur.com/jqNRvED.png'
-        });
+    try {
+        const webhooks = await channel.fetchWebhooks();
+        let webhook = webhooks.find(wh => wh.owner.id === discordClient.user.id);
+        if (!webhook) {
+            webhook = await channel.createWebhook({
+                name: 'Bot Webhook',
+                avatar: 'https://i.imgur.com/jqNRvED.png'
+            });
+        }
+        return webhook;
+    } catch (error) {
+        console.error('🎮 ❌ Failed to get or create webhook:', error);
+        throw error;
     }
-    return webhook;
 }
 
 

@@ -7,6 +7,24 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "👼 heavenly host",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\angels\\host.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "📜 summarizer",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\summarizer.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🕸️ server",
             "skipFiles": [
                 "<node_internals>/**"

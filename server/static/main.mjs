@@ -68,9 +68,10 @@ function filterResults() {
 }
 
 async function initialize() {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
     const data = await fetchData();
     data.summaries = data.summaries.filter(s => s.summary); // Filter out invalid summaries
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
     chart = createPerformanceChart(ctx, data);
     displayData(data);
 }
