@@ -34,14 +34,20 @@ try {
 app.use(express.json());
 
 // API Routes
-// Route to get the latest 100 messages
+// Add a new import to handle ObjectId
+import { ObjectId } from 'mongodb';
+
 app.get('/messages', async (req, res) => {
     if (!db) {
         return res.status(500).send({ error: 'Database connection error' });
     }
+
+    const { since } = req.query;
+    const query = since ? { _id: { $gt: ObjectId(since) } } : {};
+
     try {
-        const messages = await db.collection('messages')
-            .find({})
+        const messages = await db.collection(collectionName)
+            .find(query)
             .sort({ createdAt: -1 })
             .limit(100)
             .toArray();
@@ -51,6 +57,7 @@ app.get('/messages', async (req, res) => {
         res.status(500).send({ error: 'Failed to fetch messages' });
     }
 });
+
 
 // Route to get all locations
 app.get('/locations', async (req, res) => {
