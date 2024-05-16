@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .tasks {
+            margin-top: 20px;
+        }
+        .task {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AI Task Manager</h1>
+    <input type="text" id="model" placeholder="Model (e.g., openai/gpt-3.5-turbo)">
+    <textarea id="systemPrompt" rows="2" placeholder="System Prompt"></textarea>
+    <textarea id="messages" rows="4" placeholder="Messages (as JSON array)"></textarea>
+    <button onclick="createTask()">Create Task</button>
+    <button onclick="fetchTasks()">Fetch Tasks</button>
+    <div id="response"></div>
+    <div class="tasks" id="tasks"></div>
+</div>
+
+<script>
+    async function createTask() {
+        const model = document.getElementById('model').value;
+        const systemPrompt = document.getElementById('systemPrompt').value;
+        const messages = document.getElementById('messages').value;
+
+        if (!model || !systemPrompt || !messages) {
+            document.getElementById('response').innerText = 'All fields are required.';
+            return;
+        }
+
+        let messagesArray;
+        try {
+            messagesArray = JSON.parse(messages);
+        } catch (error) {
+            document.getElementById('response').innerText = 'Invalid JSON format for messages.';
+            return;
+        }
+
+        const task = { model, system_prompt: systemPrompt, messages: messagesArray };
+
+        try {
+            const response = await fetch('/ai/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            });
+            const result = await response.json();
+            document.getElementById('response').innerText = result.message || result.error;
+            fetchTasks(); // Refresh tasks
+        } catch (error) {
+            document.getElementById('response').innerText = 'Failed to create task.';
+        }
+    }
+
+    async function fetchTasks() {
+        try {
+            const response = await fetch('/ai/tasks');
+            const tasks = await response.json();
+            const tasksContainer = document.getElementById('tasks');
+            tasksContainer.innerHTML = '';
+            tasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'task';
+                taskDiv.innerHTML = `
+                    <strong>Model:</strong> ${task.model}<br>
+                    <strong>System Prompt:</strong> ${task.system_prompt}<br>
+                    <strong>Messages:</strong> ${JSON.stringify(task.messages)}<br>
+                    <strong>Status:</strong> ${task.status}<br>
+                    <strong>Response:</strong> ${task.response || 'N/A'}
+                `;
+                tasksContainer.appendChild(taskDiv);
+            });
+        } catch (error) {
+            document.getElementById('response').innerText = 'Failed to fetch tasks.';
+        }
+    }
+</script>
+
+</body>
+</html>

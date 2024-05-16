@@ -1,6 +1,6 @@
 import { replaceContent } from "./censorship.js";
 
-export function chunkText(message, chunkSize = 2000) {
+export default function chunkText(message, chunkSize = 2000) {
     if (!message) {
         console.warn('🎮 ❌ No message provided to chunker');
         return [];

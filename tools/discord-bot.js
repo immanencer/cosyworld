@@ -1,20 +1,27 @@
+import process from 'node:process';
+
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import ChannelManager from './discord-channel-manager.js';
 
-import c from '../configuration.js';
-const configuration = c('discord-bot');
-import { chunkText } from './chunk-text.js';
-import { findSoul } from '../agents/souls.js';
+import c from '../tools/configuration.js';
+const configuration = await c('discord-bot');
 
-import { parseYaml } from '../tools/parseYaml.js';
+import chunkText from './chunk-text.js';
+import { soulseek } from '../agents/souls.js';
+
+import { parseYaml } from './yml/parseYaml.js';
 import SoulManager from './soul-manager.js';
+
+import cleanJson from './cleanJson.js';
+
+import { parseEntry } from './parseEntrySimple.mjs';
 
 class DiscordBot {
     options = {
         yml: false
     };
-    constructor(chatBotActions, clientOptions = {}) {
+    constructor(clientOptions = {}) {
         const defaultIntents = [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
@@ -38,6 +45,7 @@ class DiscordBot {
         }
     }
 
+
     message_filter(message) {
         // Check for missing message components that are essential for filtering
         if (!message.author || !message.channel) {
@@ -50,7 +58,7 @@ class DiscordBot {
         }
 
         // Ignore messages from other bots
-        if (message.author.bot) {
+        if (message.author.bot && message.author.displayName.indexOf('🕰️') ===-1) {
             return false;
         }
 
@@ -60,8 +68,7 @@ class DiscordBot {
         return this.soul.listen.includes(message.channel.name);
     }
 
-    process_message = async (message) => {}
-
+    process_message = async (message) => message;
     async handleMessage(message) {
         this.subscribed_channels = this.soul.listen;
         if (this.souls) {
@@ -79,9 +86,27 @@ class DiscordBot {
         }
     }
 
+    // async handleMessage(message) {
+    //     this.subscribed_channels = this.soul.listen;
+    //     if (this.souls) {
+    //         this.subscribed_channels = [
+    //             ...(this.soul.listen || []),
+    //             ...Object.values(this.souls).map(soul => soul.location)
+    //         ];
+    //     }
+
+    //     if (this.message_filter(message)) {
+    //         await this.process_message(message);
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+    // }
+
     subscribed_channels = [];
     subscribe(channelName) {
-        this.subscribed_channels.push(channelName);
+        this.listen = this.listen || [];
+        this.listen.push(channelName);
         console.log(`🎮 📥 Subscribed to: ${channelName}`);
     }
 
@@ -157,8 +182,34 @@ class DiscordBot {
         }
     }
 
+    async sendAsSoulsSimple(output, unhinged) {
+        const messages = output.split('\n\n').map(parseEntry);
+
+        if (messages && this.souls) {
+            for (const message of messages) {
+                if (!message || !message.location || !message.name || !message.message) {
+                    console.error('🎮 ❌ Invalid message:', message);
+                    continue;
+                }
+                console.log(`🎮 📥 Processing message from ${message.name} in ${message.location}: ${message.message}`);
+                await this.processMessage(message, unhinged);
+            }
+        }
+
+        // send entire message to log channel
+        console.log(`🎮 📤 Sending as ${this.soul.name} (${this.soul.location})`);
+        return this.sendMessage(this.channel, output);
+    }
+
     async sendAsSoulsYML(output, unhinged) {
         console.log('🎮 📤 Sending as souls YML');
+        if (this.preprocess_response) {
+            try {
+                output = await this.preprocess_response(output);
+            } catch (error) {
+                console.error('🎮 ❌ Error in preprocess_output:', error);
+            }
+        }
 
         // Match YAML objects, assuming they are separated in the output in a specific way
         let yamlObjects = output.split('---').map(part => part.trim()).filter(part => part);
@@ -175,7 +226,7 @@ class DiscordBot {
 
             if (actions.length === 0) {
                 console.warn('🎮 ⚠️ No actions found in output:', output);
-                const soul = this.soul || findSoul();
+                const soul = this.soul || soulseek();
                 console.log(`🎮 📤 Sending as ${soul.name} (${soul.location})`);
                 return this.sendAsSoul(soul, output);
             }
@@ -190,7 +241,6 @@ class DiscordBot {
                 console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
                 await this.processAction(action, unhinged);
             }
-
             if (this.souls_moved) {
                 this.souls_moved(Object.values(this.souls));
             }
@@ -200,7 +250,7 @@ class DiscordBot {
 
     async sendAsSouls(output, unhinged, zombie) {
         // Send the rest of the message as the default soul
-        const soul = this.soul || findSoul(zombie);
+        const soul = this.soul || soulseek(zombie);
 
         if (this.options.yml) {
             console.log('🎮 📤 Sending as souls YML');
@@ -214,7 +264,7 @@ class DiscordBot {
                 try {
                     // Remove trailing comma if it exists
                     if (jsonObject.trim().endsWith(',')) {
-                        jsonObject = jsonObject.trim().substring(0, jsonObject.length - 1);
+                        jsonObject = cleanJson(jsonObject.trim().substring(0, jsonObject.length - 1));
                     }
                     return JSON.parse(jsonObject);
                 } catch (error) {
@@ -242,6 +292,10 @@ class DiscordBot {
             if (this.souls_moved) {
                 this.souls_moved(Object.values(this.souls));
             }
+
+            if (this.souls_moved) {
+                this.souls_moved(Object.values(this.souls));
+            }
         }
 
         if (!unhinged) {
@@ -264,8 +318,9 @@ class DiscordBot {
                 this.channelManager.createLocation(this.channel, action.in);
             }
             if (this.channelManager.getLocation(action.in)) {
-                const soul = new SoulManager(action.from, { ...zombie, location: action.in }).getSoul();
-                await this.sendAsSoul(soul, action.message, unhinged);
+                const soul = new SoulManager(action.from, { ...zombie, location: action.in });
+                soul.move(action.in);
+                await this.sendAsSoul(soul.get(), action.message, unhinged);
             }
         } catch (error) {
             console.error('🎮 ❌ Error processing action:', error);
@@ -274,15 +329,18 @@ class DiscordBot {
     }
 
     prior_messages = {};
-    async sendAsSoul(soul, message, unhinged) {
+    async sendAsSoul(soul, message) {
         console.log(`🎮 📤 Sending message as ${soul.name} (${soul.location})`);
 
         if (!message) { message = '...'; }
 
         let location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
-        if (!location) location = await this.channelManager.createLocation('haunted-mansion', `${soul.location}`.toLowerCase());
+        if (!location) {
+            await this.channelManager.createLocation('haunted-mansion', `${soul.location}`.toLowerCase());
+            location = await this.channelManager.getLocation(`${soul.location}`.toLowerCase());
+        }
 
-        console.log(`🎮 📤 Sending as ${soul.name} (${location.channel})`);
+        console.log(`🎮 📤 Sending as ${soul.name} (${location.channel.name})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);
@@ -290,7 +348,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: soul.name + ' ' + (soul.emoji || ''),
+                    username: `${soul.name} ${(soul.emoji || '')} ${(this.debug ? (soul.model || this?.soul?.model || '🧟') : '')}`.trim(),
                     avatarURL: soul.avatar
                 };
                 if (location.thread) {
@@ -371,13 +429,11 @@ class DiscordBot {
                 } else {
                     author = this.authors[message.authorId] || { username: 'Unknown' };
                 }
-                memory.push(`
-                    time:${message.createdTimestamp}
-                    from: ${message.author.displayName || message.author.globalName}
-                    in: ${message.channel.name}
-                    message:
-                    ${message.content}
-                    \n\n`);
+                memory.push(`[${message.createdTimestamp}] ${JSON.stringify({
+                    in: message.channel.name,
+                    from:message.author.displayName || message.author.globalName,
+                    message: message.content
+                })}`);
             }
         }
         memory.sort()

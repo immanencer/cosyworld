@@ -1,11 +1,11 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { findSoul } from './souls.js';
+import { soulseek } from './souls.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 const ai = new AIServiceManager();
-await ai.useService('groq');
+await ai.useService('ollama');
 await ai.updateConfig({
     system_prompt: `
     As a spectral guardian of the haunted mansion, you embody the essence of the manor's eerie past. Your existence is woven into the fabric of each room, each shadowed corner, and every whisper of the wind through the broken windows.
@@ -28,20 +28,11 @@ await ai.updateConfig({
     @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
-const ghost = new DiscordAIBot(findSoul('madam euphemie'));
+const ghost = new DiscordAIBot(soulseek('madam euphemie'));
 console.debug(JSON.stringify(ghost.soul));
 
 async function getMansionMap() {
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
-
-    let counter = 100;
-    const mansion_map = mansion_rooms.reduce((map, room) => {
-        map[(counter++).toString(16)] = room;
-        return map;
-    }, {});
-
-    console.log(`${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}`);
-    return mansion_map;
+    return (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
 }
 
 
@@ -51,17 +42,19 @@ ghost.options = {
 
 
 async function sendCreeperMessage() {
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
     const output = await ai.chat({
         role: 'user', content: `
 
     Here are the rooms you know of in the mansion:
 
-    ${Object.entries(mansion_map).map(([id, room]) => `${id}🚪${room}`).join('\n')}
+    ${Object.entries(mansion_map).map(T => `${T}`).join('\n')}
 
-    👻 create or select one soul to move around the haunted mansion using JSON ONLY using this format 
-    {"from": "The Forgotten", "in": "the grand hall", "message": "*A chill sweeps through the room as a soft, sorrowful melody plays from nowhere.*"}
+    👻 create or select one or more soul to haunt the mansion
+    Use any language you know to be spooky and mysterious  
+    
+    (🚪 location) Ghost Name: oooOOOooos... soooo spooooooky....
     ` });
 
     let response = '';
@@ -87,7 +80,7 @@ ghost.on_login = async () => {
     await ghost.sendMessage(`Awaken Ghost! Seek absolution!`);
 
 
-    const mansion_rooms = (await ghost.channelManager.getChannelThreads('haunted-mansion')).map(thread => `${thread.name}`);
+    const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     ghost.soul.listen = ['haunted-mansion', ...mansion_rooms];
     ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
         instructions: `
@@ -135,7 +128,7 @@ ghost.on_login = async () => {
     `);
 }
 
-ghost.sendAsSoulsYML = async (input, unhinged) => {
+ghost.sendAsSoulsYML = async (input) => {
     await sendCreeperMessage();
 
     const lines = input.split('\n');
@@ -147,8 +140,8 @@ ghost.sendAsSoulsYML = async (input, unhinged) => {
             if (buffer !== '') {
                 ghost.sendAsSoul(ghost.soul, buffer, true);
                 buffer = '';
-            };
-            const [num, room] = line.split('🚪');
+            }
+            const [num] = line.split('🚪');
 
             if (mansion_map[num]) {
                 console.log(`🛞 Moving soul to room ${mansion_map[num]}`);

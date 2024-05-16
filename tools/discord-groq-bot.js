@@ -1,7 +1,7 @@
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 
-class DiscordOllamaBot extends DiscordBot {
+class DiscordGroqBot extends DiscordBot {
     constructor(soul, systemPrompt) {
         super();
         if (!soul) throw new Error('Soul is required');
@@ -24,7 +24,7 @@ class DiscordOllamaBot extends DiscordBot {
     async handleMessage(message) {
         if (!super.handleMessage(message)) return;
         const formatted_message = JSON.stringify({
-            from: message.author.displayName,
+            from: message.author.displayName || message.author.displayName || message.author.username || message.author.id,
             in: message.channel.name,
             message: message.content
         })
@@ -88,4 +88,4 @@ class DiscordOllamaBot extends DiscordBot {
     }
 }
 
-export default DiscordOllamaBot;
+export default DiscordGroqBot;

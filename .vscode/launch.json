@@ -7,11 +7,56 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "🤖 ai",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\ratichat.js"
+            "program": "${workspaceFolder}\\services\\ai-processor.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "👼 heavenly host",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\angels\\host.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐭 ratichat",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\ratichat2.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "📜 summarizer",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\summarizer.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🕸️ server",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\server\\index.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🎮 📡 discord listener",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\services\\listener.mjs"
         }
     ]
 }

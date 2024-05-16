@@ -1,0 +1,12 @@
+{
+    "plugins": [
+        "promise",
+        "async-await"
+    ],
+    "rules": {
+        "promise/catch-or-return": "error",
+        "promise/always-return": "error",
+        "async-await/space-after-async": "error",
+        "async-await/space-after-await": "error"
+    }
+}

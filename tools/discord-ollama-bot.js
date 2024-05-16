@@ -1,22 +1,27 @@
-import { findSoul } from '../agents/souls.js';
+import { soulseek } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from './ai-service-manager.js';
 import SoulManager from './soul-manager.js';
+import { xorFoldHash } from './crypto.js';
 
 class DiscordOllamaBot extends DiscordBot {
-    constructor(soul, systemPrompt) {
+    constructor(soul_name, systemPrompt) {
         super();
-        this.soulManager = new SoulManager(soul);
-        this.soul = this.soulManager.getSoul();
+        if (typeof soul === 'string') soul = soulseek(soul);
+        this.soul_manager = new SoulManager(soul_name);
+        this.soul = this.soul_manager.get();
 
-        this.system_prompt = systemPrompt || this.soul.personality;
+        if (systemPrompt) {
+            console.warn('🚨 systemPrompt is deprecated. Use soul.personality instead');
+        }
+        this.system_prompt = this.soul.personality || systemPrompt;
         this.aiServiceManager = new AIServiceManager();
     }
 
     async initialize() {
         await this.aiServiceManager.useService('ollama');
-        await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt });
+        this.soul.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
         console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 
@@ -63,10 +68,13 @@ class DiscordOllamaBot extends DiscordBot {
         }
     
         // Set a new timeout to send messages
-        this.message_timeout = setTimeout(() => {
+        this.message_timeout = setTimeout(async () => {
             if (this.message_cache.length > 0) {
                 try {
-                    this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
+                    if (this.response_instructions_function) {
+                        this.response_instructions = (await this.response_instructions_function());
+                    }
+                    await this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
                     // Clear the cache after sending
                     this.message_cache = [];
                 } catch (error) {
@@ -109,7 +117,7 @@ class DiscordOllamaBot extends DiscordBot {
         await this.aiServiceManager.chat({
             role: 'assistant',
             content: `This is what I remember: \n\n    
-            ${memory.slice(-200).join('\n')}
+            ${memory.slice(-100).join('\n')}
             
             ${this.response_instructions || ''}
             `

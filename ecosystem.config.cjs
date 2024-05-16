@@ -1,13 +1,13 @@
 module.exports ={
   apps : [{
     name   : "ratichat",
-    script : "./agents/ratichat.js"
+    script : "./agents/ratichat2.mjs"
   },{
     name   : "badger",
     script : "./agents/badger.js"
   },{
     name   : "benny",
-    script : "./agents/benny.js"
+    script : "./agents/benny.mjs"
   },{
     name   : "toad",
     script : "./agents/toad.js"
@@ -26,5 +26,17 @@ module.exports ={
   },{
     name: "mr-bear",
     script: "./agents/mr-bear.js"
-  }]
+  },{
+    name: "skull",
+    script: "./agents/wolves/skull.js"
+  },{
+    name: "shadow",
+    script: "./agents/wolves/shadow.js"
+  },{
+    name: "asher",
+    script: "./agents/asher.mjs"
+  }],
+  restart_delay: 10000, // 10 seconds delay before restarting
+  max_restarts: 3,
+  min_uptime: 25000 // considered successfully started after 5 seconds
 }

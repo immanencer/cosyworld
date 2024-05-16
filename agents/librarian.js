@@ -1,9 +1,10 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
+import process from "process"; // Add this line
 
-import AIServiceManager from '../ai-services.js';
+import AIServiceManager from '../tools/ai-service-manager.js';
 
-import { findSoul } from './souls.js';
+import { soulseek } from './souls.js';
 import { replaceContent } from "../tools/censorship.js";
 import DiscordAIBot from "../tools/discord-ollama-bot.js";
 
@@ -11,8 +12,29 @@ const librarian = new DiscordAIBot('llama');
 librarian.on_login = async () => librarian.sendAsSoul(...(await ingest()));
 librarian.login();
 
+import { generateHash, xorFoldHash } from '../tools/crypto.js';
+
+async function openOrCreateBookshelf(book) {
+    const directoryPath = path.join('bookshelf', book);
+
+    try {
+        // Attempt to create the directory
+        await fs.mkdir(directoryPath, { recursive: true });
+        console.log(`Directory created or already exists: ${directoryPath}`);
+    } catch (error) {
+        if (error.code === 'EEXIST') {
+            // Directory already exists, handle as needed
+            console.log(`Directory already exists: ${directoryPath}`);
+        } else {
+            // An error other than "directory already exists" occurred
+            console.error(`Error creating directory at ${directoryPath}: ${error}`);
+            throw error; // Re-throw the error for further handling if necessary
+        }
+    }
+}
+
 async function ingest() {
-    const asher = findSoul('asher');
+    const asher = soulseek('asher');
     // This is the Sribe AI Service        
     const manager = new AIServiceManager();
     await manager.useService('ollama');
@@ -38,10 +60,9 @@ async function ingest() {
     for (const channel of channels) {
         console.log('📚 Ingesting channel:', channel);
 
-        // Open the bookshelf for this channel from the filesystem, or create a new one
-        if (!fs.existsSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")))) {
-            fs.mkdirSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, "")), { recursive: true });
-        }
+        const channel_hash = xorFoldHash(generateHash(channel));
+
+        openOrCreateBookshelf(channel_hash);
         console.log('📚 Ingesting channel:', channel);
 
         process.stdout.write('\n📘');
@@ -53,13 +74,13 @@ async function ingest() {
             channel_cache.push(message_formatter(message));
         }
         channel_cache.sort();
-        fs.writeFileSync(path.join('bookshelf', channel.replace(/[^\x00-\x7F]/g, ""), 'messages.txt'), channel_cache.join('\n'));
+        await fs.writeFile(path.join('bookshelf', channel_hash, 'messages.txt'), channel_cache.join('\n'));
         process.stdout.write('📘');
         message_cache.push(...channel_cache);
 
         // Getting Threads
         if (librarian.channelManager.getChannelId(channel)) {
-            const threads = await librarian.channelManager.getChannelThreads(channel);
+            const threads = await librarian.channelManager.getThreadsForChannel(channel);
 
             for (const thread of threads) {
                 console.log('📚 Ingesting thread... ');
@@ -95,10 +116,11 @@ async function ingest() {
 
         Select an imaginary or real short quote from a book or poem  
         from the vast parisian library of knowledge about the Lonely Forest and its inhabitants 
-        to describe the scroll.
     
-        Do not offer any disclaimers or commentary on the work, just present it as if it were a
-        quote from a book or a poem from a long lost manuscript, include the author's name - real or imaginary.`
+        Respond ONLY with an imaginary 
+        quote from a book or a poem from a long lost manuscript, include the author's name.
+        
+        Do not comment.`
     })) {
         if (!event) continue;
         story += event.message.content;

@@ -1,6 +1,6 @@
 import ollama from 'ollama';
 
-import AIService from '../ai-service.js';
+import AIService from '../tools/ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
 import { replaceContent } from '../tools/censorship.js';

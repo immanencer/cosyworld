@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { type } from 'os';
 import path from 'path';
 
 const ROOT_PATH = path.resolve('.');
@@ -45,7 +44,7 @@ class AIServiceManager {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
-        await this.currentService.updateConfig(config);
+        return await this.currentService.updateConfig(config);
     }
 
     async useService(serviceName) {
@@ -64,9 +63,10 @@ class AIServiceManager {
             throw new Error('No service selected');
         }
         if (!message || !message.content || !message.role) {
-            throw new Error('No message content provided: ' + JSON.stringify(message, null, 2));
+            console.error('No message content provided: ' + JSON.stringify(message));
+            return;
         }
-        return this.currentService.chat(message);
+        return await this.currentService.chat(message);
     }
 
 

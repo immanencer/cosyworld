@@ -1,12 +1,12 @@
 import { Groq } from 'groq-sdk';
-import c from "../configuration.js";
-const configuration = c('groq', {
+import c from "../tools/configuration.js";
+const configuration = await c('groq', {
     apiKey: "YOUR_API_KEY",
 });
 
 const groq = new Groq(configuration);
 
-import AIService from '../ai-service.js';
+import AIService from '../tools/ai-service.js';
 
 import { replaceContent } from '../tools/censorship.js';
 import { mapAsyncIterator } from '../tools/map-async-iterator.js';
