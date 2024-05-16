@@ -1,7 +1,4 @@
 import ollama from 'ollama';
-
-import sharp from 'sharp';
-
 import AIService from '../tools/ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';

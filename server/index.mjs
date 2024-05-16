@@ -20,6 +20,8 @@ app.use('/discord-bot', discordBot);
 import souls from './routes/souls.mjs';
 app.use('/souls', souls);
 
+import ai from './routes/ai.mjs';
+app.use('/ai', ai);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

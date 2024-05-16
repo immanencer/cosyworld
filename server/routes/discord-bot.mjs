@@ -43,10 +43,10 @@ app.get('/messages', async (req, res) => {
     }
 
     const { since } = req.query;
-    const query = since ? { _id: { $gt: ObjectId(since) } } : {};
+    const query = since ? { _id: { $gt: new ObjectId(since) } } : {};
 
     try {
-        const messages = await db.collection(collectionName)
+        const messages = await db.collection('messages')
             .find(query)
             .sort({ createdAt: -1 })
             .limit(100)
@@ -57,7 +57,6 @@ app.get('/messages', async (req, res) => {
         res.status(500).send({ error: 'Failed to fetch messages' });
     }
 });
-
 
 // Route to get all locations
 app.get('/locations', async (req, res) => {
@@ -204,6 +203,14 @@ async function getOrCreateWebhook(channel) {
         throw error;
     }
 }
+
+// periodic processing
+setInterval(async () => {
+    fetch('http://localhost:3000/discord-bot/process')
+        .then(response => response.json())
+        .then(data => console.log('🎮 Processing:', data))
+        .catch(error => console.error('🎮 ❌ Failed to process:', error));
+}, 1000 * 3);
 
 
 export default app;

@@ -1,86 +1,149 @@
-class HostOfAngels {
-    constructor() {
-        this.souls = [];
-        this.lastMessageId = null;  // Add a property to keep track of the last message ID
+import fetch from 'node-fetch';
+import AIServiceManager from '../../tools/ai-service-manager.js';
+
+const ai = new AIServiceManager();
+await ai.initializeServices();
+
+const SOULS_API = 'http://localhost:3000/souls';
+const LOCATIONS_API = 'http://localhost:3000/discord-bot/locations';
+const MESSAGES_API = 'http://localhost:3000/discord-bot/messages';
+const ENQUEUE_API = 'http://localhost:3000/discord-bot/enqueue';
+const TASKS_API = 'http://localhost:3000/ai/tasks';
+const POLL_INTERVAL = 1000;
+
+async function fetchJSON(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
+    return response.json();
+}
+
+async function postJSON(url, data) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error(`Failed to post to: ${url}`);
+    return response.json();
+}
+
+async function initializeSouls() {
+    const souls = (await fetchJSON(SOULS_API)).filter(s => s.owner === 'host');
+    const locations = await fetchJSON(LOCATIONS_API);
+
+    for (const soul of souls) {
+        await ai.useService('ollama');
+        await ai.updateConfig({ system_prompt: soul.personality });
+        soul.location = locations.find(loc => loc.name === soul.location);
+        soul.messageCache = [];
+        soul.lastProcessedMessageId = null;
     }
 
-    async initialize() {
-        console.log('🎮 Host of Angels is starting...');
-        await this.fetchSouls();
-        await this.fetchLocations();
-    }
+    return souls;
+}
 
-    async fetchSouls() {
-        try {
-            const response = await fetch('http://localhost:3000/souls');
-            if (!response.ok) {
-                throw new Error('Failed to fetch souls');
-            }
-            const souls = await response.json();
-            for (const soulConfig of souls.filter(soul => soul.owner === 'host')) {
-                this.addSoul(soulConfig);
-            }
-        } catch (error) {
-            console.error('🎮 ❌ Failed to fetch souls:', error);
+async function createTask(soul, messages) {
+    const task = {
+        action: 'ai',
+        model: 'ollama/llama3',
+        system_prompt: soul.personality,
+        messages
+    };
+
+    const response = await postJSON(TASKS_API, task);
+    return response.taskId;
+}
+
+async function getTaskStatus(taskId) {
+    const url = `${TASKS_API}/${taskId}`;
+    return await fetchJSON(url);
+}
+
+async function processMessagesForSoul(soul) {
+    const url = soul.lastProcessedMessageId
+        ? `${MESSAGES_API}?since=${soul.lastProcessedMessageId}`
+        : MESSAGES_API;
+
+    const messages = await fetchJSON(url);
+
+    messages.sort((a, b) => a._id.localeCompare(b._id));
+
+    if (messages.length > 0) {
+        soul.lastProcessedMessageId = messages.pop()._id;
+    }
+    let respond = false;
+
+    for (const message of messages) {
+        const data = {
+            id: message._id,
+            author: message.author.displayName || message.author.username,
+            content: message.content,
+            location: message.channelId
+        };
+
+        console.log(`${soul.emoji} Message received:`, data);
+
+        if (data.author === soul.owner && !data.location.includes('🥩')) {
+            soul.location = data.location;
         }
+
+        soul.messageCache.push({ role: 'user', content: `you heard ${data.author} say ${data.content}` });
+        if (data.location !== soul.location.id) continue;
+
+        if (data.author === soul.name || message.author.bot) continue;
+
+        respond = true;
     }
 
-    async fetchLocations() {
-        try {
-            const response = await fetch('http://localhost:3000/discord-bot/locations');
-            if (!response.ok) {
-                throw new Error('Failed to fetch locations');
+    if (!respond) return;
+
+    const taskId = await createTask(soul, soul.messageCache);
+    const result = await pollTaskCompletion(taskId);
+    soul.messageCache = [];
+
+
+    if (result.trim() !== "") {
+        console.log(`${soul.emoji} ${soul.name} responds:`, result);
+        await postJSON(ENQUEUE_API, {
+            action: 'sendAsSoul',
+            data: {
+                soul: {
+                    ...soul,
+                    channelId: soul.location.parent || soul.location.id,
+                    threadId: soul.location.parent ? soul.location.id : null
+                },
+                message: result
             }
-            this.locations = await response.json();
-        } catch (error) {
-            console.error('🎮 ❌ Failed to fetch locations:', error);
-        }
+        });
+    } else {
+        console.log(`${soul.emoji} ${soul.name} has nothing to say.`);
     }
 
-    addSoul(soulConfig) {
-        const soul = new Soul(ai, soulConfig);
-        soul.initialize();
-        this.souls.push(soul);
-        console.log(`🧠 Added new soul: ${soulConfig.name}`);
-    }
 
-    async fetchMessages() {
-        try {
-            const url = this.lastMessageId 
-                ? `http://localhost:3000/discord-bot/messages?since=${this.lastMessageId}` 
-                : 'http://localhost:3000/discord-bot/messages';
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Failed to fetch messages');
-            }
-            const messages = await response.json();
-            if (messages.length > 0) {
-                this.lastMessageId = messages[messages.length - 1]._id;  // Update lastMessageId with the ID of the most recent message
-            }
-            return messages;
-        } catch (error) {
-            console.error('🎮 ❌ Failed to fetch messages:', error);
-            return [];
-        }
-    }
+}
 
-    async processMessages() {
-        const messages = await this.fetchMessages();
-        if (messages.length === 0) {
-            console.log('🎮 No new messages to process.');
-            return;
+async function pollTaskCompletion(taskId) {
+    while (true) {
+        const taskStatus = await getTaskStatus(taskId);
+        if (taskStatus.status === 'completed') {
+            return taskStatus.response;
+        } else if (taskStatus.status === 'failed') {
+            throw new Error(`Task ${taskId} failed: ${taskStatus.error}`);
         }
-        for (const soul of this.souls) {
-            soul.location = this.locations.find(location => location.name === soul.soulConfig.location);
-            await soul.processMessages(messages);
-        }
+        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
     }
 }
 
-const hostOfAngels = new HostOfAngels();
-await hostOfAngels.initialize();
+async function mainLoop() {
+    const souls = await initializeSouls();
 
-// Periodically process messages
-setInterval(async () => {
-    await hostOfAngels.processMessages();
-}, 15000); // Adjust interval as needed
+    while (true) {
+        for (const soul of souls) {
+            await processMessagesForSoul(soul);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+    }
+}
+
+mainLoop().catch(console.error);

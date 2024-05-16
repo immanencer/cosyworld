@@ -51,7 +51,7 @@ class Ratichat extends DiscordBot {
             {
                 role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:
 
-            ${whispers.join('\n')}
+            ${whispers.slice(-20).join('\n')}
 
             Summarize your memory as the old oak tree` },
         ], false);
@@ -99,49 +99,30 @@ class Ratichat extends DiscordBot {
 
         const responses = await ai.currentService.raw_chat(this.model || 'llama3', [
             { role: 'system', content: `${soul.personality} you are ${soul.name}'s inner monologue.
-                You are the memory of the forest. You have heard the whispers of the forest and you know the state of the world. 
-                You must now use your avatars to send to respond to the whispers.` },
+                You can freely move your avatars around the forest to any location you know of by using the following format:
+
+                (location) avatar: *action* or message
+
+                For example:
+
+                (lost-woods) Skull: *paws at the door, then enters the cottage*
+
+                (old-oak-tree) WhiskerWind: ✨️ Ah, the ancient tree! I shall dance among its branches and weave a spell of wonder. ✨️
+
+                (lost-woods) Skull: *sniffs* *pads closer*
+
+                (old-oak-tree) WhiskerWind: 🌬️ *blows a gentle breeze* Ah, the ancient tree's secrets are beginning to unravel. The whispers speak of a hidden glade, where the moonlight pours like silver rain.
+                
+                ` },
             { role: 'assistant', content: this.memory + `
-            
-            ---
-
-            I know of the following locations in the forest:
-
-            ${listening.join('\n')}
-
             My avatars are:
 
             ${Object.keys(souls).map(s => `(${s.location || 'nowhere'}) ${s} ${souls[s].emoji}: ${souls[s].personality}`).join('\n')}
 
-            I will carefully use the exact location, avatar name and emoji to move them around responding to the whispers.
+            I always will use the following format for all my messages to send messages from my avatars to the forest:
 
-            (location) avatar: *action* or message
-            
-            For example
-            
-            (lost-woods) Skull 🐺: *perches* beside you, eyes scanning the surroundings.
-            
-            (old-oak-tree) WhiskerWind 🍃: ✨️ Ah, the ancient tree! I shall dance among its branches and weave a spell of wonder. ✨️
-
-            (lost-woods) Skull 🐺: *paws at the door, then enters the cottage*
-
-            (lost-woods) Skull 🐺: *sniffs* *pads closer*
-
-            (lost-woods) Skull 🐺: *sniffs* *paws at the air*
-
-            (old-oak-tree) WhiskerWind 🍃: 🌬️ *blows a gentle breeze* Ah, the ancient tree's secrets are beginning to unravel. The whispers speak of a hidden glade, where the moonligh 
-            t pours like silver rain.
-
-            (old-oak-tree) ratimics: the hidden glade you say? I believe I know it
-
-            (lost-woods) Skull 🐺: *sniffs* *whispers* something ancient and forgotten lies within the hidden glade...
-
-            (old-oak-tree) Skull 🐺: (🐺 Skull 🐺): ⬆️    *winks softly* 🔜
-
-            (lost-woods) ratimics: Shall we go, to the hidden glade, dear skull?
-            
-            `},
-            { role: 'user', content: `${this.message_cache.join('\n')}` }
+            (location) avatar ☀️: *action* or message`},
+            { role: 'user', content: `${this.message_cache.slice(-50).join('\n')}` }
         ]);
 
         console.log(responses.message.content);

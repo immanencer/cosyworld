@@ -1,13 +1,13 @@
 module.exports ={
   apps : [{
     name   : "ratichat",
-    script : "./agents/ratichat.js"
+    script : "./agents/ratichat2.mjs"
   },{
     name   : "badger",
     script : "./agents/badger.js"
   },{
     name   : "benny",
-    script : "./agents/benny.js"
+    script : "./agents/benny.mjs"
   },{
     name   : "toad",
     script : "./agents/toad.js"
@@ -32,6 +32,9 @@ module.exports ={
   },{
     name: "shadow",
     script: "./agents/wolves/shadow.js"
+  },{
+    name: "asher",
+    script: "./agents/asher.mjs"
   }],
   restart_delay: 10000, // 10 seconds delay before restarting
   max_restarts: 3,
