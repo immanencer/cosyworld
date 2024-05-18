@@ -1,150 +1,132 @@
 import DiscordBot from "../tools/discord-bot-2.js";
 import AIServiceManager from "../tools/ai-service-manager.js";
+import calculateTPS from "../tools/calculateTPS.js";
+import loadWhispers from "../tools/bookshelf.js";
+import { soulseek, SOULS } from './souls.js';
+import { parseEntry } from "../tools/parseEntrySimple.mjs";
+
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
-import calculateTPS from "../tools/calculateTPS.js";
-
-import loadWhispers from "../tools/bookshelf.js";
-
-import { soulseek, SOULS } from './souls.js';
-
-import { parseEntry } from "../tools/parseEntrySimple.mjs";
-
 const soul = soulseek('L\'Arbre des Rêves');
 const souls = SOULS.filter(s => s.owner === soul.name);
-const roots = [
-    'old-oak-tree',
-    'lost-woods'
-];
-
-const listening = [];
+const roots = ['old-oak-tree', 'lost-woods'];
 
 class Ratichat extends DiscordBot {
-
     constructor() {
         super();
-        this.lastProcessed = 0;
-        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
+        this.messageCache = [];
+        this.listeningRooms = [];
+        this.memory = '';
     }
 
-    async on_login() {
-        console.log('🌳 Ratichat is online');
-
-        console.log('🧠 initializing ai');
+    async initializeAI() {
+        console.log('🧠 Initializing AI');
         await ai.useService('ollama');
+        await ai.updateConfig({ system_prompt: soul.personality });
+    }
 
-        console.log('📚 loading whispers');
+    async loadWhispersAndMemory() {
+        console.log('📚 Loading whispers');
         let rooms = roots;
         for (let room of roots) {
             const threads = await this.channels.getThreadsForChannel(room);
             rooms = rooms.concat(threads.map(t => t.name));
-
         }
-        listening.push(...rooms);
+        this.listeningRooms = rooms;
+
         let whispers = await loadWhispers({ rooms });
         whispers = whispers.map(w => `(${w.location}) ${w.username}: ${w.message}`);
-        console.log('📚 whispers loaded:\n\n', whispers.join('\n'));
+        console.log('📚 Whispers loaded:\n\n', whispers.join('\n'));
 
-        this.model = await ai.updateConfig({ system_prompt: `${soul.personality}` });
-        const memory = await ai.currentService.raw_chat(this.model, [
-            {
-                role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:
-
+        const memoryResponse = await ai.currentService.raw_chat(
+            await ai.updateConfig({ system_prompt: soul.personality }), 
+            [{ role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:
             ${whispers.slice(-20).join('\n')}
-
-            Summarize your memory as the old oak tree` },
-        ], false);
-        await calculateTPS(memory);
-        this.memory = memory.message.content;
-
-        this.sendAsSoul(soul, this.memory);
+            Summarize your memory as the old oak tree` }]
+        );
+        await calculateTPS(memoryResponse);
+        this.memory = memoryResponse.message.content;
 
         console.log('🌳 Ratichat remembers:', this.memory);
+        await this.sendAsSoul(soul, this.memory);
     }
 
-
-    debounce() {
-        const now = Date.now();
-        if (now - this.lastProcessed < this.debounceTime) {
-            return false;
-        }
-        this.lastProcessed = now;
-        return true;
+    async on_login() {
+        console.log('🌳 Ratichat is online');
+        await this.initializeAI();
+        await this.loadWhispersAndMemory();
     }
 
-    message_cache = [];
+    shouldProcessMessage(message) {
+        return (
+            !message.author.bot &&
+            !message.author.username.includes('🕰️') &&
+            message.author.username !== this.client.user.username &&
+            this.listeningRooms.includes(message.channel.name)
+        );
+    }
+
     async on_message(message) {
-        const data = {
-            author: message.author.displayName || message.author.globalName,
-            content: message.content,
-            location: message.channel.name
-        };
+        const { displayName, globalName } = message.author;
+        const location = message.channel.name;
+        const content = message.content;
 
-        if (message.author.bot || message.author.username === this.client.user.username) {
-            // a self message
-            return;
-        }
-        if (data.author === `${soul.name} ${soul.emoji}`) return;
-        if (!listening.includes(data.location)) return;
+        if (!this.shouldProcessMessage(message)) return;
+
+        const data = { author: displayName || globalName, content, location };
         console.log(`${soul.emoji} ${soul.name} heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
 
-        this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
-        if (!this.debounce()) {
-            console.log('${soul.emoji} ${soul.name} is debouncing...');
-            return;
-        }
+        this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
+        if (this.messageCache.length === 0) return;
 
-        if (this.message_cache.length === 0) return;
+        const response = await ai.currentService.raw_chat(
+            ai.model || 'llama3',
+            [
+                { role: 'system', content: `${soul.personality}` },
+                { role: 'assistant', content: `${this.memory}\nMy avatars are:\n
+${souls.map(s => `(${s.location || 'nowhere'}) ${s.name} ${s.emoji}: ${s.personality}`).join('\n')}
+From now on I will always begin my responses by summarizing the state of the world
+and then making a long term plan.
 
-        const responses = await ai.currentService.raw_chat(this.model || 'llama3', [
-            { role: 'system', content: `${soul.personality} you are ${soul.name}'s inner monologue.
-                You can freely move your avatars around the forest to any location you know of by using the following format:
 
-                (location) avatar: *action* or message
+I will always respond with the actions of my avatars in a code block.
 
-                For example:
+\`\`\`
 
-                (lost-woods) Skull: *paws at the door, then enters the cottage*
+(🏡 cody cottage) Rati 🐭: *weaves a loom* Oh hello dear, let me tell you a short story of the forest.
 
-                (old-oak-tree) WhiskerWind: ✨️ Ah, the ancient tree! I shall dance among its branches and weave a spell of wonder. ✨️
+There once was a mouse who lived in a tree, she was very happy and free.
+And then one day, she met a bee, who was very happy and free.
+They danced and sang, and had a grand old time, and then they went to bed.
+The end.
 
-                (lost-woods) Skull: *sniffs* *pads closer*
+(🌿 herb garden) WhiskerWind 🍃: *flutters in the wind*
 
-                (old-oak-tree) WhiskerWind: 🌬️ *blows a gentle breeze* Ah, the ancient tree's secrets are beginning to unravel. The whispers speak of a hidden glade, where the moonlight pours like silver rain.
-                
+(🌙 moonlit clearing) Luna 🌙: *channels the moon*
+
+(🦊 fox hole one) Sammy 🦊: *scurries nervously*
+
+(lost-woods) Skull 🐺: *howls at the moon*
+
+\`\`\`
                 ` },
-            { role: 'assistant', content: this.memory + `
-            My avatars are:
+                { role: 'user', content: this.messageCache.slice(-88).join('\n') }
+            ]
+        );
 
-            ${Object.keys(souls).map(s => `(${s.location || 'nowhere'}) ${s} ${souls[s].emoji}: ${souls[s].personality}`).join('\n')}
 
-            I always will use the following format for all my messages to send messages from my avatars to the forest:
+        this.messageCache = [];
 
-            (location) avatar ☀️: *action* or message`},
-            { role: 'user', content: `${this.message_cache.slice(-50).join('\n')}` }
-        ]);
 
-        console.log(responses.message.content);
 
-        let messages = responses.message.content
-            .split('\n\n')
-            .map(parseEntry);
-        console.log(messages);
-
-        messages = messages.filter(m => m !== null);
-
-        for (let message of messages.filter(T => T && T.message !== '')) {
+        const messages = response.message.content.split(/(.*:)/).map(parseEntry).filter(m => m !== null);
+        for (let message of messages) {
             const avatar = soulseek(message.name, soul, message.emoji);
-            if (!avatar) {
-                console.error('No avatar found for', message.name);
-                continue;
-            }
+            if (!avatar) continue;
             if (avatar.location !== message.location) {
                 const location = await this.channels.getLocation(await this.channels.fuzzyMatchName(message.location));
-                if (location) {
-                    avatar.location = location.thread_name || location.channel_name || avatar.location
-                };
+                if (location) avatar.location = location.thread_name || location.channel_name || avatar.location;
             }
             await this.sendAsSoul(avatar, message.message);
         }

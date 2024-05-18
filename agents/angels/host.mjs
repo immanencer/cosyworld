@@ -1,8 +1,4 @@
 import fetch from 'node-fetch';
-import AIServiceManager from '../../tools/ai-service-manager.js';
-
-const ai = new AIServiceManager();
-await ai.initializeServices();
 
 const SOULS_API = 'http://localhost:3000/souls';
 const LOCATIONS_API = 'http://localhost:3000/discord-bot/locations';
@@ -12,8 +8,15 @@ const TASKS_API = 'http://localhost:3000/ai/tasks';
 const POLL_INTERVAL = 1000;
 
 async function fetchJSON(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
+    let response;
+    try {
+        response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
+
+    } catch (error) {
+        console.error(`Failed to fetch: ${url}`);
+        return [];
+    }
     return response.json();
 }
 
@@ -32,8 +35,6 @@ async function initializeSouls() {
     const locations = await fetchJSON(LOCATIONS_API);
 
     for (const soul of souls) {
-        await ai.useService('ollama');
-        await ai.updateConfig({ system_prompt: soul.personality });
         soul.location = locations.find(loc => loc.name === soul.location);
         soul.messageCache = [];
         soul.lastProcessedMessageId = null;
@@ -61,17 +62,25 @@ async function getTaskStatus(taskId) {
 
 async function processMessagesForSoul(soul) {
     const url = soul.lastProcessedMessageId
-        ? `${MESSAGES_API}?since=${soul.lastProcessedMessageId}`
-        : MESSAGES_API;
+        ? `${MESSAGES_API}?location=${soul.location.id}&since=${soul.lastProcessedMessageId}`
+        : `${MESSAGES_API}?location=${soul.location.id}`;
 
-    const messages = await fetchJSON(url);
+    let messages;
+    try {
+        messages = await fetchJSON(url);
+    } catch (error) {
+        console.error(`Failed to fetch messages for ${soul.name}:`, error);
+        return;
+    }
 
     messages.sort((a, b) => a._id.localeCompare(b._id));
 
     if (messages.length > 0) {
-        soul.lastProcessedMessageId = messages.pop()._id;
+        soul.lastProcessedMessageId = messages[messages.length - 1]._id;
     }
     let respond = false;
+
+    let conversation = []; // Review the conversation from this soul's perspective
 
     for (const message of messages) {
         const data = {
@@ -81,24 +90,53 @@ async function processMessagesForSoul(soul) {
             location: message.channelId
         };
 
-        console.log(`${soul.emoji} Message received:`, data);
-
-        if (data.author === soul.owner && !data.location.includes('🥩')) {
-            soul.location = data.location;
+        // Check the author and categorize the message appropriately
+        if (data.author === soul.name) {
+            conversation.push({ role: 'assistant', content: data.content }); // Flit's messages as assistant responses
+        } else {
+            conversation.push({ role: 'user', content: `(${data.location}) ${data.author}: ${data.content}` }); // Other user messages
         }
 
-        soul.messageCache.push({ role: 'user', content: `you heard ${data.author} say ${data.content}` });
-        if (data.location !== soul.location.id) continue;
+        if (!soul?.location?.id) {
+            console.error(`Soul ${soul.name} has no location.`);
+        }
 
-        if (data.author === soul.name || message.author.bot) continue;
+        if (data.location !== soul?.location?.id) {
+            // fuzzy match the soul name to the message
+            if (data.content.toLowerCase().includes(soul.name.toLowerCase())) {
+                console.log(`${soul.emoji} ${soul.name} is mentioned in another location.`);
+                if (soul.owner === 'host' || soul.owner === data.author) {
+                    soul.location.id = data.location;
+                    console.log(`${soul.emoji} ${soul.name} is now in ${soul.location.id}.`);
+                }
+                respond = true;
+            }
+        };
+        if (soul.talking_to !== data.author && (data.author === soul.name || message.author.bot)) continue;
 
+        soul.talking_to = data.author;
         respond = true;
     }
 
+
     if (!respond) return;
 
-    const taskId = await createTask(soul, soul.messageCache);
-    const result = await pollTaskCompletion(taskId);
+    let taskId;
+
+    try {
+        taskId = await createTask(soul, conversation.slice(-10));
+    } catch (error) {
+        console.error(`Failed to create task for ${soul.name}:`, error);
+        return;
+    }
+
+    let result;
+    try {
+        result = await pollTaskCompletion(taskId);
+    } catch (error) {
+        console.error(`Failed to create task for ${soul.name}:`, error);
+        return;
+    }
     soul.messageCache = [];
 
 
@@ -122,11 +160,12 @@ async function processMessagesForSoul(soul) {
 
 }
 
+let running = true;
 async function pollTaskCompletion(taskId) {
-    while (true) {
+    while (running) {
         const taskStatus = await getTaskStatus(taskId);
         if (taskStatus.status === 'completed') {
-            return taskStatus.response;
+            return taskStatus.response || '';
         } else if (taskStatus.status === 'failed') {
             throw new Error(`Task ${taskId} failed: ${taskStatus.error}`);
         }
@@ -134,14 +173,13 @@ async function pollTaskCompletion(taskId) {
     }
 }
 
+const souls = await initializeSouls();
 async function mainLoop() {
-    const souls = await initializeSouls();
-
-    while (true) {
+    while (running) {
         for (const soul of souls) {
+            console.log(`${soul.emoji} Processing messages for ${soul.name}`);
             await processMessagesForSoul(soul);
         }
-
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
     }
 }

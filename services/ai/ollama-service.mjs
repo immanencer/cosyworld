@@ -1,5 +1,7 @@
 import ollama from 'ollama';
 
+const model_cache = {};
+
 export default class OllamaService {
     constructor() {
         // Initialization for Ollama (if any)
@@ -10,11 +12,16 @@ export default class OllamaService {
 system "${systemPrompt}"`;
 
         const modelHash = this.generateHash(modelfile);
-        try {
-            await ollama.create({ model: modelHash, modelfile });
-        } catch (error) {
-            console.error('🦙 Failed to create model:', error);
-            throw error;
+
+        if (!model_cache[modelHash]) {
+            try {
+                await ollama.create({ model: modelHash, modelfile });
+                console.log('🦙 Model created:', modelHash);
+                model_cache[modelHash] = true;
+            } catch (error) {
+                console.error('💀 🦙 Failed to create model:', error);
+                throw error;
+            }
         }
 
         const ollamaMessages = [
@@ -22,12 +29,11 @@ system "${systemPrompt}"`;
             ...messages
         ];
 
-        let output = '';
-        const stream = await ollama.chat({ model: modelHash, messages: ollamaMessages, stream: true });
-        for await (const event of stream) {
-            output += event.message.content;
+        const result = await ollama.chat({ model: modelHash, messages: ollamaMessages, stream: false });
+        if (result.message.content === '') {
+            console.error('🦙 Empty response from Ollama');
         }
-        return output;
+        return result.message.content;
     }
 
     generateHash(input) {

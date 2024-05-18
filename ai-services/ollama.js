@@ -2,7 +2,6 @@ import ollama from 'ollama';
 import AIService from '../tools/ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
-import { replaceContent } from '../tools/censorship.js';
 
 class OllamaService extends AIService {
     constructor(config) {
@@ -28,9 +27,10 @@ system "${config.system_prompt || 'you are an alien intelligence from the future
 
     messages = [];
     async chat(message) {
-        message.content = replaceContent(message.content);
         this.messages.push(message);
-        if (message.role === 'assistant' || message.role === 'system') { return; }
+        if (message.role === 'assistant' || message.role === 'system') {
+            return (async function*() { return; })();
+        }
         return await ollama.chat({ model: this.model, messages: this.messages.slice(-50), stream: true });
     }
 

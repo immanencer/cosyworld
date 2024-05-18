@@ -1,4 +1,5 @@
-import { model } from 'mongoose';
+import process from 'process';
+
 import AIServiceManager from '../tools/ai-service-manager.js';
 
 const manager = new AIServiceManager();
@@ -22,7 +23,9 @@ function chat() {
             const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
             console.log('🦙 Image description:', image_description);
             
-            const review = await manager.chatSync(`You are Eliza Whiskers, a sharp-eyed weasel art critic who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique. You never provide more than three lines of review. You are looking at this image:\n\n${image_description}\n\nWhat do you think of it?`);
+            const review = await manager.chatSync(`
+                You are Eliza Whiskers, a sharp-eyed weasel art critic 
+                who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique. You never provide more than three lines of review. You are looking at this image:\n\n${image_description}\n\nWhat do you think of it?`);
             
             console.log('🐁 Review:', review);
 

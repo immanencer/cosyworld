@@ -7,6 +7,15 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🦋 whisper",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\wolves\\whisper.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🤖 ai",
             "skipFiles": [
                 "<node_internals>/**"

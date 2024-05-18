@@ -7,6 +7,11 @@ const collectionName = 'messages';
 
 const discordToken = (await configuration('discord-bot')).token;
 
+import AIServiceManager from '../tools/ai-service-manager.js';
+
+const manager = new AIServiceManager();
+await manager.useService('ollama');
+
 // Discord Client Setup
 const client = new Client({
     intents: [
@@ -33,6 +38,13 @@ client.on('messageCreate', async (message) => {
         channelId: message.channelId,
         guildId: message.guildId
     };
+
+    //const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
+    //console.log(message.attachments.toJSON());
+
+    if (message.content.trim() === '') {
+        return;
+    }
 
     try {
         await db.collection(collectionName).insertOne(messageData);

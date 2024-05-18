@@ -23,7 +23,8 @@ class AI {
     }
 
     async generateResponse(systemPrompt, messages) {
-        return await this.service.chat({ systemPrompt, messages });
+        console.log('🤖 AI:', systemPrompt, messages.join('').length);
+        return await this.service.chat({ systemPrompt, messages: messages });
     }
 }
 
