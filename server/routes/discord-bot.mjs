@@ -42,8 +42,8 @@ app.get('/messages', async (req, res) => {
         return res.status(500).send({ error: 'Database connection error' });
     }
 
-    const { since } = req.query;
-    const query = since ? { _id: { $gt: new ObjectId(since) } } : {};
+    const { since, location } = req.query;
+    const query = since ? { _id: { $gt: new ObjectId(since) , channelId: location }} : {};
 
     try {
         const messages = await db.collection('messages')

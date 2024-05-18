@@ -62,8 +62,8 @@ async function getTaskStatus(taskId) {
 let counter = 1;
 async function processMessagesForSoul(soul) {
     const url = soul.lastProcessedMessageId
-        ? `${MESSAGES_API}?since=${soul.lastProcessedMessageId}`
-        : MESSAGES_API;
+        ? `${MESSAGES_API}?location=${soul.location.id}&since=${soul.lastProcessedMessageId}`
+        : `${MESSAGES_API}?location=${soul.location.id}`;
 
     let messages;
     try {
