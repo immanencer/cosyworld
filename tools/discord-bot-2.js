@@ -54,6 +54,7 @@ class MinimalistDiscordBot {
         }
         catch (error) {
             console.error('🎮 ❌ Failed to handle message:', error);
+            throw error;
         }
     }
 

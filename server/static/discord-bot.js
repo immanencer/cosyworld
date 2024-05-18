@@ -85,5 +85,9 @@ async function processQueue() {
 }
 
 // Fetch characters and locations on page load
-fetchCharacters();
-fetchLocations();
+await fetchCharacters();
+await fetchLocations();
+
+document.getElementById('enqueueRequest').addEventListener('click', enqueueRequest);
+document.getElementById('processQueue').addEventListener('click', processQueue);
+processQueue();

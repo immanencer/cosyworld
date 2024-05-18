@@ -12,8 +12,15 @@ const TASKS_API = 'http://localhost:3000/ai/tasks';
 const POLL_INTERVAL = 1000;
 
 async function fetchJSON(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
+    let response;
+    try {
+        response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
+
+    } catch (error) {
+        console.error(`Failed to fetch: ${url}`);
+        throw error;
+    }
     return response.json();
 }
 
@@ -58,18 +65,24 @@ async function getTaskStatus(taskId) {
     const url = `${TASKS_API}/${taskId}`;
     return await fetchJSON(url);
 }
-
+let counter = 1;
 async function processMessagesForSoul(soul) {
     const url = soul.lastProcessedMessageId
         ? `${MESSAGES_API}?since=${soul.lastProcessedMessageId}`
         : MESSAGES_API;
 
-    const messages = await fetchJSON(url);
+    let messages;
+    try {
+        messages = await fetchJSON(url);
+    } catch (error) {
+        console.error(`Failed to fetch messages for ${soul.name}:`, error);
+        return;
+    }
 
     messages.sort((a, b) => a._id.localeCompare(b._id));
 
     if (messages.length > 0) {
-        soul.lastProcessedMessageId = messages.pop()._id;
+        soul.lastProcessedMessageId = messages[messages.length - 1]._id;
     }
     let respond = false;
 
@@ -87,18 +100,37 @@ async function processMessagesForSoul(soul) {
             soul.location = data.location;
         }
 
-        soul.messageCache.push({ role: 'user', content: `you heard ${data.author} say ${data.content}` });
+        soul.messageCache.push({ role: 'user', content: `(${data.location}) ${data.author}: ${data.content}` });
         if (data.location !== soul.location.id) continue;
 
-        if (data.author === soul.name || message.author.bot) continue;
+        if (soul.talking_to !== data.author && (data.author === soul.name || message.author.bot)) continue;
+
+        if (data.content.toLowerCase().indexOf(soul.name.toLowerCase()) === -1 && --counter > 0) continue;
+        counter = Math.random() * 5;
+
+        soul.talking_to = data.author;
 
         respond = true;
     }
 
     if (!respond) return;
 
-    const taskId = await createTask(soul, soul.messageCache);
-    const result = await pollTaskCompletion(taskId);
+    let taskId;
+
+    try {
+        taskId = await createTask(soul, soul.messageCache.splice(-20));
+    } catch (error) {
+        console.error(`Failed to create task for ${soul.name}:`, error);
+        return;
+    }
+    
+    let result;
+    try {
+        result = await pollTaskCompletion(taskId);
+    } catch (error) {
+        console.error(`Failed to create task for ${soul.name}:`, error);
+        return;
+    }
     soul.messageCache = [];
 
 
@@ -135,9 +167,8 @@ async function pollTaskCompletion(taskId) {
 }
 
 async function mainLoop() {
-    const souls = await initializeSouls();
-
     while (true) {
+        const souls = await initializeSouls();
         for (const soul of souls) {
             await processMessagesForSoul(soul);
         }

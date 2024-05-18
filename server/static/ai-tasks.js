@@ -1,5 +1,4 @@
-
-async function createTask() {
+export async function createTask() {
     const model = document.getElementById('model').value;
     const systemPrompt = document.getElementById('systemPrompt').value;
     const messages = document.getElementById('messages').value;
@@ -33,19 +32,19 @@ async function createTask() {
     }
 }
 
-async function fetchTasks() {
+export async function fetchTasks() {
     try {
         const response = await fetch('/ai/tasks');
         const tasks = await response.json();
         const tasksContainer = document.getElementById('tasks');
         tasksContainer.innerHTML = '';
-        tasks.forEach(task => {
+        tasks.splice(-10).forEach(task => {
             const taskDiv = document.createElement('div');
             taskDiv.className = 'task';
             taskDiv.innerHTML = `
                 <strong>Model:</strong> ${task.model}<br>
                 <strong>System Prompt:</strong> ${task.system_prompt}<br>
-                <strong>Messages:</strong> ${JSON.stringify(task.messages)}<br>
+                <strong>Messages:</strong> ${JSON.stringify(task.messages.length)}<br>
                 <strong>Status:</strong> ${task.status}<br>
                 <strong>Response:</strong> ${task.response || 'N/A'}
             `;
@@ -55,3 +54,7 @@ async function fetchTasks() {
         document.getElementById('response').innerText = 'Failed to fetch tasks.';
     }
 }
+
+document.getElementById('createTask').addEventListener('click', createTask);
+document.getElementById('fetchTasks').addEventListener('click', fetchTasks);
+fetchTasks();

@@ -23,7 +23,7 @@ class AI {
     }
 
     async generateResponse(systemPrompt, messages) {
-        return await this.service.chat({ systemPrompt, messages });
+        return await this.service.chat({ systemPrompt, messages: messages.slice(-88) });
     }
 }
 

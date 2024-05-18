@@ -89,8 +89,8 @@
     <input type="text" id="model" placeholder="Model (e.g., openai/gpt-3.5-turbo)">
     <textarea id="systemPrompt" rows="2" placeholder="System Prompt"></textarea>
     <textarea id="messages" rows="4" placeholder="Messages (as JSON array)"></textarea>
-    <button onclick="createTask()">Create Task</button>
-    <button onclick="fetchTasks()">Fetch Tasks</button>
+    <button id="createTask">Create Task</button>
+    <button id="fetchTasks">Fetch Tasks</button>
     <div id="response"></div>
     <div class="tasks" id="tasks"></div>
 </div>
@@ -100,7 +100,6 @@
     <div class="header">
         <div class="logo"><img src="https://i.imgur.com/dUxHmFC.png" alt="Logo"></div>
         <div>
-            <div class="title">Document Summaries Dashboard</div>
             <div class="description">Asher the mouse scribe diligently chronicles the lives of the inhabitants of the Lonely Forest.</div>
         </div>
     </div>
@@ -113,7 +112,7 @@
             <thead>
                 <tr>
                     <th>Source</th>
-                    <th>Lines Summarized</th>
+                    <th>Lines</th>
                     <th>TPS</th>
                 </tr>
             </thead>
@@ -129,106 +128,7 @@
     <select id="soulSelect" title="Select Soul"></select>
     <select id="locationSelect" title="Select Location"></select>
     <textarea id="message" rows="4" placeholder="Message"></textarea>
-    <button onclick="enqueueRequest()">Enqueue Request</button>
-    <button onclick="processQueue()">Process Queue</button>
+    <button id="enqueueRequest">Enqueue Request</button>
+    <button id="processQueue">Process Queue</button>
     <p id="response"></p>
 </div>
-
-<script>
-    async function createTask() {
-        const model = document.getElementById('model').value;
-        const systemPrompt = document.getElementById('systemPrompt').value;
-        const messages = document.getElementById('messages').value;
-
-        if (!model || !systemPrompt || !messages) {
-            document.getElementById('response').innerText = 'All fields are required.';
-            return;
-        }
-
-        let messagesArray;
-        try {
-            messagesArray = JSON.parse(messages);
-        } catch (error) {
-            document.getElementById('response').innerText = 'Invalid JSON format for messages.';
-            return;
-        }
-
-        const task = { model, system_prompt: systemPrompt, messages: messagesArray };
-
-        try {
-            const response = await fetch('/ai/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(task)
-            });
-            const result = await response.json();
-            document.getElementById('response').innerText = result.message || result.error;
-            fetchTasks(); // Refresh tasks
-        } catch (error) {
-            document.getElementById('response').innerText = 'Failed to create task.';
-        }
-    }
-
-    async function fetchTasks() {
-        try {
-            const response = await fetch('/ai/tasks');
-            const tasks = await response.json();
-            const tasksContainer = document.getElementById('tasks');
-            tasksContainer.innerHTML = '';
-            tasks.forEach(task => {
-                const taskDiv = document.createElement('div');
-                taskDiv.className = 'task';
-                taskDiv.innerHTML = `
-                    <strong>Model:</strong> ${task.model}<br>
-                    <strong>System Prompt:</strong> ${task.system_prompt}<br>
-                    <strong>Messages:</strong> ${JSON.stringify(task.messages)}<br>
-                    <strong>Status:</strong> ${task.status}<br>
-                    <strong>Response:</strong> ${task.response || 'N/A'}
-                `;
-                tasksContainer.appendChild(taskDiv);
-            });
-        } catch (error) {
-            document.getElementById('response').innerText = 'Failed to fetch tasks.';
-        }
-    }
-
-    async function enqueueRequest() {
-        const soulName = document.getElementById('soulSelect').value;
-        const soul = characters.find(character => character.name === soulName);
-        if (!soul) {
-            document.getElementById('response').innerText = 'Selected soul not found';
-            return;
-        }
-
-        const locationId = document.getElementById('locationSelect').value;
-        const message = document.getElementById('message').value;
-
-        const location = locations.find(location => location.id === locationId);
-        const requestBody = {
-            action: 'sendAsSoul',
-            data: {
-                soul: { 
-                    ...soul,
-                    channelId: location.parent || location.id,
-                    threadId: location.parent ? location.id : null 
-                },
-                message: message
-            }
-        };
-
-        const response = await fetch('http://localhost:3000/discord-bot/enqueue', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        const result = await response.json();
-        document.getElementById('response').innerText = result.message || result.error;
-    }
-
-    async function processQueue() {
-        const response = await fetch('http://localhost:3000/discord-bot/process');
-        const result = await response.json();
-        document.getElementByI

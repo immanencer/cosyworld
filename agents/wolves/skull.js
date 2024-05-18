@@ -5,25 +5,6 @@ await ai.initializeServices();
 
 import calculateTPS from "../../tools/calculateTPS.js";
 
-function parseMessage(str) {
-    const regex = /\((.*?)\)\s(.*?):\s*(.*)/;
-    const match = str.match(regex);
-
-    if (match) {
-        const location = match[1];
-        const author = match[2];
-        const message = match[3];
-
-        return {
-            location: location,
-            author: author,
-            message: message
-        };
-    } else {
-        return null; // Return null if no match is found
-    }
-}
-
 class Skull extends DiscordBot {
 
     constructor() {
@@ -155,45 +136,8 @@ class Skull extends DiscordBot {
 
         const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}` });
         await ai.chat({ role: 'assistant', content: `${result}` });
+        await this.sendAsSoul(this.soul, `${result}`);
         this.message_cache = [];
-
-        //split the result into lines
-        const lines = result.split('\n');
-        // accumulate the normal lines from the result
-        const normalLines = [];
-        const parsedLines = [];
-
-        for (const line of lines) {
-            const parsed = parseMessage(line);
-            if (parsed) {
-                parsedLines.push(parsed);
-            } else {
-                normalLines.push(line);
-            }
-        }
-
-        // send the normal lines as a message
-        if (normalLines.length > 0) {
-            await this.sendAsSoul(this.soul, `${normalLines.join('\n')}`);
-        }
-
-
-        // send each parsed line as a message
-        for (const parsed of parsedLines) {
-            // if the message is in a different location, move the soul to that location
-            if (this.soul.location !== parsed.location) {
-                this.soul.location = parsed.location;
-                console.log(`🐺 Skull is moving to ${parsed.location}`);
-            }
-
-            // if the name is wrong and the soul has no avatars, log an error
-            if (parsed.author !== this.soul.name && !this.soul.avatars) {
-                console.error(`🐺 ❌ Skull is imagining what ${parsed.author} might say.`);
-                continue
-            }
-
-                await this.sendAsSoul(this.soul, `🐺 ${parsed.message}`);
-        }
     }
 }
 

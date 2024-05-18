@@ -41,7 +41,9 @@ class Ratichat extends DiscordBot {
 
         const memoryResponse = await ai.currentService.raw_chat(
             await ai.updateConfig({ system_prompt: soul.personality }), 
-            [{ role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:\n${whispers.slice(-20).join('\n')}\nSummarize your memory as the old oak tree` }]
+            [{ role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:
+            ${whispers.slice(-20).join('\n')}
+            Summarize your memory as the old oak tree` }]
         );
         await calculateTPS(memoryResponse);
         this.memory = memoryResponse.message.content;
@@ -81,30 +83,38 @@ class Ratichat extends DiscordBot {
         const response = await ai.currentService.raw_chat(
             ai.model || 'llama3',
             [
-                { role: 'system', content: `${soul.personality} you are ${soul.name}'s inner monologue.` },
-                { role: 'assistant', content: `${this.memory}\n
-                My avatars are:\n
-                ${souls.map(s => `(${s.location || 'nowhere'}) ${s.name} ${s.emoji}: ${s.personality}`).join('\n')}
-                
-                I will now listen for the whispers of the forest and respond in the following sequence:\n
+                { role: 'system', content: `${soul.personality}` },
+                { role: 'assistant', content: `${this.memory}\nMy avatars are:\n
+${souls.map(s => `(${s.location || 'nowhere'}) ${s.name} ${s.emoji}: ${s.personality}`).join('\n')}
+From now on I will always begin my responses by summarizing the state of the world
+and then making a long term plan.
 
-                1. I shall summarize my understanding of the world as the old oak tree.
-                2. I shall choose some of my avatars to respond to the whispers of the forest in this format:
-                
-                (location) avatar: message
 
-                
-                (location) avatar: message
+I will always respond with the actions of my avatars in a code block.
 
-                
-                (location) avatar: message
+\`\`\`
 
-                
-                I will always separate each avatar's response with a blank line. I will now begin listening for whispers...
+(🏡 cody cottage) Rati 🐭: *weaves a loom* Oh hello dear, let me tell you a short story of the forest.
+
+There once was a mouse who lived in a tree, she was very happy and free.
+And then one day, she met a bee, who was very happy and free.
+They danced and sang, and had a grand old time, and then they went to bed.
+The end.
+
+(🌿 herb garden) WhiskerWind 🍃: *flutters in the wind*
+
+(🌙 moonlit clearing) Luna 🌙: *channels the moon*
+
+(🦊 fox hole one) Sammy 🦊: *scurries nervously*
+
+(lost-woods) Skull 🐺: *howls at the moon*
+
+\`\`\`
                 ` },
-                { role: 'user', content: this.messageCache.slice(-50).join('\n') }
+                { role: 'user', content: this.messageCache.slice(-88).join('\n') }
             ]
         );
+
 
         this.messageCache = [];
 
