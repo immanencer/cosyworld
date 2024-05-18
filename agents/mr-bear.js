@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../tools/discord-openai-bot.js';
 import fs from 'fs/promises';  // Using the promises API for async operations
 
 const bear = new DiscordAIBot('kierkegaard');
