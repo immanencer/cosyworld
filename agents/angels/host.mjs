@@ -15,7 +15,7 @@ async function fetchJSON(url) {
 
     } catch (error) {
         console.error(`Failed to fetch: ${url}`);
-        throw error;
+        return [];
     }
     return response.json();
 }
@@ -59,7 +59,7 @@ async function getTaskStatus(taskId) {
     const url = `${TASKS_API}/${taskId}`;
     return await fetchJSON(url);
 }
-let counter = 1;
+
 async function processMessagesForSoul(soul) {
     const url = soul.lastProcessedMessageId
         ? `${MESSAGES_API}?location=${soul.location.id}&since=${soul.lastProcessedMessageId}`
@@ -101,10 +101,19 @@ async function processMessagesForSoul(soul) {
             console.error(`Soul ${soul.name} has no location.`);
         }
 
-        if (data.location !== soul?.location?.id) continue;
+        if (data.location !== soul?.location?.id) {
+            // fuzzy match the soul name to the message
+            if (data.content.toLowerCase().includes(soul.name.toLowerCase())) {
+                console.log(`${soul.emoji} ${soul.name} is mentioned in another location.`);
+                if (soul.owner === 'host' || soul.owner === data.author) {
+                    soul.location.id = data.location;
+                    console.log(`${soul.emoji} ${soul.name} is now in ${soul.location.id}.`);
+                }
+                respond = true;
+            }
+        };
         if (soul.talking_to !== data.author && (data.author === soul.name || message.author.bot)) continue;
-        if (data.content.toLowerCase().indexOf(soul.name.toLowerCase()) === -1 && --counter > 0) continue;
-        counter = Math.random() * 5;
+
         soul.talking_to = data.author;
         respond = true;
     }
@@ -115,7 +124,7 @@ async function processMessagesForSoul(soul) {
     let taskId;
 
     try {
-        taskId = await createTask(soul, conversation.slice(-5));
+        taskId = await createTask(soul, conversation.slice(-10));
     } catch (error) {
         console.error(`Failed to create task for ${soul.name}:`, error);
         return;
@@ -151,12 +160,12 @@ async function processMessagesForSoul(soul) {
 
 }
 
-
+let running = true;
 async function pollTaskCompletion(taskId) {
-    while (true) {
+    while (running) {
         const taskStatus = await getTaskStatus(taskId);
         if (taskStatus.status === 'completed') {
-            return taskStatus.response;
+            return taskStatus.response || '';
         } else if (taskStatus.status === 'failed') {
             throw new Error(`Task ${taskId} failed: ${taskStatus.error}`);
         }
@@ -164,10 +173,11 @@ async function pollTaskCompletion(taskId) {
     }
 }
 
+const souls = await initializeSouls();
 async function mainLoop() {
-    while (true) {
-        const souls = await initializeSouls();
+    while (running) {
         for (const soul of souls) {
+            console.log(`${soul.emoji} Processing messages for ${soul.name}`);
             await processMessagesForSoul(soul);
         }
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));

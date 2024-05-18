@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-const POLLING_INTERVAL = 500;
+const POLLING_INTERVAL = 1000;
 
 const client = new MongoClient('mongodb://localhost:27017');
 const db = client.db('cosyworld');
@@ -9,7 +9,6 @@ const collection = db.collection('tasks');
 import AI from './ai.mjs';
 
 async function process_next_task() {
-    await client.connect();
     // get the next task from the queue
     const task = await collection.findOneAndUpdate(
         { status: 'pending' },
@@ -22,7 +21,7 @@ async function process_next_task() {
     }
     
     // process the task
-    console.log('Processing task:', task);
+    console.log('Processing task:', task._id);
     const ai = new AI(task.model || 'ollama/llama3');
 
 
@@ -45,12 +44,14 @@ async function process_next_task() {
         { $set: { status: 'completed', response } }
     );
     
-    // close the connection
-    await client.close();
 }
 
 
-while (true) {
+let running = true;
+await client.connect();
+while (running) {
     await process_next_task();
     await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL));
 }
+// close the connection
+await client.close();

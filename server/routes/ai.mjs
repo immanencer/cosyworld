@@ -21,7 +21,7 @@ async function connectToDB() {
     }
 }
 
-connectToDB();
+await connectToDB();
 
 // Middleware to parse JSON requests
 router.use(bodyParser.json());

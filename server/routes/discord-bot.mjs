@@ -36,14 +36,17 @@ app.use(express.json());
 // API Routes
 // Add a new import to handle ObjectId
 import { ObjectId } from 'mongodb';
-
 app.get('/messages', async (req, res) => {
-    if (!db) {
-        return res.status(500).send({ error: 'Database connection error' });
-    }
-
     const { since, location } = req.query;
-    const query = since ? { _id: { $gt: new ObjectId(since) , channelId: location }} : {};
+    
+    // Construct the query
+    const query = {};
+    if (since) {
+        query._id = { $gt: new ObjectId(since) };
+    }
+    if (location) {
+        query.channelId = location;
+    }
 
     try {
         const messages = await db.collection('messages')
@@ -51,13 +54,13 @@ app.get('/messages', async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(100)
             .toArray();
+        
         res.status(200).send(messages);
     } catch (error) {
-        console.error('🎮 ❌ Failed to fetch messages:', error);
+        console.error('Failed to fetch messages:', error);
         res.status(500).send({ error: 'Failed to fetch messages' });
     }
 });
-
 // Route to get all locations
 app.get('/locations', async (req, res) => {
     try {
@@ -178,6 +181,10 @@ async function sendMessage(channelId, message, threadId = null) {
 
 async function sendAsSoul(soul, message) {
     const channel = await discordClient.channels.fetch(soul.channelId);
+    if (!channel) {
+        console.error('🎮 ❌ Invalid channel:', soul.channelId); 
+        return;
+    }
     const webhook = await getOrCreateWebhook(channel);
     await webhook.send({
         content: message,
