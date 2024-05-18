@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-openai-bot.js';
+import DiscordAIBot from '../tools/discord-ollama-bot.js';
 import fs from 'fs/promises';  // Using the promises API for async operations
 
 const bear = new DiscordAIBot('kierkegaard');
@@ -27,7 +27,7 @@ async function loadFoodData() {
         bear.foodCount = new Map(JSON.parse(data));
         // Reduce all food counts by 20% to simulate decay
         for (const [key, value] of bear.foodCount.entries()) {
-            bear.foodCount.set(key, Math.floor(value * 0.888));
+            bear.foodCount.set(key, Math.floor(value * 0.99));
         }
     } catch (error) {
         bear.foodCount = new Map();  // Initialize an empty Map if the file doesn't exist

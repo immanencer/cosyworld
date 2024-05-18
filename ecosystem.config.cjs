@@ -33,8 +33,8 @@ module.exports ={
     name: "shadow",
     script: "./agents/wolves/shadow.js"
   },{
-    name: "asher",
-    script: "./agents/asher.mjs"
+    name: "whisper",
+    script: "./agents/wolves/whisper.js"
   }],
   restart_delay: 10000, // 10 seconds delay before restarting
   max_restarts: 3,
