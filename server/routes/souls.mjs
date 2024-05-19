@@ -1,5 +1,5 @@
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { ObjectId, MongoClient } from 'mongodb';
 
 const router = express.Router();
 const mongoUrl = 'mongodb://localhost:27017';
@@ -23,6 +23,33 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('🎮 ❌ Failed to fetch souls:', error);
         res.status(500).send({ error: 'Failed to fetch souls' });
+    }
+});
+
+
+// Route to update a soul (PATCH)
+router.patch('/update/:id', async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (!id) {
+        return res.status(400).send({ error: 'ID is required to update the soul' });
+    }
+
+    try {
+        const result = await db.collection(collectionName).updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).send({ error: 'Soul not found' });
+        }
+
+        res.status(200).send({ message: 'Soul updated successfully' });
+    } catch (error) {
+        console.error('🎮 ❌ Failed to update soul:', error);
+        res.status(500).send({ error: 'Failed to update soul' });
     }
 });
 

@@ -1,5 +1,5 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.js";
+import AIServiceManager from "../../tools/ai-service-manager.mjs";
 
 import findSoul from "../../tools/soul-manager.js";
 

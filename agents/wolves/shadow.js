@@ -1,5 +1,5 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.js";
+import AIServiceManager from "../../tools/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
@@ -17,7 +17,7 @@ class Shadow extends DiscordBot {
         owner: "Wolf777Link",
         avatar: 'https://i.imgur.com/vZzwzVB.png',
         location: '🐺 wolf den',
-        personality: `You are Shadow, Wolf777Link's young wolf cub, you only respond in soft howls SHORT cub-like *actions* or cute emojis. 🐾`
+        personality: `You are Shadow, Wolf777Link's young college age wolf cub, you only respond in soft howls SHORT cub-like *actions* or cute emojis. 🐾`
     };
 
     async on_login() {

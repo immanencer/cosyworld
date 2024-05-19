@@ -3,14 +3,12 @@ import configuration from '../tools/configuration.js';
 
 import db from '../database/index.js';
 
+import OllamaService from '../ai-services/ollama.js';
+const ai = new OllamaService();
+
 const collectionName = 'messages';
 
 const discordToken = (await configuration('discord-bot')).token;
-
-import AIServiceManager from '../tools/ai-service-manager.js';
-
-const manager = new AIServiceManager();
-await manager.useService('ollama');
 
 // Discord Client Setup
 const client = new Client({
@@ -26,7 +24,10 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
+    if (message.channel.name.indexOf('🚧') === 0) return false;
+    if (message.channel.name.indexOf('🥩') === 0) return false;
     const messageData = {
+        message_id: message.id,
         author: {
             id: message.author.id,
             username: message.author.username,
@@ -39,11 +40,27 @@ client.on('messageCreate', async (message) => {
         guildId: message.guildId
     };
 
-    //const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
-    //console.log(message.attachments.toJSON());
+    // check for any image urls in the image or attachments
+    const imageUrls = [];
+    if (message.attachments.size > 0) {
+        message.attachments.forEach(attachment => {
+            if (!attachment) return;
+            if (attachment.url.split('?')[0].match(/\.(jpeg|jpg|gif|png)$/) != null) {
+                imageUrls.push(attachment.url);
+            }
+        });
+    }
 
-    if (message.content.trim() === '') {
+    
+    if (imageUrls.length === 0 && message.content.trim() === '') {
         return;
+    }
+
+
+    //loop through each image url
+    for (const imageUrl of imageUrls) {
+        const image_description = await ai.viewImageByUrl(imageUrl);
+        messageData.content += `an image was detected: \n${image_description}`;
     }
 
     try {

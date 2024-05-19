@@ -1,7 +1,7 @@
 import { soulseek } from '../agents/souls.js';
 
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from './ai-service-manager.js';
+import AIServiceManager from './ai-service-manager.mjs';
 import SoulManager from './soul-manager.js';
 import { xorFoldHash } from './crypto.js';
 

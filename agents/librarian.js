@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import process from "process"; // Add this line
 
-import AIServiceManager from '../tools/ai-service-manager.js';
+import AIServiceManager from '../tools/ai-service-manager.mjs';
 
 import { soulseek } from './souls.js';
 import { replaceContent } from "../tools/censorship.js";

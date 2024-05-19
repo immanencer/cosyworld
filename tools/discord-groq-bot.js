@@ -1,5 +1,5 @@
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../tools/ai-service-manager.js';
+import AIServiceManager from '../tools/ai-service-manager.mjs';
 
 class DiscordGroqBot extends DiscordBot {
     constructor(soul, systemPrompt) {

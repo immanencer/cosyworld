@@ -1,6 +1,6 @@
 import process from 'process';
 
-import AIServiceManager from '../tools/ai-service-manager.js';
+import AIServiceManager from '../tools/ai-service-manager.mjs';
 
 const manager = new AIServiceManager();
 await manager.useService('ollama');

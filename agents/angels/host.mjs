@@ -30,9 +30,10 @@ async function postJSON(url, data) {
     return response.json();
 }
 
+let locations = [];
 async function initializeSouls() {
     const souls = (await fetchJSON(SOULS_API)).filter(s => s.owner === 'host');
-    const locations = await fetchJSON(LOCATIONS_API);
+    locations = await fetchJSON(LOCATIONS_API);
 
     for (const soul of souls) {
         soul.location = locations.find(loc => loc.name === soul.location);
@@ -60,14 +61,64 @@ async function getTaskStatus(taskId) {
     return await fetchJSON(url);
 }
 
+
+async function getMessages(location, since) {
+    const url = since
+        ? `${MESSAGES_API}?location=${location}&since=${since}`
+        : `${MESSAGES_API}?location=${location}`;
+    return await fetchJSON(url);
+}
+
+async function getMentions(name, since) {
+    const url = since
+        ? `${MESSAGES_API}/mention?name=${name}&since=${since}`
+        : `${MESSAGES_API}/mention?name=${name}`;
+    return await fetchJSON(url);
+}
+
+
+let bot_replies = 0;
 async function processMessagesForSoul(soul) {
-    const url = soul.lastProcessedMessageId
-        ? `${MESSAGES_API}?location=${soul.location.id}&since=${soul.lastProcessedMessageId}`
-        : `${MESSAGES_API}?location=${soul.location.id}`;
+    let mentions;
+    try {
+        mentions = await getMentions(soul.name, soul.lastProcessedMessageId);
+    
+    } catch (error) {
+        console.error(`Failed to fetch mentions for ${soul.name}:`, error);
+        return;
+    }
+    if (!soul.location) {
+        soul.location = locations[0];
+    }
+
+    let lastMention;
+    if (mentions.length > 0) {
+        console.log(`${soul.emoji} ${soul.name} is mentioned in ${mentions.length} messages.`);
+        // get the last message that mentions the soul
+        lastMention = mentions[mentions.length - 1];
+
+        if (soul.location.id !== lastMention.channelId && (soul.owner === 'host' || soul.owner === lastMention.author)) {
+            soul.location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId);
+            if (!soul.location) {
+                console.error(`Soul ${soul.name} has no location.`);
+                soul.location = locations[0];
+            }
+            console.log(`${soul.emoji} ${soul.name} is now in ${soul.location?.name}.`);
+            fetchJSON(`${SOULS_API}/${soul.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ location: soul.location.id })
+            });
+        }
+        soul.lastProcessedMessageId = lastMention._id;
+    }
+    
+    
+
 
     let messages;
+    
     try {
-        messages = await fetchJSON(url);
+        messages = await getMessages(soul.location.id, soul.lastProcessedMessageId);
     } catch (error) {
         console.error(`Failed to fetch messages for ${soul.name}:`, error);
         return;
@@ -89,9 +140,16 @@ async function processMessagesForSoul(soul) {
             content: message.content,
             location: message.channelId
         };
+        
+        if (message.author.discriminator === '0000') {
+            bot_replies++;
+            if (bot_replies > 10) continue;
+        } else {
+            bot_replies = 0;
+        }
 
         // Check the author and categorize the message appropriately
-        if (data.author === soul.name) {
+        if (data.author.includes(soul.name)) {
             conversation.push({ role: 'assistant', content: data.content }); // Flit's messages as assistant responses
         } else {
             conversation.push({ role: 'user', content: `(${data.location}) ${data.author}: ${data.content}` }); // Other user messages
@@ -124,7 +182,7 @@ async function processMessagesForSoul(soul) {
     let taskId;
 
     try {
-        taskId = await createTask(soul, conversation.slice(-10));
+        taskId = await createTask(soul, conversation);
     } catch (error) {
         console.error(`Failed to create task for ${soul.name}:`, error);
         return;
@@ -175,6 +233,25 @@ async function pollTaskCompletion(taskId) {
 
 const souls = await initializeSouls();
 async function mainLoop() {
+    const _souls = await initializeSouls();
+
+    // find any new souls or updates to existing souls and merge them into memory
+    for (const soul of _souls) {
+        const existing = souls.find(s => s.name === soul.name);
+        if (existing) {
+            Object.assign(existing, soul);
+        } else {
+            souls.push(soul);
+        }
+    }
+
+    // remove any souls that have been deleted
+    for(const soul of souls) {
+        if (!_souls.find(s => s.name === soul.name)) {
+            souls.splice(souls.indexOf(soul), 1);
+        }
+    }
+
     while (running) {
         for (const soul of souls) {
             console.log(`${soul.emoji} Processing messages for ${soul.name}`);

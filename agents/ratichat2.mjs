@@ -1,5 +1,5 @@
 import DiscordBot from "../tools/discord-bot-2.js";
-import AIServiceManager from "../tools/ai-service-manager.js";
+import AIServiceManager from "../tools/ai-service-manager.mjs";
 import calculateTPS from "../tools/calculateTPS.js";
 import loadWhispers from "../tools/bookshelf.js";
 import { soulseek, SOULS } from './souls.js';

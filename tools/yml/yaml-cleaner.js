@@ -1,5 +1,5 @@
 import yaml from 'js-yaml';
-import AIServiceManager from "../../tools/ai-service-manager.js"
+import AIServiceManager from "../../tools/ai-service-manager.mjs"
 
 const ai = new AIServiceManager();
 await ai.useService('phi');

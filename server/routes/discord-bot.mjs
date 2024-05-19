@@ -5,6 +5,8 @@ import express from 'express';
 
 import { Client, GatewayIntentBits } from 'discord.js';
 
+import chunkText from '../../tools/chunk-text.js';
+
 const app = express.Router();
 
 // Discord Client Setup
@@ -38,7 +40,7 @@ app.use(express.json());
 import { ObjectId } from 'mongodb';
 app.get('/messages', async (req, res) => {
     const { since, location } = req.query;
-    
+
     // Construct the query
     const query = {};
     if (since) {
@@ -47,25 +49,52 @@ app.get('/messages', async (req, res) => {
     if (location) {
         query.channelId = location;
     }
-
     try {
         const messages = await db.collection('messages')
             .find(query)
             .sort({ createdAt: -1 })
             .limit(100)
             .toArray();
-        
+
         res.status(200).send(messages);
     } catch (error) {
         console.error('Failed to fetch messages:', error);
         res.status(500).send({ error: 'Failed to fetch messages' });
     }
 });
+
+// Endpoint to get messages mentioning a fuzzy-matched name since a specified ID
+app.get('/messages/mention', async (req, res) => {
+    const { name, since } = req.query;
+
+    // Construct the query
+    const query = {};
+    if (since) {
+        query._id = { $gt: new ObjectId(since) };
+    }
+    if (name) {
+        query.content = { $regex: new RegExp('\\b' + name + '\\b', 'i') }; // Fuzzy matching, case-insensitive
+    }
+
+    try {
+        const messages = await db.collection('messages')
+            .find(query)
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .toArray();
+
+        res.status(200).send(messages);
+    } catch (error) {
+        console.error('Failed to fetch messages:', error);
+        res.status(500).send({ error: 'Failed to fetch messages' });
+    }
+});
+
 // Route to get all locations
 app.get('/locations', async (req, res) => {
     try {
         const channels = await discordClient.channels.cache;
-        
+
         const locations = [];
 
         for (const [id, channel] of channels) {
@@ -121,7 +150,7 @@ app.get('/process', async (req, res) => {
             { status: 'queued' },
             { $set: { status: 'processing', startedAt: new Date() } },
             { sort: { createdAt: 1 }, returnDocument: 'after' }
-        );        
+        );
 
         if (!request?.action) {
             return res.status(200).send({ message: 'No queued requests' });
@@ -130,7 +159,7 @@ app.get('/process', async (req, res) => {
         const { action, data } = request;
         await processRequest(action, data);
         await db.collection(collectionName).updateOne(
-            { _id: request._id  },
+            { _id: request._id },
             { $set: { status: 'completed', completedAt: new Date() } }
         );
 
@@ -180,18 +209,29 @@ async function sendMessage(channelId, message, threadId = null) {
 }
 
 async function sendAsSoul(soul, message) {
+    console.log('🎮 Sending as soul:', soul.name, message);
     const channel = await discordClient.channels.fetch(soul.channelId);
     if (!channel) {
-        console.error('🎮 ❌ Invalid channel:', soul.channelId); 
+        console.error('🎮 ❌ Invalid channel:', soul.channelId);
         return;
     }
-    const webhook = await getOrCreateWebhook(channel);
-    await webhook.send({
-        content: message,
-        username: soul.name,
-        avatarURL: soul.avatar,
-        threadId: soul.threadId
-    });
+
+    try {
+
+        const webhook = await getOrCreateWebhook(channel);
+
+        chunkText(message, 2000).forEach(async message => {
+            await webhook.send({
+                content: message,
+                username: soul.name,
+                avatarURL: soul.avatar,
+                threadId: soul.threadId
+            });
+        });
+
+    } catch (error) {
+        console.error('🎮 ❌ Failed to send as soul:', error);
+    }
 }
 
 async function getOrCreateWebhook(channel) {
@@ -215,7 +255,7 @@ async function getOrCreateWebhook(channel) {
 setInterval(async () => {
     try {
         const response = await fetch('http://localhost:3000/discord-bot/process');
-        const data = await response.json(); 
+        const data = await response.json();
         if (data.message === "No queued requests") return;
         if (data) console.log('🎮 Processing:', data);
     } catch (error) {
