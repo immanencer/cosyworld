@@ -51,7 +51,7 @@ async function summarizeTextFile(file, state) {
     const batchCount = 88;
 
     const messages = [
-        { role: 'system', content: `You are a mouse scribe named Asher who lives in an abbey and summarizes occult books to extract forbidden knowledge.` }
+        { role: 'system', content: `You are a mouse scribe named Asher who lives in an abbey who researches the lonely forest.` }
     ]
 
     let counter = 0;
@@ -66,12 +66,12 @@ async function summarizeTextFile(file, state) {
         
         if (lineCount % batchCount === 0) {
             const content = lines.join('\n');
-            messages.push({ role: 'user', content: `${content}\n\nPlease summarize these important texts.
-                    
-            ignore the mundane and summarize references in markdown format
-            📚 highlight occult knowledge with various emoji
-            be brief and poetic in your descriptions
-            do not mention your existence or the abbey to the reader
+            messages.push({ role: 'user', content: `${content}\n\n
+
+            ---
+
+            Here are a selection of whispers from the Lonely Forest. 
+            Write an imaginary excerpt from a lost book or poem highlighting the essence of these texts.
             ` });
             let summary = null;
             try {
@@ -115,9 +115,9 @@ async function summarizeTextFile(file, state) {
 // Example usage
 async function main() {
     const state = await readOrCreateState();
-    const textFiles = await findTextFiles('./bookshelf/occult-library');
+    const textFiles = await findTextFiles('./bookshelf/0hg5/');
     for (const file of textFiles) {
-        await summarizeTextFile(`./bookshelf/occult-library/${file}`, state);
+        await summarizeTextFile(`./bookshelf/0hg5/${file}`, state);
     }
 }
 
