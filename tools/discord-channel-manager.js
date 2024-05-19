@@ -234,7 +234,7 @@ class ChannelManager {
         const history = await thread.messages.fetch({ limit: 100 });
         for (const [id, message] of history) {
             console.log('🎮 Found message ' + id);
-            messages.push(`(${message.channel.name}) ${message.author.displayName || message.author.username }: ${message.content}`);
+            messages.push(message);
         }
         return messages.reverse();
     }

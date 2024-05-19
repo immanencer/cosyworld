@@ -1,42 +1,18 @@
 module.exports ={
-  apps : [{
-    name   : "ratichat",
-    script : "./agents/ratichat2.mjs"
-  },{
-    name   : "badger",
-    script : "./agents/badger.js"
-  },{
-    name   : "benny",
-    script : "./agents/benny.mjs"
-  },{
-    name   : "toad",
-    script : "./agents/toad.js"
-  },{
-    name   : "librarian",
-    script : "./agents/librarian.js"
-  },{
-    name   : "remy",
-    script : "./agents/remy.js"
-  },{
-    name   : "steamclock",
-    script : "./agents/steamclock.js"
-  },{
-    name   : "ghost",
-    script : "./agents/ghost.js"
-  },{
-    name: "mr-bear",
-    script: "./agents/mr-bear.js"
-  },{
-    name: "skull",
-    script: "./agents/wolves/skull.js"
-  },{
-    name: "shadow",
-    script: "./agents/wolves/shadow.js"
-  },{
-    name: "whisper",
-    script: "./agents/wolves/whisper.js"
-  }],
+  apps : [
+    {   "name": "🤖 ai",
+        "script": "./services/ai-processor.mjs"
+    },
+    {   "name": "👼 heavenly host",
+        "script": "./agents/angels/host.mjs"
+    },
+    {   "name": "🕸️ server",
+        "script": "./server/index.mjs"
+    },
+    {   "name": "🎮 📡 discord listener",
+        "script": "./services/listener.mjs"
+    }],
   restart_delay: 10000, // 10 seconds delay before restarting
   max_restarts: 3,
-  min_uptime: 25000 // considered successfully started after 5 seconds
+  min_uptime: 1000 * 60 * 60 // considered successfully started after an hour
 }

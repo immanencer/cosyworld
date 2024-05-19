@@ -45,7 +45,7 @@ async function ingest() {
     console.log(asher.name, asher.emoji, asher.location, asher.personality);
 
     // message formatter
-    const message_formatter = (message) => `[${message.createdTimestamp}] ${replaceContent(message.author.displayName || message.author.globalName)} (${message.channel.name}) ${message.content}`;
+    const message_formatter = (message) => `[${message.createdTimestamp}] ${replaceContent(message?.author?.displayName || message?.author.globalName)} (${message.channel.name}) ${message.content}`;
 
     console.log('📚 Ingesting all messages');
     const channels = [

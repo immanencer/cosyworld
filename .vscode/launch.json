@@ -7,6 +7,15 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "📚 librarian",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\librarian.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🦋 whisper",
             "skipFiles": [
                 "<node_internals>/**"
