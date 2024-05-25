@@ -78,7 +78,7 @@ class DiscordBot {
 app.post('/send', async (req, res) => {
     try {
         const { avatar, message } = req.body;
-        await DiscordBot.webhooks.sendAsSoul(avatar, message);
+        await DiscordBot.webhooks.sendAsAvatar(avatar, message);
         res.status(200).send({ message: 'Message sent successfully.' });
     } catch (error) {
         console.error(`🎮 ❌ Failed to send message: ${error}`);

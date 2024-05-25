@@ -13,7 +13,7 @@ class Skull extends DiscordBot {
         this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
     }
 
-    soul = {
+    avatar = {
         "emoji": "🐺",
         "name": "Skull",
         "owner": "ratimics",
@@ -33,7 +33,7 @@ class Skull extends DiscordBot {
 
         Here are the whispers you have heard:
 
-        ${(await this.channels.getChannelOrThreadHistory(this.soul.location)).join('\n')}
+        ${(await this.channels.getChannelOrThreadHistory(this.avatar.location)).join('\n')}
 
         Summarize the above in a wolf-language
         `;
@@ -47,15 +47,15 @@ class Skull extends DiscordBot {
 
         console.log('🐺 Skull remembers:', memory.message.content);
         await ai.updateConfig({
-            system_prompt: `${this.soul.personality}
+            system_prompt: `${this.avatar.personality}
             
-            You are ${this.soul.name} ${this.soul.emoji} 
+            You are ${this.avatar.name} ${this.avatar.emoji} 
 
             ${this.memory}
 
-            You are ${this.soul.name} ${this.soul.emoji} 
+            You are ${this.avatar.name} ${this.avatar.emoji} 
             
-            ${this.soul.personality}
+            ${this.avatar.personality}
             `
         })
     }
@@ -84,7 +84,7 @@ class Skull extends DiscordBot {
         if (message.channel.name.indexOf('🥩') === 0) return false;
 
         // Follow the owner
-        if (data.author == this.soul.owner) {
+        if (data.author == this.avatar.owner) {
             if (data.content.includes('come')) {
                 this.action = 'come';
             }
@@ -93,8 +93,8 @@ class Skull extends DiscordBot {
             }
 
             if (this.action === 'come') {
-                this.soul.location = data.location;
-                console.log(`🐺 Skull is following ${this.soul.owner} to ${data.location}`);
+                this.avatar.location = data.location;
+                console.log(`🐺 Skull is following ${this.avatar.owner} to ${data.location}`);
             }
         }
 
@@ -102,8 +102,8 @@ class Skull extends DiscordBot {
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
-        if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
-        if (data.location !== this.soul.location) return;
+        if (data.author === `${this.avatar.name} ${this.avatar.emoji}`) return;
+        if (data.location !== this.avatar.location) return;
         console.log(`🐺 Skull heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
 
         this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
@@ -115,7 +115,7 @@ class Skull extends DiscordBot {
         if (this.message_cache.length === 0) return;
 
         const respond = await ai.currentService.raw_chat('llama3', [
-            { role: 'system', content: `you are ${this.soul.name}'s executive function. You only respond YES or NO as to whether skull should respond or not` },
+            { role: 'system', content: `you are ${this.avatar.name}'s executive function. You only respond YES or NO as to whether skull should respond or not` },
             {
                 role: 'user', content: `
             HERE ARE THE RECENT WHISPERS YOU HAVE HEARD FROM VARIOUS RESIDENTS OF THE FOREST
@@ -136,7 +136,7 @@ class Skull extends DiscordBot {
 
         const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}` });
         await ai.chat({ role: 'assistant', content: `${result}` });
-        await this.sendAsSoul(this.soul, `${result}`);
+        await this.sendAsAvatar(this.avatar, `${result}`);
         this.message_cache = [];
     }
 }

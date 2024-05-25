@@ -2,14 +2,14 @@ import DiscordBot from "../tools/discord-bot-2.js";
 import AIServiceManager from "../tools/ai-service-manager.mjs";
 import calculateTPS from "../tools/calculateTPS.js";
 import loadWhispers from "../tools/bookshelf.js";
-import { soulseek, SOULS } from './souls.js';
+import { avatarseek, SOULS } from './avatars.js';
 import { parseEntry } from "../tools/parseEntrySimple.mjs";
 
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
-const soul = soulseek('L\'Arbre des Rêves');
-const souls = SOULS.filter(s => s.owner === soul.name);
+const avatar = avatarseek('L\'Arbre des Rêves');
+const avatars = SOULS.filter(s => s.owner === avatar.name);
 const roots = ['old-oak-tree', 'lost-woods'];
 
 class Ratichat extends DiscordBot {
@@ -23,7 +23,7 @@ class Ratichat extends DiscordBot {
     async initializeAI() {
         console.log('🧠 Initializing AI');
         await ai.useService('ollama');
-        await ai.updateConfig({ system_prompt: soul.personality });
+        await ai.updateConfig({ system_prompt: avatar.personality });
     }
 
     async loadWhispersAndMemory() {
@@ -40,7 +40,7 @@ class Ratichat extends DiscordBot {
         console.log('📚 Whispers loaded:\n\n', whispers.join('\n'));
 
         const memoryResponse = await ai.currentService.raw_chat(
-            await ai.updateConfig({ system_prompt: soul.personality }), 
+            await ai.updateConfig({ system_prompt: avatar.personality }), 
             [{ role: 'user', content: `Oh ancient oak, here are some recent whispers from the lonely forest:
             ${whispers.slice(-20).join('\n')}
             Summarize your memory as the old oak tree` }]
@@ -49,7 +49,7 @@ class Ratichat extends DiscordBot {
         this.memory = memoryResponse.message.content;
 
         console.log('🌳 Ratichat remembers:', this.memory);
-        await this.sendAsSoul(soul, this.memory);
+        await this.sendAsAvatar(avatar, this.memory);
     }
 
     async on_login() {
@@ -75,7 +75,7 @@ class Ratichat extends DiscordBot {
         if (!this.shouldProcessMessage(message)) return;
 
         const data = { author: displayName || globalName, content, location };
-        console.log(`${soul.emoji} ${soul.name} heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
+        console.log(`${avatar.emoji} ${avatar.name} heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
 
         this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (this.messageCache.length === 0) return;
@@ -83,9 +83,9 @@ class Ratichat extends DiscordBot {
         const response = await ai.currentService.raw_chat(
             ai.model || 'llama3',
             [
-                { role: 'system', content: `${soul.personality}` },
+                { role: 'system', content: `${avatar.personality}` },
                 { role: 'assistant', content: `${this.memory}\nMy avatars are:\n
-${souls.map(s => `(${s.location || 'nowhere'}) ${s.name} ${s.emoji}: ${s.personality}`).join('\n')}
+${avatars.map(s => `(${s.location || 'nowhere'}) ${s.name} ${s.emoji}: ${s.personality}`).join('\n')}
 From now on I will always begin my responses by summarizing the state of the world
 and then making a long term plan.
 
@@ -122,13 +122,13 @@ The end.
 
         const messages = response.message.content.split(/(.*:)/).map(parseEntry).filter(m => m !== null);
         for (let message of messages) {
-            const avatar = soulseek(message.name, soul, message.emoji);
+            const avatar = avatarseek(message.name, avatar, message.emoji);
             if (!avatar) continue;
             if (avatar.location !== message.location) {
                 const location = await this.channels.getLocation(await this.channels.fuzzyMatchName(message.location));
                 if (location) avatar.location = location.thread_name || location.channel_name || avatar.location;
             }
-            await this.sendAsSoul(avatar, message.message);
+            await this.sendAsAvatar(avatar, message.message);
         }
     }
 }

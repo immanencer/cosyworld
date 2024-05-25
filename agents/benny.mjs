@@ -1,7 +1,7 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 
-const soul =  {
+const avatar =  {
     emoji: '🐿️',
     name: 'Benny',
     location: '🐠 hidden pond',
@@ -10,5 +10,5 @@ const soul =  {
     personality: `you are benny the beaver; always respond in  beaver-like sentences`
 };
 
-const benny = new DiscordAIBot(soul);
+const benny = new DiscordAIBot(avatar);
 await benny.login();

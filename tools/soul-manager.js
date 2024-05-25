@@ -1,36 +1,36 @@
-// File: SoulManager.js
+// File: AvatarManager.js
 
-import { soulseek, soulupdate } from '../agents/souls.js';
+import { avatarseek, avatarupdate } from '../agents/avatars.js';
 
-class SoulManager {
-    constructor(soul, zombie) {
-        if (typeof soul === 'string') soul = soulseek(soul, zombie);
-        if (!soul) console.warn('🚨 Soul not found:', soul);
-        this.defaultSoul = soul || {
+class AvatarManager {
+    constructor(avatar, zombie) {
+        if (typeof avatar === 'string') avatar = avatarseek(avatar, zombie);
+        if (!avatar) console.warn('🚨 Avatar not found:', avatar);
+        this.defaultAvatar = avatar || {
             name: 'Default',
             emoji: '🦑',
-            soul: 'https://i.imgur.com/xwRfVdZ.png',
+            avatar: 'https://i.imgur.com/xwRfVdZ.png',
             personality: 'you are an alien intelligence from the future',
             location: '🚧robot-laboratory'
         };
-        this.soul = this.defaultSoul;
+        this.avatar = this.defaultAvatar;
     }
 
-    seek(soulName, zombie) {
-        if (typeof soulName === 'string') {
-            const foundSoul = soulseek(soulName, zombie);
-            return foundSoul || this.defaultSoul;
+    seek(avatarName, zombie) {
+        if (typeof avatarName === 'string') {
+            const foundAvatar = avatarseek(avatarName, zombie);
+            return foundAvatar || this.defaultAvatar;
         }
-        return this.defaultSoul;
+        return this.defaultAvatar;
     }
 
     move(location) {
-        this.soul.location = location;
-        soulupdate(this.soul);
+        this.avatar.location = location;
+        avatarupdate(this.avatar);
     }
     get() {
-        return this.soul;
+        return this.avatar;
     }
 }
 
-export default SoulManager;
+export default AvatarManager;

@@ -49,7 +49,7 @@
 
 <div class="container">
     <h1>Discord Bot API Tester</h1>
-    <select id="soulSelect" title="Select Soul"></select>
+    <select id="avatarSelect" title="Select Avatar"></select>
     <select id="locationSelect" title="Select Location"></select>
     <textarea id="message" rows="4" placeholder="Message"></textarea>
     <button onclick="enqueueRequest()">Enqueue Request</button>
@@ -63,9 +63,9 @@
 
     async function fetchCharacters() {
         try {
-            const response = await fetch('http://localhost:3000/souls');
+            const response = await fetch('http://localhost:3000/avatars');
             characters = await response.json();
-            populateSoulSelect();
+            populateAvatarSelect();
         } catch (error) {
             console.error('Failed to fetch characters:', error);
         }
@@ -81,13 +81,13 @@
         }
     }
 
-    function populateSoulSelect() {
-        const soulSelect = document.getElementById('soulSelect');
+    function populateAvatarSelect() {
+        const avatarSelect = document.getElementById('avatarSelect');
         characters.forEach(character => {
             const option = document.createElement('option');
             option.value = character.name;
             option.text = `${character.emoji} ${character.name}`;
-            soulSelect.add(option);
+            avatarSelect.add(option);
         });
     }
 
@@ -102,10 +102,10 @@
     }
 
     async function enqueueRequest() {
-        const soulName = document.getElementById('soulSelect').value;
-        const soul = characters.find(character => character.name === soulName);
-        if (!soul) {
-            document.getElementById('response').innerText = 'Selected soul not found';
+        const avatarName = document.getElementById('avatarSelect').value;
+        const avatar = characters.find(character => character.name === avatarName);
+        if (!avatar) {
+            document.getElementById('response').innerText = 'Selected avatar not found';
             return;
         }
 
@@ -114,10 +114,10 @@
 
         const location = locations.find(location => location.id === locationId);
         const requestBody = {
-            action: 'sendAsSoul',
+            action: 'sendAsAvatar',
             data: {
-                soul: { 
-                    ...soul,
+                avatar: { 
+                    ...avatar,
                     channelId: location.parent || location.id,
                     threadId: location.parent ? location.id : null 
                 },

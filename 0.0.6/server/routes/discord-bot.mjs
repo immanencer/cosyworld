@@ -184,16 +184,16 @@ async function processRequest(action, data) {
         case 'sendMessage':
             await sendMessage(data.channelId, data.message, data.threadId);
             break;
-        case 'sendAsSoul':
-            if (!data.soul) {
-                console.error('🎮 ❌ Missing soul data');
+        case 'sendAsAvatar':
+            if (!data.avatar) {
+                console.error('🎮 ❌ Missing avatar data');
                 return;
             }
             if (!data.message) {
-                console.error('🎮 ❌ Missing soul message');
+                console.error('🎮 ❌ Missing avatar message');
                 return;
             }
-            await sendAsSoul(data.soul, data.message);
+            await sendAsAvatar(data.avatar, data.message);
             break;
         // Add more cases as needed
         default:
@@ -208,11 +208,11 @@ async function sendMessage(channelId, message, threadId = null) {
     await channel.send({ content: message, threadId });
 }
 
-async function sendAsSoul(soul, message) {
-    console.log('🎮 Sending as soul:', soul.name, message);
-    const channel = await discordClient.channels.fetch(soul.channelId);
+async function sendAsAvatar(avatar, message) {
+    console.log('🎮 Sending as avatar:', avatar.name, message);
+    const channel = await discordClient.channels.fetch(avatar.channelId);
     if (!channel) {
-        console.error('🎮 ❌ Invalid channel:', soul.channelId);
+        console.error('🎮 ❌ Invalid channel:', avatar.channelId);
         return;
     }
 
@@ -223,14 +223,14 @@ async function sendAsSoul(soul, message) {
         chunkText(message, 2000).forEach(async message => {
             await webhook.send({
                 content: message,
-                username: soul.name,
-                avatarURL: soul.avatar,
-                threadId: soul.threadId
+                username: avatar.name,
+                avatarURL: avatar.avatar,
+                threadId: avatar.threadId
             });
         });
 
     } catch (error) {
-        console.error('🎮 ❌ Failed to send as soul:', error);
+        console.error('🎮 ❌ Failed to send as avatar:', error);
     }
 }
 

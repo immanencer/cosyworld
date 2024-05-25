@@ -1,7 +1,7 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
 
 
-const soul =  {
+const avatar =  {
         "emoji": "🐇",
         "name": "Remy",
         "location": "🌿 herb garden",
@@ -13,6 +13,6 @@ const soul =  {
         `,
     };
 
-const benny = new DiscordAIBot(soul, );
+const benny = new DiscordAIBot(avatar, );
 benny.login();
-benny.subscribe(soul.location);
+benny.subscribe(avatar.location);

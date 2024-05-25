@@ -1,27 +1,27 @@
-import { soulseek } from '../agents/souls.js';
+import { avatarseek } from '../agents/avatars.js';
 
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from './ai-service-manager.mjs';
-import SoulManager from './soul-manager.js';
+import AvatarManager from './avatar-manager.js';
 import { xorFoldHash } from './crypto.js';
 
 class DiscordOllamaBot extends DiscordBot {
-    constructor(soul, systemPrompt) {
+    constructor(avatar, systemPrompt) {
         super();
-        if (typeof soul === 'string') soul = soulseek(soul);
-        this.soul_manager = new SoulManager(soul);
-        this.soul = this.soul_manager.get();
+        if (typeof avatar === 'string') avatar = avatarseek(avatar);
+        this.avatar_manager = new AvatarManager(avatar);
+        this.avatar = this.avatar_manager.get();
 
         if (systemPrompt) {
-            console.warn('🚨 systemPrompt is deprecated. Use soul.personality instead');
+            console.warn('🚨 systemPrompt is deprecated. Use avatar.personality instead');
         }
-        this.system_prompt = this.soul.personality || systemPrompt;
+        this.system_prompt = this.avatar.personality || systemPrompt;
         this.aiServiceManager = new AIServiceManager();
     }
 
     async initialize() {
         await this.aiServiceManager.useService('openai');
-        this.soul.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
+        this.avatar.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
         console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 
@@ -40,7 +40,7 @@ class DiscordOllamaBot extends DiscordBot {
             console.debug('Message filtered out by base class');
             return;
         }
-        if (message.author.displayName === this.soul.name) {
+        if (message.author.displayName === this.avatar.name) {
             console.debug('Ignoring message from self');
             return;
         }
@@ -107,7 +107,7 @@ class DiscordOllamaBot extends DiscordBot {
 
         await this.aiServiceManager.chat({ role: 'assistant', content: output });
 
-        await this.sendAsSouls(output);
+        await this.sendAsAvatars(output);
     }
 
     async initializeMemory(memories, options = { slice: 200, instructions: '' }) {

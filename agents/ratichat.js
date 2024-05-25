@@ -1,22 +1,22 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import SoulManager from '../tools/soul-manager.js';
-import { soulseek } from './souls.js';
+import AvatarManager from '../tools/avatar-manager.js';
+import { avatarseek } from './avatars.js';
 
-const souls = {
-    'old oak tree': soulseek('old oak tree'),
-    'rati': soulseek('rati'),
-    'skull': soulseek('skull'),
-    'whiskerwind': soulseek('whiskerwind'),
-    'luna': soulseek('luna'),
-    'sammy': soulseek('sammy')
+const avatars = {
+    'old oak tree': avatarseek('old oak tree'),
+    'rati': avatarseek('rati'),
+    'skull': avatarseek('skull'),
+    'whiskerwind': avatarseek('whiskerwind'),
+    'luna': avatarseek('luna'),
+    'sammy': avatarseek('sammy')
 };
 
-const ratichat = new DiscordAIBot(new SoulManager('Old Oak Tree').get());
-ratichat.souls = souls;
+const ratichat = new DiscordAIBot(new AvatarManager('Old Oak Tree').get());
+ratichat.avatars = avatars;
 
 ratichat.on_login = async () => {
     console.log(JSON.stringify(await ratichat.channelManager.getChannelMapPrompt()));
-    const system_prompt = `${ratichat.soul.personality}`;
+    const system_prompt = `${ratichat.avatar.personality}`;
 
     console.log(system_prompt);
     await ratichat.aiServiceManager.updateConfig({ system_prompt: system_prompt + `
@@ -33,7 +33,7 @@ You control your avatars, Rati, Skull, Whiskerwind, Luna, and Sammy to explore t
 
 Your Avatars Are:
 
-${Object.keys(ratichat.souls).map(soul => ratichat.souls[soul].name + ': ' + ratichat.souls[soul].personality).join('\n')}
+${Object.keys(ratichat.avatars).map(avatar => ratichat.avatars[avatar].name + ': ' + ratichat.avatars[avatar].personality).join('\n')}
 
 ### Inner Thoughts of the Old Oak
 
@@ -47,7 +47,7 @@ Together, they embody the spirit of the forest;
 
 ### Forest Whispers
 
-(🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the soul.
+(🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the avatar.
 (lost-woods) Skull 🐺: *short wolfish action*
 (🌿 herb garden) WhiskerWind 🍃: 💚🌼
 (🌙 moonlit clearing) Luna 🌙: ✨ *channels lunar energy*

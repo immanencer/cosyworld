@@ -15,8 +15,9 @@ async function process_next_task() {
         { $set: { status: 'processing' } }
     );
     
+    let logged = false;
     if (!task) {
-        console.log('No tasks in the queue');
+        if (!logged) { console.log('No tasks in the queue, monitoring...'); logged = true; }
         return;
     }
     

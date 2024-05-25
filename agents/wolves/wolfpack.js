@@ -1,7 +1,7 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
 import AIServiceManager from "../../tools/ai-service-manager.mjs";
 
-import findSoul from "../../tools/soul-manager.js";
+import findAvatar from "../../tools/avatar-manager.js";
 
 // AI Service setup (assuming it provides responses based on wolves' personalities)
 const ai = new AIServiceManager();
@@ -88,7 +88,7 @@ class WolfPack extends DiscordBot {
     async interactWithWolf(wolf, history) {
         // Here you could include logic based on the wolf's personality and the user's current loyalty with the wolf
         const response = await ai.chatHistory(wolf.personality, history);
-        await this.sendAsSoul(wolf, response);
+        await this.sendAsAvatar(wolf, response);
     }
 }
 

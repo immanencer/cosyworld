@@ -40,7 +40,7 @@ export function parseEntry(entry) {
 
 // Example usage:
 const entries = [
-    "(🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the soul.",
+    "(🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the avatar.",
     "(lost-woods) Skull 🐺: *short wolfish action*",
     "(🌿 herb garden) WhiskerWind 🍃: 💚🌼",
     "(🌙 moonlit clearing) Luna 🌙: ✨ *channels lunar energy*",

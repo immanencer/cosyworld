@@ -4,12 +4,12 @@ import process from "process"; // Add this line
 
 import AIServiceManager from '../tools/ai-service-manager.mjs';
 
-import { soulseek } from './souls.js';
+import { avatarseek } from './avatars.js';
 import { replaceContent } from "../tools/censorship.js";
 import DiscordAIBot from "../tools/discord-ollama-bot.js";
 
 const librarian = new DiscordAIBot('llama');
-librarian.on_login = async () => librarian.sendAsSoul(...(await ingest()));
+librarian.on_login = async () => librarian.sendAsAvatar(...(await ingest()));
 librarian.login();
 
 import { generateHash, xorFoldHash } from '../tools/crypto.js';
@@ -34,7 +34,7 @@ async function openOrCreateBookshelf(book) {
 }
 
 async function ingest() {
-    const asher = soulseek('asher');
+    const asher = avatarseek('asher');
     // This is the Sribe AI Service        
     const manager = new AIServiceManager();
     await manager.useService('ollama');

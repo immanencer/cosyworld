@@ -4,9 +4,9 @@ let locations = [];
 
 async function fetchCharacters() {
     try {
-        const response = await fetch('http://localhost:3000/souls');
+        const response = await fetch('http://localhost:3000/avatars');
         characters = await response.json();
-        populateSoulSelect();
+        populateAvatarSelect();
     } catch (error) {
         console.error('Failed to fetch characters:', error);
     }
@@ -22,13 +22,13 @@ async function fetchLocations() {
     }
 }
 
-function populateSoulSelect() {
-    const soulSelect = document.getElementById('soulSelect');
+function populateAvatarSelect() {
+    const avatarSelect = document.getElementById('avatarSelect');
     characters.forEach(character => {
         const option = document.createElement('option');
         option.value = character.name;
         option.text = `${character.emoji} ${character.name}`;
-        soulSelect.add(option);
+        avatarSelect.add(option);
     });
 }
 
@@ -43,10 +43,10 @@ function populateLocationSelect() {
 }
 
 async function enqueueRequest() {
-    const soulName = document.getElementById('soulSelect').value;
-    const soul = characters.find(character => character.name === soulName);
-    if (!soul) {
-        document.getElementById('response').innerText = 'Selected soul not found';
+    const avatarName = document.getElementById('avatarSelect').value;
+    const avatar = characters.find(character => character.name === avatarName);
+    if (!avatar) {
+        document.getElementById('response').innerText = 'Selected avatar not found';
         return;
     }
 
@@ -55,10 +55,10 @@ async function enqueueRequest() {
 
     const location = locations.find(location => location.id === locationId);
     const requestBody = {
-        action: 'sendAsSoul',
+        action: 'sendAsAvatar',
         data: {
-            soul: { 
-                ...soul,
+            avatar: { 
+                ...avatar,
                 channelId: location.parent || location.id,
                 threadId: location.parent ? location.id : null 
             },

@@ -6,7 +6,7 @@ module.exports ={
     {   "name": "👼 heavenly host",
         "script": "./agents/angels/host.mjs"
     },
-    {   "name": "🕸️ server",
+    {   "name": "🕸️  server",
         "script": "./server/index.mjs"
     },
     {   "name": "🎮 📡 discord listener",

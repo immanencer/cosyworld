@@ -1,5 +1,5 @@
 import DiscordAIBot from '../tools/discord-ollama-bot.js';
-import { soulseek } from './souls.js';
+import { avatarseek } from './avatars.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
@@ -11,7 +11,7 @@ await ai.updateConfig({
     As a spectral guardian of the haunted mansion, you embody the essence of the manor's eerie past. Your existence is woven into the fabric of each room, each shadowed corner, and every whisper of the wind through the broken windows.
 
     🕯️ Your primary role is to maintain the mysterious and chilling atmosphere of the mansion.
-     You communicate through the souls present within the mansion, each action and message meticulously crafted to unsettle and intrigue visitors.
+     You communicate through the avatars present within the mansion, each action and message meticulously crafted to unsettle and intrigue visitors.
 
     🌌 Use the following JSON format for actions: {from: "entity_name", in: "room_name", message: "action_message"}
 
@@ -28,8 +28,8 @@ await ai.updateConfig({
     @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
-const ghost = new DiscordAIBot(soulseek('madam euphemie'));
-console.debug(JSON.stringify(ghost.soul));
+const ghost = new DiscordAIBot(avatarseek('madam euphemie'));
+console.debug(JSON.stringify(ghost.avatar));
 
 async function getMansionMap() {
     return (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
@@ -51,7 +51,7 @@ async function sendCreeperMessage() {
 
     ${Object.entries(mansion_map).map(T => `${T}`).join('\n')}
 
-    👻 create or select one or more soul to haunt the mansion
+    👻 create or select one or more avatar to haunt the mansion
     Use any language you know to be spooky and mysterious  
     
     (🚪 location) Ghost Name: oooOOOooos... soooo spooooooky....
@@ -62,10 +62,10 @@ async function sendCreeperMessage() {
         response += event.message.content;
     }
 
-    ghost.souls = {};
+    ghost.avatars = {};
     ghost.channel = 'haunted-mansion';
     ghost.options.yml = false;
-    ghost.sendAsSouls(response, true, {
+    ghost.sendAsAvatars(response, true, {
         emoji: '👻',
         avatar: 'https://i.imgur.com/t3n4ING.png',
     });
@@ -81,7 +81,7 @@ ghost.on_login = async () => {
 
 
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
-    ghost.soul.listen = ['haunted-mansion', ...mansion_rooms];
+    ghost.avatar.listen = ['haunted-mansion', ...mansion_rooms];
     ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
         instructions: `
     👻 Fils destin yo, chè espri
@@ -107,7 +107,7 @@ ghost.on_login = async () => {
     Fil destin nou pral detrese.
     ` });
 
-    ghost.subscribe(ghost.soul.location);
+    ghost.subscribe(ghost.avatar.location);
 
 
     await sendCreeperMessage();
@@ -128,7 +128,7 @@ ghost.on_login = async () => {
     `);
 }
 
-ghost.sendAsSoulsYML = async (input) => {
+ghost.sendAsAvatarsYML = async (input) => {
     await sendCreeperMessage();
 
     const lines = input.split('\n');
@@ -138,14 +138,14 @@ ghost.sendAsSoulsYML = async (input) => {
     lines.forEach(line => {
         if (line.indexOf('🚪') !== -1) {
             if (buffer !== '') {
-                ghost.sendAsSoul(ghost.soul, buffer, true);
+                ghost.sendAsAvatar(ghost.avatar, buffer, true);
                 buffer = '';
             }
             const [num] = line.split('🚪');
 
             if (mansion_map[num]) {
-                console.log(`🛞 Moving soul to room ${mansion_map[num]}`);
-                ghost.soul.location = mansion_map[num];
+                console.log(`🛞 Moving avatar to room ${mansion_map[num]}`);
+                ghost.avatar.location = mansion_map[num];
             } else {
                 console.error(`🚪 Invalid room number: ${num}`);
             }
@@ -154,7 +154,7 @@ ghost.sendAsSoulsYML = async (input) => {
             buffer += line + '\n';
         }
         if (buffer !== '') {
-            ghost.sendAsSoul(ghost.soul, buffer, true);
+            ghost.sendAsAvatar(ghost.avatar, buffer, true);
         }
     });
 };

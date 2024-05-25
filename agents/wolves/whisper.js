@@ -16,7 +16,7 @@ class Whisper extends DiscordBot {
         this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
     }
 
-    soul = {
+    avatar = {
         "emoji": "🦋",
         "name": "Whisper",
         "owner": "latenk",
@@ -26,18 +26,18 @@ class Whisper extends DiscordBot {
     };
 
     async on_login() {
-        console.log(`${this.soul.emoji} ${this.soul.name} is online`);
+        console.log(`${this.avatar.emoji} ${this.avatar.name} is online`);
 
         const role = 'system';
-        const content = this.soul.personality;
+        const content = this.avatar.personality;
 
-        const history = (await this.channels.getChannelOrThreadHistory(this.soul.location)).join('\n');
-        console.log(`${this.soul.emoji} ${this.soul.name} heard: `, history);
+        const history = (await this.channels.getChannelOrThreadHistory(this.avatar.location)).join('\n');
+        console.log(`${this.avatar.emoji} ${this.avatar.name} heard: `, history);
 
         const memory = await ai.currentService.raw_chat('llama3', [
             { role, content },
             {
-                role: 'user', content: `You are ${this.soul.name} memory.
+                role: 'user', content: `You are ${this.avatar.name} memory.
 
             Here are the whispers you have heard:
     
@@ -49,8 +49,8 @@ class Whisper extends DiscordBot {
         await calculateTPS(memory);
         this.memory = memory.message.content;
 
-        console.log(`${this.soul.emoji} ${this.soul.name} remembers: `, this.memory);
-        await ai.updateConfig({ system_prompt: `${this.soul.personality}` })
+        console.log(`${this.avatar.emoji} ${this.avatar.name} remembers: `, this.memory);
+        await ai.updateConfig({ system_prompt: `${this.avatar.personality}` })
     }
 
 
@@ -77,7 +77,7 @@ class Whisper extends DiscordBot {
         if (message.channel.name.indexOf('🥩') === 0) return false;
 
         // Follow the owner
-        if (data.author == this.soul.owner) {
+        if (data.author == this.avatar.owner) {
             if (data.content.includes('🌹')) {
                 this.action = '🌹';
             }
@@ -86,8 +86,8 @@ class Whisper extends DiscordBot {
             }
 
             if (this.action === '🌹') {
-                this.soul.location = data.location;
-                console.log(`${this.soul.emoji} ${this.soul.name} following ${this.soul.owner} to ${data.location}`);
+                this.avatar.location = data.location;
+                console.log(`${this.avatar.emoji} ${this.avatar.name} following ${this.avatar.owner} to ${data.location}`);
             }
         }
 
@@ -95,14 +95,14 @@ class Whisper extends DiscordBot {
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
-        if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
-        if (data.location !== this.soul.location) return;
+        if (data.author === `${this.avatar.name} ${this.avatar.emoji}`) return;
+        if (data.location !== this.avatar.location) return;
 
         console.log(`(${data.location}) ${data.author}: ${data.content}`);
 
         this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (!this.debounce()) {
-            console.log(`${this.soul.emoji} ${this.soul.name} is debouncing...'`);
+            console.log(`${this.avatar.emoji} ${this.avatar.name} is debouncing...'`);
             return;
         }
 
@@ -111,7 +111,7 @@ class Whisper extends DiscordBot {
         console.log(this.message_cache.join('\n'));
 
         const respond = await ai.currentService.raw_chat('llama3', [
-            { role: 'system', content: `${this.soul.personality}. You are the executive function.` },
+            { role: 'system', content: `${this.avatar.personality}. You are the executive function.` },
             {
                 role: 'user', content: `
             HERE ARE THE RECENT MESSAGES YOU HAVE HEARD FROM VARIOUS RESIDENTS OF THE FOREST:
@@ -126,14 +126,14 @@ class Whisper extends DiscordBot {
 
         console.log(`${respond.message.content}`);
         if (respond.message.content.toLowerCase().includes('yes')) {
-            console.log(`${this.soul.emoji} ${this.soul.name} ✅ is responding...`);
+            console.log(`${this.avatar.emoji} ${this.avatar.name} ✅ is responding...`);
         } else {
-            console.log(`${this.soul.emoji} ${this.soul.name} 🤐 is not responding..`);
+            console.log(`${this.avatar.emoji} ${this.avatar.name} 🤐 is not responding..`);
             return;
         }
         const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}\n\n${respond.message.content}` });
         await ai.chat({ role: 'assistant', content: `${result}` });
-        await this.sendAsSoul(this.soul, `${result}`);
+        await this.sendAsAvatar(this.avatar, `${result}`);
         this.message_cache = [];
     }
 }

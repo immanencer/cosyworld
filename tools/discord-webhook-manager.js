@@ -55,11 +55,11 @@ class WebhookManager {
         }
     }
 
-    async sendAsSoul(soul, message) {
-        console.log('🎮 Sending message as soul:', soul.name);
-        const location = await this.channelManager.getLocation(soul.location);
+    async sendAsAvatar(avatar, message) {
+        console.log('🎮 Sending message as avatar:', avatar.name);
+        const location = await this.channelManager.getLocation(avatar.location);
         if (!location) {
-            console.error(`🎮 ❌ Invalid location: ${soul.location}`);
+            console.error(`🎮 ❌ Invalid location: ${avatar.location}`);
             return;
         }
         const webhook = await this.getOrCreateWebhook(location.channel);
@@ -71,12 +71,12 @@ class WebhookManager {
         try {
             await webhook.send({
                 content: message,
-                username: `${soul.name} ${soul.emoji || ''}`.trim(),
-                avatarURL: soul.avatar,
+                username: `${avatar.name} ${avatar.emoji || ''}`.trim(),
+                avatarURL: avatar.avatar,
                 threadId: location.thread
             });
         } catch (error) {
-            console.error(`🎮 ❌ Failed to send message as ${soul.name}: ${error}`);
+            console.error(`🎮 ❌ Failed to send message as ${avatar.name}: ${error}`);
         }
     }
 }

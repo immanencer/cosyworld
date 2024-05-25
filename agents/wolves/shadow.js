@@ -11,7 +11,7 @@ class Shadow extends DiscordBot {
         this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
     }
     
-    soul = {
+    avatar = {
         emoji: '🐺',
         name: 'Shadow',
         owner: "Wolf777Link",
@@ -25,7 +25,7 @@ class Shadow extends DiscordBot {
         
         console.log('🧠 initializing ai');
         await ai.useService('ollama');
-        await ai.updateConfig({ system_prompt: this.soul.personality });
+        await ai.updateConfig({ system_prompt: this.avatar.personality });
 
     }
 
@@ -48,14 +48,14 @@ class Shadow extends DiscordBot {
         console.log('🐺 Message received:', data);
 
         // Follow the owner
-        if (data.author == this.soul.owner && data.location.indexOf('🥩') === -1) this.soul.location = data.location;
+        if (data.author == this.avatar.owner && data.location.indexOf('🥩') === -1) this.avatar.location = data.location;
 
         if (message.author.bot || message.author === this.client.user.username) { 
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
-        if (data.author === `${this.soul.name} ${this.soul.emoji}`) return;
-        if (data.location !== this.soul.location) return;
+        if (data.author === `${this.avatar.name} ${this.avatar.emoji}`) return;
+        if (data.location !== this.avatar.location) return;
         console.log('🐺 Shadow is processing the message...');
 
         this.message_cache.push(`in "${data.location}" you heard ${data.author} say ${data.content}`);
@@ -70,7 +70,7 @@ class Shadow extends DiscordBot {
         if (result.trim() !== "") await ai.chat({ role: 'assistant', content: `${result}` });
 
             console.log('🐺 Shadow responds:', result);
-            await this.sendAsSoul(this.soul, result);
+            await this.sendAsAvatar(this.avatar, result);
     }
 }
 

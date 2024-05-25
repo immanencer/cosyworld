@@ -1,76 +1,76 @@
 import fs from 'fs/promises';
-const filePath = './.state/souls.json';
+const filePath = './.state/avatars.json';
 
-const SOULS = (await soulload(filePath) || await soulload('./souls.json') || null);
+const SOULS = (await avatarload(filePath) || await avatarload('./avatars.json') || null);
 if (!SOULS) {
-    throw new Error('Failed to load souls data, check the file path and format.');
+    throw new Error('Failed to load avatars data, check the file path and format.');
 }
 
-async function soulload(path) {
+async function avatarload(path) {
     try {
         const data = await fs.readFile(path, 'utf8'); // Read the file
-        const souls = JSON.parse(data); // Parse the JSON string back into an array
-        console.log('✅ Souls data loaded successfully.');
-        await soulsave(souls);
-        return souls;
+        const avatars = JSON.parse(data); // Parse the JSON string back into an array
+        console.log('✅ Avatars data loaded successfully.');
+        await avatarsave(avatars);
+        return avatars;
     } catch (error) {
-        console.warn('⚠️ Failed to load souls data:', error);
+        console.warn('⚠️ Failed to load avatars data:', error);
         return null;
     }
 }
 
-async function soulsave(souls) {
-    if (!souls) return console.error('💀 No souls data to save.');
+async function avatarsave(avatars) {
+    if (!avatars) return console.error('💀 No avatars data to save.');
     try {
-        const data = JSON.stringify(souls, null, 4); // Pretty print JSON
+        const data = JSON.stringify(avatars, null, 4); // Pretty print JSON
         await fs.writeFile(filePath, data, 'utf8');
-        console.log('Souls data saved successfully.');
+        console.log('Avatars data saved successfully.');
     } catch (error) {
-        console.error('Failed to save souls data:', error);
+        console.error('Failed to save avatars data:', error);
     }
 }
 
-function soulfind(name) {
+function avatarfind(name) {
     const normalizedName = name.toLowerCase();
-    return SOULS.find( soul => {
-        const soulNameLower = soul.name.toLowerCase();
-        return soulNameLower.includes(normalizedName) || normalizedName.includes(soulNameLower);
+    return SOULS.find( avatar => {
+        const avatarNameLower = avatar.name.toLowerCase();
+        return avatarNameLower.includes(normalizedName) || normalizedName.includes(avatarNameLower);
     });
 }
 
-function soulupdate(soul) {
-    const index = SOULS.findIndex((s) => s.name === soul.name);
+function avatarupdate(avatar) {
+    const index = SOULS.findIndex((s) => s.name === avatar.name);
     if (index === -1) {
-        console.error('👻 ❌ soul terminated:', soul);
+        console.error('👻 ❌ avatar terminated:', avatar);
         return;
     }
 
-    SOULS[index] = soul;
-    console.log('👻 ✅ soul saved:', soul);
-    soulsave();
+    SOULS[index] = avatar;
+    console.log('👻 ✅ avatar saved:', avatar);
+    avatarsave();
 };
 
-// Searches for a soul by name in a case-insensitive manner. Returns the soul, a zombie soul, or a default if not found.
-function soulseek(name,zombie, emoji) {
-    // Find the soul that matches the name in either direction of containment
-    const foundSoul = soulfind(name) || SOULS.find(soul => soul.emoji === emoji);
+// Searches for a avatar by name in a case-insensitive manner. Returns the avatar, a zombie avatar, or a default if not found.
+function avatarseek(name,zombie, emoji) {
+    // Find the avatar that matches the name in either direction of containment
+    const foundAvatar = avatarfind(name) || SOULS.find(avatar => avatar.emoji === emoji);
 
-    if (foundSoul) {
-        console.log('👻 ✅ found soul:', foundSoul);
-        return foundSoul;
+    if (foundAvatar) {
+        console.log('👻 ✅ found avatar:', foundAvatar);
+        return foundAvatar;
     }
 
-    // Return a zombie soul if provided
+    // Return a zombie avatar if provided
     if (zombie) {
-        console.log('👻 🧟 found zombie soul:', zombie);
+        console.log('👻 🧟 found zombie avatar:', zombie);
         return {
             name,
             ...zombie
         };
     }
 
-    // Return a default soul if no soul or zombie soul is found
-    console.log(`👻 🔍 no soul found for ${name}, returning default`);
+    // Return a default avatar if no avatar or zombie avatar is found
+    console.log(`👻 🔍 no avatar found for ${name}, returning default`);
     return {
         name: 'Default',
         emoji: '🦑',
@@ -81,7 +81,7 @@ function soulseek(name,zombie, emoji) {
 }
 
 
-export { SOULS, soulseek, soulupdate, soulsave };
+export { SOULS, avatarseek, avatarupdate, avatarsave };
 
 
 

@@ -27,7 +27,7 @@ class MinimalistDiscordBot {
     setupEventListeners() {
         this.channels = new ChannelManager(this.client);
         this.webhooks = new WebhookManager(this.channels);
-        this.sendAsSoul = this.webhooks.sendAsSoul.bind(this.webhooks);
+        this.sendAsAvatar = this.webhooks.sendAsAvatar.bind(this.webhooks);
 
         this.client.once(Events.ClientReady, async () => {
             console.log(`🎮 Bot is ready! Logged in as ${this.client.user.tag}`);
