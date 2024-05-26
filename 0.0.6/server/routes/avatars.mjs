@@ -25,6 +25,23 @@ router.get('/', async (req, res) => {
         res.status(500).send({ error: 'Failed to fetch avatars' });
     }
 });
+// Route to get a avatar by ID
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).send({ error: 'ID is required to fetch the avatar' });
+    }
+    try {
+        const avatar = await db.collection(collectionName).findOne({ _id: new ObjectId(id) });
+        if (!avatar) {
+            return res.status(404).send({ error: 'Avatar not found' });
+        }
+        res.status(200).send(avatar);
+    } catch (error) {
+        console.error('🎮 ❌ Failed to fetch avatar:', error);
+        res.status(500).send({ error: 'Failed to fetch avatar' });
+    }
+});
 
 
 // Route to update a avatar (PATCH)

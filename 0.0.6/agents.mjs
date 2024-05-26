@@ -1,5 +1,7 @@
-import fetch from 'node-fetch';
-import { createTask, pollTaskCompletion } from './services/taskManager.js';
+import agents from './agents/index.mjs';
+
+import { createTask, pollTaskCompletion } from './tools/taskManager.mjs';
+import { fetchJSON, postJSON } from './tools/fetchJson.mjs';
 
 const POLL_INTERVAL = 1000;
 const AVATARS_API = 'http://localhost:3000/avatars';
@@ -7,32 +9,9 @@ const LOCATIONS_API = 'http://localhost:3000/discord-bot/locations';
 const MESSAGES_API = 'http://localhost:3000/discord-bot/messages';
 const ENQUEUE_API = 'http://localhost:3000/discord-bot/enqueue';
 
-async function fetchJSON(url) {
-    let response;
-    try {
-        response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
-
-    } catch (error) {
-        console.error(`Failed to fetch: ${url}`);
-        return [];
-    }
-    return response.json();
-}
-
-async function postJSON(url, data) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error(`Failed to post to: ${url}`);
-    return response.json();
-}
-
 let locations = [];
 async function initializeAvatars() {
-    const avatars = (await fetchJSON(SOULS_API)).filter(s => s.owner === 'host');
+    const avatars = (await fetchJSON(AVATARS_API)).filter(s => s.owner === 'host');
     locations = await fetchJSON(LOCATIONS_API);
 
     for (const avatar of avatars) {
@@ -60,6 +39,8 @@ async function getMentions(name, since) {
 
 let bot_replies = 0;
 async function processMessagesForAvatar(avatar) {
+    const agent = agents.find(agent => agent.name === avatar.agent);
+
     let mentions;
     try {
         mentions = await getMentions(avatar.name, avatar.lastProcessedMessageId);
@@ -78,14 +59,14 @@ async function processMessagesForAvatar(avatar) {
         // get the last message that mentions the avatar
         lastMention = mentions[mentions.length - 1];
 
-        if (avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
+        if (avatar.summon && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
             avatar.location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId);
             if (!avatar.location) {
                 console.error(`Avatar ${avatar.name} has no location.`);
                 avatar.location = locations[0];
             }
             console.log(`${avatar.emoji} ${avatar.name} is now in ${avatar.location?.name}.`);
-            fetchJSON(`${SOULS_API}/${avatar.id}`, {
+            fetchJSON(`${AVATARS_API}/${avatar._id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ location: avatar.location.id })
             });
@@ -107,10 +88,11 @@ async function processMessagesForAvatar(avatar) {
     if (messages.length > 0) {
         avatar.lastProcessedMessageId = messages[messages.length - 1]._id;
     }
-    let respond = false;
 
     let conversation = []; // Review the conversation from this avatar's perspective
 
+    // Process the messages
+    let respond = false;
     for (const message of messages) {
         const data = {
             id: message._id,
@@ -152,6 +134,14 @@ async function processMessagesForAvatar(avatar) {
 
         avatar.talking_to = data.author;
         respond = true;
+
+        if (agent?.on_message) {
+            try {
+                respond = agent.on_message(avatar, data);
+            } catch (error) {
+                console.error(`Failed to process message for ${avatar.name}:`, error);
+            }
+        }
     }
 
     if (!respond) return;
@@ -159,7 +149,7 @@ async function processMessagesForAvatar(avatar) {
     let taskId;
 
     try {
-        taskId = await createTask(avatar, conversation);
+        taskId = await createTask(avatar.personality, conversation);
     } catch (error) {
         console.error(`Failed to create task for ${avatar.name}:`, error);
         return;

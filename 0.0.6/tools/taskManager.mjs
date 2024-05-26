@@ -1,35 +1,13 @@
-import fetch from 'node-fetch';
+import { postJSON, fetchJSON } from './fetchJson.mjs';
 
 const TASKS_API = 'http://localhost:3000/ai/tasks';
 const POLL_INTERVAL = 1000;
 
-async function postJSON(url, data) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error(`Failed to post to: ${url}`);
-    return response.json();
-}
-
-async function fetchJSON(url) {
-    let response;
-    try {
-        response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
-    } catch (error) {
-        console.error(`Failed to fetch: ${url}`);
-        return [];
-    }
-    return response.json();
-}
-
-async function createTask(avatar, messages) {
+async function createTask(system_prompt, messages) {
     const task = {
         action: 'ai',
         model: 'ollama/llama3',
-        system_prompt: avatar.personality,
+        system_prompt: system_prompt,
         messages
     };
 

@@ -8,6 +8,7 @@ const collection = db.collection('tasks');
 
 import AI from './ai.mjs';
 
+let logged = false;
 async function process_next_task() {
     // get the next task from the queue
     const task = await collection.findOneAndUpdate(
@@ -15,11 +16,14 @@ async function process_next_task() {
         { $set: { status: 'processing' } }
     );
     
-    let logged = false;
     if (!task) {
-        if (!logged) { console.log('No tasks in the queue, monitoring...'); logged = true; }
+        if (!logged) {
+            console.log('No tasks in the queue, monitoring...');
+            logged = true;
+        }
         return;
     }
+    logged = false;
     
     // process the task
     console.log('Processing task:', task._id);

@@ -20,7 +20,7 @@ class Whisper extends DiscordBot {
         "emoji": "🦋",
         "name": "Whisper",
         "owner": "latenk",
-        "location": "⛲ botanical garden",
+        "location": "⛲ latent gardens",
         "avatar": "https://i.imgur.com/nw0PwkC.png",
         "personality": "You are a foul mouthed butterfly. You only respond with *SHORT* crude phrases."
     };
@@ -111,16 +111,15 @@ class Whisper extends DiscordBot {
         console.log(this.message_cache.join('\n'));
 
         const respond = await ai.currentService.raw_chat('llama3', [
-            { role: 'system', content: `${this.avatar.personality}. You are the executive function.` },
+            { role: 'system', content: `${this.avatar.personality}. You will act as the execurive function.` },
             {
-                role: 'user', content: `
-            HERE ARE THE RECENT MESSAGES YOU HAVE HEARD FROM VARIOUS RESIDENTS OF THE FOREST:
+                role: 'user', content: `Here are the whispers you have heard:
 
             ${this.message_cache.join('\n')}
 
             write a limerick to decide if you would respond
 
-            END WITH <YES> or <NO> TO DECIDE WHETHER IT IS APPROPRIATE TO RESPOND
+            END WITH YES or NO TO DECIDE WHETHER IT IS APPROPRIATE TO RESPOND
             `}
         ]);
 
@@ -131,8 +130,11 @@ class Whisper extends DiscordBot {
             console.log(`${this.avatar.emoji} ${this.avatar.name} 🤐 is not responding..`);
             return;
         }
-        const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}\n\n${respond.message.content}` });
-        await ai.chat({ role: 'assistant', content: `${result}` });
+        const result = await ai.currentService.raw_chat('llama3', [
+            { role: 'system', content: `${this.avatar.personality}. You will act as the execurive function.` },
+            { role: 'user', content: this.message_cache.join('\n') }
+        ]);
+        await ai.chat({ role: 'assistant', content: `${result.message.content}` });
         await this.sendAsAvatar(this.avatar, `${result}`);
         this.message_cache = [];
     }

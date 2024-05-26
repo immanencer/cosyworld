@@ -26,6 +26,7 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
     if (message.channel.name.indexOf('🚧') === 0) return false;
     if (message.channel.name.indexOf('🥩') === 0) return false;
+    if (message.channel.name.indexOf('🐺') === 0) return false;
     const messageData = {
         message_id: message.id,
         author: {

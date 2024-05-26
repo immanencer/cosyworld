@@ -34,11 +34,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "👼 heavenly host",
+            "name": "👼 agent host",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\angels\\host.mjs"
+            "program": "${workspaceFolder}/0.0.6/agents.mjs"
         },
         {
             "type": "node",
@@ -47,7 +47,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\ratichat2.mjs"
+            "program": "${workspaceFolder}\\0.0.6\\agents\\ratichat.mjs"
         },
         {
             "type": "node",
@@ -65,7 +65,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\server\\index.mjs"
+            "program": "${workspaceFolder}\\0.0.6\\server\\index.mjs"
         },
         {
             "type": "node",

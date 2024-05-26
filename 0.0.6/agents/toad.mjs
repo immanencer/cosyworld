@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../0.0.6/tools/discord-ollama-bot.js';
 
 const toad = new DiscordAIBot({
     emoji: '🐸',

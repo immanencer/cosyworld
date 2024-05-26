@@ -279,7 +279,7 @@ class ChannelManager {
                 continue; // Skip to the next channel if there are no threads
             } else {
                 for (const thread of threads) {
-                    if (typeof thread !== 'string') {
+                    if (typeof thread.name !== 'string') {
                         console.error('🎮 ⚠️ Invalid thread name:', JSON.stringify(thread, null, 2));
                         continue; // Skip to the next thread if the thread is not a string
                     }

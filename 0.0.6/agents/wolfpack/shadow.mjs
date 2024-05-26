@@ -45,7 +45,6 @@ class Shadow extends DiscordBot {
             content: message.content,
             location: message.channel.name
         };
-        console.log('🐺 Message received:', data);
 
         // Follow the owner
         if (data.author == this.avatar.owner && data.location.indexOf('🥩') === -1) this.avatar.location = data.location;

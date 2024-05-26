@@ -29,6 +29,7 @@ try {
 } catch (error) {
     console.error('🎮 ❌ Discord login error:', error);
     discordReady = false;
+    throw error;
 }
 
 

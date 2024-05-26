@@ -45,7 +45,7 @@ ${Object.keys(ratichat.avatars).map(avatar => ratichat.avatars[avatar].name + ':
 Together, they embody the spirit of the forest;
     a microcosm of life's intricate dance.
 
-### Forest Whispers
+### Actions of the Avatars
 
 (🏡 cody cottage) Rati 🐭: *cute domestic activities* A wise story is a balm for the avatar.
 (lost-woods) Skull 🐺: *short wolfish action*
