@@ -98,7 +98,7 @@ class Skull extends DiscordBot {
             }
         }
 
-        if (message.author.bot || message.author === this.client.user.username) { 
+        if (message.author.bot || message.author === this.client.user.username) {
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
@@ -134,10 +134,14 @@ class Skull extends DiscordBot {
             return;
         }
 
-        const result = await ai.chatSync({ role: 'user', content: `${this.message_cache.join('\n')}` });
-        await ai.chat({ role: 'assistant', content: `${result}` });
-        await this.sendAsAvatar(this.avatar, `${result}`);
+        if (this.message_cache.length === 0) return;
+        const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });
         this.message_cache = [];
+        if (result.trim() !== "") {
+            await ai.chat({ role: 'assistant', content: `${result}` });
+            console.log('🐺 Skull responds:', result);
+            await this.sendAsAvatar(this.avatar, result);
+        }
     }
 }
 
