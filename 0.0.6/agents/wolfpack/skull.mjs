@@ -135,7 +135,12 @@ class Skull extends DiscordBot {
         }
 
         if (this.message_cache.length === 0) return;
-        const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });
+        const result = await ai.chatSync({
+            role: 'user',
+            content: `
+            Here are the recent messages you have heard: ${this.message_cache.join('\n')},
+            respond to them in wolf language and short wolfish actions`
+        });
         this.message_cache = [];
         if (result.trim() !== "") {
             await ai.chat({ role: 'assistant', content: `${result}` });
