@@ -10,7 +10,7 @@ export function parseEntry(entry) {
     const rest = entry.substring(firstSplit + 1).trim();
 
     // Find the position of the last colon, which precedes the message
-    const lastColon = rest.lastIndexOf(':');
+    const lastColon = rest.indexOf(':');
     if (lastColon === -1) {
         console.error('Failed to parse (No colon found):', entry);
         return null;
@@ -32,7 +32,7 @@ export function parseEntry(entry) {
 
     return {
         location,
-        name,
+        from: name,
         emoji,
         message
     };

@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-const filePath = './.state/avatars.json';
+const filePath = 'avatars.json';
 
 const SOULS = (await avatarload(filePath) || await avatarload('./avatars.json') || null);
 if (!SOULS) {

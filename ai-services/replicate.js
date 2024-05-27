@@ -36,7 +36,7 @@ export default class ReplicateService extends AIService {
     }
 
     updateConfig(config) {
-        this.config = { ...this.config, ...config };
+        return this.config = { ...this.config, ...config };
     }
     chat_history = [];
     chat = async (message) => {

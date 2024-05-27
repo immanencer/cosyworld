@@ -27,6 +27,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\agents\\librarian.js"
         },
         {
@@ -36,6 +37,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\agents\\wolves\\whisper.js"
         },
         {
@@ -45,6 +47,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\services\\ai-processor.mjs"
         },
         {
@@ -54,6 +57,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}/agents.mjs"
         },
         {
@@ -73,16 +77,18 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\agents\\mr-bear.mjs"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "📜 summarizer",
+            "name": "🐁 asher",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\agents\\summarizer.mjs"
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}\\agents\\asher.mjs"
         },
         {
             "type": "node",
@@ -91,6 +97,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\server\\index.mjs"
         },
         {
@@ -100,6 +107,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\services\\listener.mjs"
         }
     ]

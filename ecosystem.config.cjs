@@ -1,31 +1,39 @@
-module.exports ={
-  apps : [
-    {   "name": "server",
-        "script": "./server/index.mjs"
+require('dotenv').config()
+module.exports = {
+  apps: [
+    {
+      "name": "server",
+      "script": "./server/index.mjs"
     },
-    {   "name": "ai",
-        "script": "./services/ai-processor.mjs"
+    {
+      "name": "ai",
+      "script": "./services/ai-processor.mjs"
     },
-    {   "name": "agents",
-        "script": "./agents.mjs"
+    {
+      "name": "agents",
+      "script": "./agents.mjs"
     },
-    {   "name": "listener",
-        "script": "./services/listener.mjs"
+    {
+      "name": "listener",
+      "script": "./services/listener.mjs"
     },
-    {   "name": "whisper",
-        "script": "./agents/wolfpack/whisper.mjs"
+    {
+      "name": "whisper",
+      "script": "./agents/wolfpack/whisper.mjs"
     },
-    {   "name": "shadow",
-        "script": "./agents/wolfpack/shadow.mjs"
+    {
+      "name": "shadow",
+      "script": "./agents/wolfpack/shadow.mjs"
     },
-    {   "name": "skull",
-        "script": "./agents/wolfpack/skull.mjs"
-    },{
+    {
+      "name": "skull",
+      "script": "./agents/wolfpack/skull.mjs"
+    }, {
       "name": "ratichat",
       "script": "./agents/ratichat.mjs"
-    },{
+    }, {
       "name": "steamclock",
-      "script": "./agents/steamclock.mjs" 
+      "script": "./agents/steamclock.mjs"
     },
     {
       "name": "remy",

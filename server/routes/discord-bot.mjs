@@ -18,12 +18,11 @@ const discordClient = new Client({
     ]
 });
 
-import configuration from '../../tools/configuration.js';
-const config = await configuration('discord-bot');
-
 let discordReady = false;
+import process from 'process';
+
 try {
-    await discordClient.login(config.token);
+    await discordClient.login(process.env.DISCORD_BOT_TOKEN);
     console.log('🎮 Bot logged in');
     discordReady = true;
 } catch (error) {

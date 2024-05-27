@@ -12,8 +12,6 @@ import AvatarManager from './avatar-manager.js';
 
 import cleanJson from './cleanJson.js';
 
-import { parseEntry } from './parseEntrySimple.mjs';
-
 class DiscordBot {
     options = {
         yml: false
@@ -52,16 +50,44 @@ class DiscordBot {
             return false;
         }
 
+        // Ignore messaages from the avatar or any of the avatars
+        if (message.author.id === this.client.user.id) {
+            console.log('🎮 ❌ Ignoring message from self:', message);
+            return false;
+        }
+
+        if (message.author.displayName.includes(this.avatar.name)) {
+            console.log('🎮 ❌ Ignoring message from self:', message);
+            return false;
+        }
+
+        if (this.avatars) {
+            for (const avatar of Object.values(this.avatars)) {
+                if (message.author.displayName.includes(avatar.name)) {
+                    console.log('🎮 ❌ Ignoring message from self:', message);
+                    return false;
+                }
+            }
+        }
+
         // Ignore messages from the bot itself
         if ((message.author.displayName || message.author.username) === (this.client.user.displayName || this.client.user.username)) {
             console.log('🎮 ❌ Ignoring message from self:', message);
             return false;
         }
 
+
         // Ignore messages that do not come from subscribed channels
         this.avatar.location = this.avatar.location || 'haunted-mansion';
-        this.avatar.listen = this.avatar.listen || [this.avatar.location];
-        return this.avatar.listen.includes(message.channel.name);
+        this.avatar.listen = this.avatar.listen || [];
+        this.avatar.listen = [...this.avatar.listen, this.avatar.location];
+        
+        if (!this.avatar.listen.includes(message.channel.name)) {
+            console.log('🎮 ❌ Ignoring message from non-subscribed channel:', message.channel.name);
+            return false;
+        }
+
+        return true;
     }
 
     subscribed_channels = [];
@@ -86,6 +112,7 @@ class DiscordBot {
         console.log(`Connected to guild: ${guild.name}`);
 
         if (this.on_login) {
+            this.user = this.client.user;
             await this.on_login();
         }
     }
@@ -94,7 +121,7 @@ class DiscordBot {
     async handleMessage(message) {
         console.log('🎮 📥 Received message:', message.content);
         throw new Error('handleMessage not implemented');
-    }  
+    }
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
             try {
@@ -148,23 +175,63 @@ class DiscordBot {
     }
 
     async sendAsAvatarsSimple(output, unhinged) {
-        const messages = output.split('\n\n').map(parseEntry);
+        // Split the output into lines
+        const lines = output.split('\n').map(line => line.trim()).filter(line => line);
 
+        // Define a pattern to identify the start of an avatar message
+        const actionPattern = /^\([^)]*\) [^:]+:/;
+
+        let currentMessage = null;
+        const messages = [];
+
+        // Iterate over each line and collect multi-line messages
+        for (const line of lines) {
+            if (actionPattern.test(line)) {
+                // If there's an existing message, push it to messages array
+                if (currentMessage) {
+                    messages.push(currentMessage);
+                }
+                // Start a new message
+                currentMessage = line;
+            } else if (currentMessage) {
+                // Append to the current message
+                currentMessage += `\n${line}`;
+            }
+        }
+        // Push the last message if it exists
+        if (currentMessage) {
+            messages.push(currentMessage);
+        }
+
+        // Process each message
         if (messages && this.avatars) {
             for (const message of messages) {
-                if (!message || !message.location || !message.name || !message.message) {
-                    console.error('🎮 ❌ Invalid message:', message);
+                // Extract location, name, and content
+                const parts = message.match(new RegExp(/^\(([^)]+)\) ([^:]+):\s([\s\S]*)$/));
+                if (!parts) {
+                    console.error('🎮 ❌ Invalid message format:', message);
                     continue;
                 }
-                console.log(`🎮 📥 Processing message from ${message.name} in ${message.location}: ${message.message}`);
-                await this.processMessage(message, unhinged);
+
+                const [_, location, name, content] = parts;
+                const messageObject = {
+                    location: location.trim(),
+                    name: name.trim(),
+                    message: content.trim()
+                };
+
+                console.log(`🎮 📥 Processing message from ${name} in ${location}: ${content}`);
+                await this.processAction(messageObject, unhinged);
             }
         }
 
-        // send entire message to log channel
+        // Send the entire message to the log channel
         console.log(`🎮 📤 Sending as ${this.avatar.name} (${this.avatar.location})`);
-        return this.sendMessage(this.channel, output);
+        return this.sendAsAvatar(this.avatar, output);
     }
+
+
+
 
     async sendAsAvatarsYML(output, unhinged) {
         console.log('🎮 📤 Sending as avatars YML');
@@ -199,11 +266,11 @@ class DiscordBot {
             console.log(`🎮 📤 Sending ${actions.length} action: ${JSON.stringify(actions)}`)
 
             for (const action of actions) {
-                if (!action || !action.from || !action.in || !action.message) {
+                if (!action || !action.name || !action.location || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
                     continue;
                 }
-                console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
+                console.log(`🎮 📥 Processing message from ${action.name} in ${action.location}: ${action.message}`);
                 await this.processAction(action, unhinged);
             }
             if (this.avatars_moved) {
@@ -246,11 +313,11 @@ class DiscordBot {
             console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
 
             for await (const action of actions) {
-                if (!action || !action.from || !action.in || !action.message) {
+                if (!action || !action.name || !action.location || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
                     continue;
                 }
-                console.log(`🎮 📥 Processing message from ${action.from} in ${action.in}: ${action.message}`);
+                console.log(`🎮 📥 Processing message from ${action.name} in ${action.location}: ${action.message}`);
                 await this.processAction(action, unhinged, zombie);
             }
 
@@ -272,19 +339,19 @@ class DiscordBot {
     async processAction(action, unhinged, zombie) {
         console.log('🎮 Processing action... ');
         try {
-            if (unhinged && !this.avatars[action.from]) {
-                this.avatars[action.from] = {
-                    name: action.from,
-                    location: action.in,
+            if (unhinged && !this.avatars[action.name]) {
+                this.avatars[action.name] = {
+                    name: action.name,
+                    location: action.location,
                     avatar: 'https://i.imgur.com/9ZbYgUf.png'
                 };
             }
-            if (unhinged && !this.channelManager.getLocation(action.in)) {
-                this.channelManager.createLocation(this.channel, action.in);
+            if (unhinged && !this.channelManager.getLocation(action.location)) {
+                this.channelManager.createLocation(this.channel, action.location);
             }
-            if (this.channelManager.getLocation(action.in)) {
-                const avatar = new AvatarManager(action.from, { ...zombie, location: action.in });
-                avatar.move(action.in);
+            if (this.channelManager.getLocation(action.location)) {
+                const avatar = new AvatarManager(action.name, { ...zombie, location: action.location });
+                avatar.move(action.location);
                 await this.sendAsAvatar(avatar.get(), action.message, unhinged);
             }
         } catch (error) {
@@ -397,7 +464,7 @@ class DiscordBot {
                 }
                 memory.push(`[${message.createdTimestamp}] ${JSON.stringify({
                     in: message.channel.name,
-                    from:message.author.displayName || message.author.globalName,
+                    from: message.author.displayName || message.author.globalName,
                     message: message.content
                 })}`);
             }
