@@ -1,7 +1,10 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.mjs";
+import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();
+
+console.log('🧠 initializing ai');
+await ai.useService('replicate');
 
 import calculateTPS from "../../tools/calculateTPS.js";
 
@@ -22,13 +25,9 @@ class Skull extends DiscordBot {
         "personality": "you are Skull the silent wolf. You only respond SHORT wolf-like *actions* and wolf related emojis. You DO NOT SPEAK!"
     };
 
-    async on_login() {
-        console.log('🐺 Skull is online');
+    initialized = false;
+    async intitialize() {
 
-        console.log('🧠 initializing ai');
-        await ai.useService('ollama');
-
-        const role = 'system';
         const content = `You are Skull the silent wolf's memory. Shadow is your brother, ratimics is your owner.
 
         Here are the whispers you have heard:
@@ -38,8 +37,8 @@ class Skull extends DiscordBot {
         Summarize the above in a wolf-language
         `;
 
-        const memory = await ai.currentService.raw_chat('llama3', [
-            { role, content },
+        const memory = await ai.raw_chat('llama3', [
+            { role: 'system', content },
             { role: 'user', content: 'summarize what you remember' }
         ]);
         await calculateTPS(memory);
@@ -57,7 +56,10 @@ class Skull extends DiscordBot {
             
             ${this.avatar.personality}
             `
-        })
+        });
+
+        console.log('🐺 Skull is online');
+        this.initialized = true;
     }
 
 
@@ -73,6 +75,9 @@ class Skull extends DiscordBot {
     message_cache = [];
     action = 'come'
     async on_message(message) {
+        if (!this.initialized) {
+            await this.intitialize();
+        }
         const data = {
             author: message.author.displayName || message.author.globalName,
             content: message.content,
@@ -114,7 +119,7 @@ class Skull extends DiscordBot {
 
         if (this.message_cache.length === 0) return;
 
-        const respond = await ai.currentService.raw_chat('llama3', [
+        const respond = await ai.raw_chat('llama3', [
             { role: 'system', content: `you are ${this.avatar.name}'s executive function. You only respond YES or NO as to whether skull should respond or not` },
             {
                 role: 'user', content: `

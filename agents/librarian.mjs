@@ -2,11 +2,11 @@ import fs from "fs/promises";
 import path from "path";
 import process from "process"; // Add this line
 
-import AIServiceManager from '../tools/ai-service-manager.mjs';
+import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 
 import { avatarseek } from './avatars.js';
 import { replaceContent } from "../tools/censorship.js";
-import DiscordAIBot from "../tools/discord-ollama-bot.js";
+import DiscordAIBot from "../tools/discord-ai-bot.js";
 
 const librarian = new DiscordAIBot('llama');
 librarian.on_login = async () => librarian.sendAsAvatar(...(await ingest()));

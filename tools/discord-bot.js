@@ -4,9 +4,6 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import ChannelManager from './discord-channel-manager.js';
 
-import c from './configuration.js';
-const configuration = await c('discord-bot');
-
 import chunkText from './chunk-text.js';
 import { avatarseek } from '../agents/avatars.js';
 
@@ -21,7 +18,9 @@ class DiscordBot {
     options = {
         yml: false
     };
-    constructor(clientOptions = {}) {
+    constructor(clientOptions = {}, guild) {
+
+        this.guild = guild;
         const defaultIntents = [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
@@ -78,12 +77,12 @@ class DiscordBot {
 
     async clientReadyHandler() {
         await this.initialize();
-        await this.channelManager.initialize(configuration.guild);
+        await this.channelManager.initialize(this.guild);
 
         console.log(`🎮 ✅ Ready! Logged in as ${this.client.user.tag}`);
         this.setActivity('whimsical tales', { type: 'WATCHING' });
 
-        const guild = await this.client.guilds.fetch(configuration.guild); // Useful for debugging
+        const guild = await this.client.guilds.fetch(this.guild); // Useful for debugging
         console.log(`Connected to guild: ${guild.name}`);
 
         if (this.on_login) {
@@ -371,7 +370,7 @@ class DiscordBot {
 
     async login() {
         try {
-            await this.client.login(configuration.token);
+            await this.client.login(process.env.DISCORD_BOT_TOKEN);
         } catch (error) {
             console.error('🎮 ❌ Error logging in:', error);
             console.log('📰 If this says you have an invalid token, make sure that .configurations/discord-bot.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')

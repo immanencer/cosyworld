@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../tools/discord-ai-bot.js';
 import AvatarManager from '../tools/avatar-manager.js';
 import { avatarseek } from './avatars.js';
 
@@ -11,7 +11,7 @@ const avatars = {
     'sammy': avatarseek('sammy')
 };
 
-const ratichat = new DiscordAIBot(new AvatarManager('Old Oak Tree').get());
+const ratichat = new DiscordAIBot(new AvatarManager('Old Oak Tree').get(), '1219837842058907728');
 ratichat.avatars = avatars;
 
 ratichat.on_login = async () => {

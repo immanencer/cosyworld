@@ -103,6 +103,13 @@ class AIServiceManager {
         }
         return this.currentService.complete(prompt);
     }
+
+    async raw_chat(model, messages) {
+        if (!this.currentService) {
+            throw new Error('No service selected');
+        }
+        return this.currentService.raw_chat(model, messages);
+    }
 }
 
 export default AIServiceManager;

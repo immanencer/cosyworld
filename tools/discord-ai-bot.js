@@ -1,25 +1,23 @@
 import DiscordBot from './discord-bot.js';
-import AIServiceManager from './ai-service-manager.mjs';
+import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 import { xorFoldHash } from './crypto.js';
 
-class DiscordOllamaBot extends DiscordBot {
-    constructor(avatar, systemPrompt) {
-        super();
+class DiscordAiBot extends DiscordBot {
+    constructor(avatar, guild, service = 'ollama') {
+        super({}, guild);
+        this.service = service;
         this.avatar = avatar;
         if (typeof avatar === 'string') {
             this.avatar = this.avatar_manager.get(avatar);
         }
-        if (systemPrompt) {
-            console.warn('🚨 systemPrompt is deprecated. Use avatar.personality instead');
-        }
-        this.system_prompt = this.avatar.personality || systemPrompt;
+        this.system_prompt = this.avatar.personality;
         this.aiServiceManager = new AIServiceManager();
     }
 
     async initialize() {
-        await this.aiServiceManager.useService('ollama');
+        await this.aiServiceManager.useService(this.service);
         this.avatar.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
-        console.log('🎮 🤖 Discord Ollama Bot Initialized');
+        console.log('🎮 🤖 Discord AI Bot Initialized: ' + this.service);
     }
 
     async process_message (message) {
@@ -124,4 +122,4 @@ class DiscordOllamaBot extends DiscordBot {
     }
 }
 
-export default DiscordOllamaBot;
+export default DiscordAiBot;

@@ -1,5 +1,5 @@
 import ollama from 'ollama';
-import AIService from '../tools/ai-service.js';
+import AIService from './ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
 

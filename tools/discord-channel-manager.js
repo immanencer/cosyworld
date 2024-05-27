@@ -8,6 +8,11 @@ class ChannelManager {
     }
 
     async initialize(guildId) {
+        console.log('🎮 Initializing channel manager');
+        if (!guildId) {
+            console.error('🎮 ❌ No guild ID provided');
+            return;
+        }
         const guild = await this.discord_client.guilds.fetch(guildId);
         const channels = await guild.channels.fetch();
 

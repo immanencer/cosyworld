@@ -1,9 +1,6 @@
 import ollama from 'ollama';
 
-import AIService from '../tools/ai-service.js';
-
-import { generateHash } from '../tools/crypto.js';
-import { replaceContent } from '../tools/censorship.js';
+import AIService from './ai-service.js';
 
 class PhiService extends AIService {
     constructor(config) {
@@ -27,15 +24,6 @@ SYSTEM "${config.system_prompt}123"`;
         this.messages.push(message);            
         if (message.role === 'assistant') { return; }
         return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
-    }
-
-    // Others if needed
-    async complete(prompt) {
-        return 'This is a 🦙 completion';
-    }
-
-    async draw(prompt) {
-        return 'This is a 🦙 drawing';
     }
 }
 

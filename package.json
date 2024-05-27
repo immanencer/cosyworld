@@ -4,7 +4,6 @@
   "description": "",
   "main": "ai-service.js",
   "scripts": {
-    "test": "jest",
     "demo": "node ./demo/demo.js",
     "server": "node ./server/index.js",
     "server-dev": "node ./server/index.js"

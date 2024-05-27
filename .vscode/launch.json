@@ -4,6 +4,25 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🗣️ demo",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\demo\\demo.js",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐺 skull",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}\\agents\\wolfpack\\skull.mjs",
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "📚 librarian",
             "skipFiles": [
                 "<node_internals>/**"
@@ -44,6 +63,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\agents\\ratichat.mjs"
         },
         {
