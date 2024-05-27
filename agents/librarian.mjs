@@ -69,9 +69,9 @@ async function ingest() {
         const messages = await librarian.channelManager.getChannelOrThreadHistory(channel);
         const channel_cache = [];
         console.log('📚 Ingesting messages... ');
-        for (const [id, message] of messages) {
+        for (const message of messages) {
             process.stdout.write('📄');
-            channel_cache.push(message_formatter(message));
+            channel_cache.push(message_formatter(message[1]));
         }
         channel_cache.sort();
         await fs.writeFile(path.join('bookshelf', channel_hash, 'messages.txt'), channel_cache.join('\n'));

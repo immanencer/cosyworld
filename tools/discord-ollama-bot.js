@@ -23,6 +23,7 @@ class DiscordOllamaBot extends DiscordBot {
     }
 
     async process_message (message) {
+        console.log('Processing message:', message.content); // Log the incoming message for debugging
         return true;
     }
 
@@ -112,9 +113,9 @@ class DiscordOllamaBot extends DiscordBot {
         await this.aiServiceManager.chat({
             role: 'assistant',
             content: `This is what I remember: \n\n    
-            ${memory.slice(-100).join('\n')}
+            ${memory.slice(options.slice).join('\n')}
             
-            ${this.response_instructions || ''}
+            ${this.response_instructions || options.instructions || ''}
             `
         });
 

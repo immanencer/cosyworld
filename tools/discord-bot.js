@@ -92,7 +92,10 @@ class DiscordBot {
     }
 
 
-    async handleMessage(message) { throw new Error('handleMessage not implemented'); }  
+    async handleMessage(message) {
+        console.log('🎮 📥 Received message:', message.content);
+        throw new Error('handleMessage not implemented');
+    }  
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
             try {
