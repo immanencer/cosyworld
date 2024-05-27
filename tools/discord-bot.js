@@ -214,6 +214,7 @@ class DiscordBot {
                 }
 
                 const [_, location, name, content] = parts;
+                console.debug(_); 
                 const messageObject = {
                     location: location.trim(),
                     name: name.trim(),
@@ -373,7 +374,7 @@ class DiscordBot {
             location = await this.channelManager.getLocation(`${avatar.location}`.toLowerCase());
         }
 
-        console.log(`🎮 📤 Sending as ${avatar.name} (${location.channel.name})`);
+        console.log(`🎮 📤 Sending as ${avatar.name} (${location})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);
@@ -381,7 +382,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: this.displayName || avatar.name,
+                    username: avatar.name || this.displayName,
                     avatarURL: avatar.avatar
                 };
                 if (location.thread) {

@@ -59,6 +59,7 @@ class AIServiceManager {
             throw new Error(`Service '${serviceName}' not supported`);
         }
         this.currentService = service;
+        this.raw_chat = service.raw_chat;
     }
     
     async chat(message) {
@@ -105,13 +106,6 @@ class AIServiceManager {
             throw new Error('No service selected');
         }
         return this.currentService.complete(prompt);
-    }
-
-    async raw_chat(model, messages) {
-        if (!this.currentService) {
-            throw new Error('No service selected');
-        }
-        return this.currentService.raw_chat(model, messages);
     }
 }
 

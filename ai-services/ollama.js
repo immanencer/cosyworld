@@ -1,4 +1,5 @@
 import ollama from 'ollama';
+
 import AIService from './ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
@@ -6,36 +7,44 @@ import { generateHash } from '../tools/crypto.js';
 class OllamaService extends AIService {
     constructor(config) {
         super(config);
+        this.model_cache = {}; // Cache for models
     }
 
     async updateConfig(config) {
         super.updateConfig(config);
 
-        const modelfile = `from ${config.model || 'llama3:instruct'}
+        const modelfile = `from ${config.model || 'llama3'}
 system "${config.system_prompt || 'you are an alien intelligence from the future'}"`;
 
-        this.model = generateHash(modelfile);
+        const model = generateHash(modelfile);
         console.debug('🦙 Model:', this.model);
-        try {
-            await ollama.create({ model: this.model, modelfile });
-        } catch (error) {
-            console.error('🦙 Failed to create model:', error);
-            return null;
+
+        if (!this.model_cache[model]) {
+            try {
+                await ollama.create({ model: model, modelfile });
+            } catch (error) {
+                console.error('🦙 Failed to create model:', error);
+                return null;
+            }
+            this.model_cache[model] = true;
         }
-        return this.model;
+
+        if (!config.model) { this.model = model; }
+        return model;
     }
 
-    messages = [];
+    async raw_chat({model, messages, stream}) {
+        this.updateConfig({ model });
+        return await ollama.chat({ model, messages, stream });
+    }
+
     async chat(message) {
+        this.messages = this.messages || [];
         this.messages.push(message);
         if (message.role === 'assistant' || message.role === 'system') {
             return (async function*() { return; })();
         }
         return await ollama.chat({ model: this.model, messages: this.messages.slice(-50), stream: true });
-    }
-
-    async raw_chat(model = this.model, messages = [{ role: 'system', content: 'you are an alien intelligence from the future' }], stream = false) {
-        return await ollama.chat({ model, messages, stream });
     }
 
     // Others if needed
