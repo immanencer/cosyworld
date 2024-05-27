@@ -46,6 +46,10 @@ module.exports ={
     {
       "name": "toad",
       "script": "./agents/toad.mjs"
+    },
+    {
+      "name": "mr-bear",
+      "script": "./agents/mr-bear.mjs"
     }
   ],
   restart_delay: 10000, // 10 seconds delay before restarting

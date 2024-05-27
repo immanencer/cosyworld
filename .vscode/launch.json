@@ -1,8 +1,5 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
+    "version": "0.0.6",
     "configurations": [
         {
             "type": "node",
@@ -38,16 +35,25 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/0.0.6/agents.mjs"
+            "program": "${workspaceFolder}/agents.mjs"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "🐭 ratichat",
+            "name": "🌳 ratichat",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\0.0.6\\agents\\ratichat.mjs"
+            "program": "${workspaceFolder}\\agents\\ratichat.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐻 kierkegaard",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agents\\mr-bear.mjs"
         },
         {
             "type": "node",
@@ -65,7 +71,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\0.0.6\\server\\index.mjs"
+            "program": "${workspaceFolder}\\server\\index.mjs"
         },
         {
             "type": "node",

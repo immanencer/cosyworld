@@ -38,6 +38,7 @@ async function getMentions(name, since) {
 }
 
 let bot_replies = 0;
+let last_response = {};
 async function processMessagesForAvatar(avatar) {
     const agent = agents.find(agent => agent.name === avatar.agent);
 
@@ -103,7 +104,9 @@ async function processMessagesForAvatar(avatar) {
         
         if (message.author.discriminator === '0000') {
             bot_replies++;
-            if (bot_replies > 10) continue;
+            if (bot_replies > 5) {
+                continue; 
+            }
         } else {
             bot_replies = 0;
         }
@@ -134,6 +137,12 @@ async function processMessagesForAvatar(avatar) {
 
         avatar.talking_to = data.author;
         respond = true;
+
+        // check the last response time
+        if (last_response[avatar.name] && last_response[avatar.name].time > Date.now() - 5000) {
+            console.log(`${avatar.emoji} ${avatar.name} is still on cooldown.`);
+            continue;
+        }
 
         if (agent?.on_message) {
             try {

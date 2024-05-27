@@ -1,17 +1,14 @@
-import { avatarseek } from '../agents/avatars.js';
-
 import DiscordBot from './discord-bot.js';
 import AIServiceManager from './ai-service-manager.mjs';
-import AvatarManager from './avatar-manager.js';
 import { xorFoldHash } from './crypto.js';
 
 class DiscordOllamaBot extends DiscordBot {
-    constructor(avatar_name, systemPrompt) {
+    constructor(avatar, systemPrompt) {
         super();
-        if (typeof avatar === 'string') avatar = avatarseek(avatar);
-        this.avatar_manager = new AvatarManager(avatar_name);
-        this.avatar = this.avatar_manager.get();
-
+        this.avatar = avatar;
+        if (typeof avatar === 'string') {
+            this.avatar = this.avatar_manager.get(avatar);
+        }
         if (systemPrompt) {
             console.warn('🚨 systemPrompt is deprecated. Use avatar.personality instead');
         }
@@ -25,26 +22,23 @@ class DiscordOllamaBot extends DiscordBot {
         console.log('🎮 🤖 Discord Ollama Bot Initialized');
     }
 
+    async process_message (message) {
+        return true;
+    }
+
     message_cache = [];
     message_timeout = 0;
     async handleMessage(message) {
-        let handle = false;
-        try {
-            handle = await super.handleMessage(message)
-        } catch (error) {
-            console.error('Error handling message:', error);
+        if (!super.message_filter(message)) {
+            console.debug('Message filtered out by base class');
             return false;
         }
-        // Check if the superclass method approves the message for handling
-        if (!handle) {
-            console.debug('Message filtered out by base class');
-            return;
-        }
-        if (message.author.displayName === this.avatar.name) {
-            console.debug('Ignoring message from self');
-            return;
-        }
-    
+
+        if (!await this.process_message(message)) {
+            console.debug('Message filtered out by agent');
+            return false;
+        };
+
         // Try to format the message and catch any potential errors
         let formatted_message;
         try {
@@ -53,6 +47,7 @@ class DiscordOllamaBot extends DiscordBot {
                 in: message.channel.name,
                 message: message.content
             };
+            if (formatted_message.from === this.displayName)
             console.log('🎮🦙 Received message from', formatted_message);
         } catch (error) {
             console.error('🚨 Error formatting message:', error);

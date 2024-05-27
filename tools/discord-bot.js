@@ -4,7 +4,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import ChannelManager from './discord-channel-manager.js';
 
-import c from '../tools/configuration.js';
+import c from './configuration.js';
 const configuration = await c('discord-bot');
 
 import chunkText from './chunk-text.js';
@@ -49,16 +49,13 @@ class DiscordBot {
     message_filter(message) {
         // Check for missing message components that are essential for filtering
         if (!message.author || !message.channel) {
+            console.log('🎮 ❌ Missing author or channel in message:', message);
             return false;
         }
 
         // Ignore messages from the bot itself
-        if (message.author.id === this.client.user.id) {
-            return false;
-        }
-
-        // Ignore messages from other bots
-        if (message.author.bot && message.author.displayName.indexOf('🕰️') ===-1) {
+        if ((message.author.displayName || message.author.username) === (this.client.user.displayName || this.client.user.username)) {
+            console.log('🎮 ❌ Ignoring message from self:', message);
             return false;
         }
 
@@ -67,41 +64,6 @@ class DiscordBot {
         this.avatar.listen = this.avatar.listen || [this.avatar.location];
         return this.avatar.listen.includes(message.channel.name);
     }
-
-    process_message = async (message) => message;
-    async handleMessage(message) {
-        this.subscribed_channels = this.avatar.listen;
-        if (this.avatars) {
-            this.subscribed_channels = [
-                ...(this.avatar.listen || []),
-                ...Object.values(this.avatars).map(avatar => avatar.location)
-            ];
-        }
-
-        if (this.message_filter(message)) {
-            await this.process_message(message);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // async handleMessage(message) {
-    //     this.subscribed_channels = this.avatar.listen;
-    //     if (this.avatars) {
-    //         this.subscribed_channels = [
-    //             ...(this.avatar.listen || []),
-    //             ...Object.values(this.avatars).map(avatar => avatar.location)
-    //         ];
-    //     }
-
-    //     if (this.message_filter(message)) {
-    //         await this.process_message(message);
-    //         return true;
-    //     } else {
-    //         return false;
-    //     }
-    // }
 
     subscribed_channels = [];
     subscribe(channelName) {
@@ -130,6 +92,7 @@ class DiscordBot {
     }
 
 
+    async handleMessage(message) { throw new Error('handleMessage not implemented'); }  
     setupEventListeners() {
         this.client.once(Events.ClientReady, async () => {
             try {
@@ -330,6 +293,7 @@ class DiscordBot {
 
     prior_messages = {};
     async sendAsAvatar(avatar, message) {
+        this.displayName = this.displayName || `${avatar.name} ${(avatar.emoji || '')} ${(this.debug ? (avatar.model || this?.avatar?.model || '🧟') : '')}`.trim();
         console.log(`🎮 📤 Sending message as ${avatar.name} (${avatar.location})`);
 
         if (!message) { message = '...'; }
@@ -348,7 +312,7 @@ class DiscordBot {
                 if (chunk.trim() === '') return;
                 const data = {
                     content: chunk, // Ensuring message length limits
-                    username: `${avatar.name} ${(avatar.emoji || '')} ${(this.debug ? (avatar.model || this?.avatar?.model || '🧟') : '')}`.trim(),
+                    username: this.displayName || avatar.name,
                     avatarURL: avatar.avatar
                 };
                 if (location.thread) {

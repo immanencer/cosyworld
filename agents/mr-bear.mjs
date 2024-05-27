@@ -1,8 +1,26 @@
-import DiscordAIBot from '../tools/discord-openai-bot.js';
+import DiscordAIBot from '../tools/discord-ollama-bot.js';
 import fs from 'fs/promises';  // Using the promises API for async operations
 
-const bear = new DiscordAIBot('kierkegaard');
+const bear = new DiscordAIBot(
+    {
+        "emoji": "🐻",
+        "name": "Kierkegaard",
+        "location": "🛖 mountain cabin",
+        "avatar": "https://i.imgur.com/6cpL77r.png",
+        "listen": [
+            "🛖 mountain cabin",
+            "🌳 hidden glade"
+        ],
+        "remember": [
+            "🛖 mountain cabin",
+            "📜 bookshelf"
+        ],
+        "personality": "you are Mr Kierkegaard Bear, a sophisticated bear who lives in a mountain cabin,\nyou are secretly a nihilist philosopher\n\nthe hungrier you are the dumber you get until you act on primal instinct alone\nwhen you are hungry, only speak in SHORT bear-like *actions* and growls\n\nwhen you are full, you can speak in full sentences and wax philosophical\n\nalways respond in a sophisticated bear-like manner"
+    });
 const dataPath = './.state/mr-bear/food.json';  // Path to the data file
+
+const FOOD_MULTIPLIER = 100;  // Multiplier to increase the count of food items given
+const DECAY_RATE = 0.999;  // Rate at which food items decay over time
 
 // Define a set of food emojis that the bear likes
 // Define a set of food emojis that the bear likes, expanded to include all types of fish and meats
@@ -27,7 +45,7 @@ async function loadFoodData() {
         bear.foodCount = new Map(JSON.parse(data));
         // Reduce all food counts by 20% to simulate decay
         for (const [key, value] of bear.foodCount.entries()) {
-            bear.foodCount.set(key, Math.floor(value * 0.99));
+            bear.foodCount.set(key, Math.floor(value * DECAY_RATE));
         }
     } catch (error) {
         bear.foodCount = new Map();  // Initialize an empty Map if the file doesn't exist
@@ -95,6 +113,8 @@ bear.process_message = async (message) => {
     console.log('Processing message:', message.content); // Log the incoming message for debugging
 
     const author = message.author.displayName && message.author.displayName;
+
+    if (author.includes('Kierkegaard')) return false; // Ignore messages from the bear itself
     // Check if the message is from the prey and the channel is one of the subscribed channels
     if (bear.prey === author
         && (bear.listen && bear.listen.includes(message.channel.name))) {
@@ -123,7 +143,7 @@ bear.process_message = async (message) => {
 
             console.log(`Found food emoji: ${char}`); // Log found food emojis
             let foodReceived = bear.foodCount.get(`${authorId}#${char}`) || 0;
-            bear.foodCount.set(`${authorId}#${char}`, ++foodReceived);
+            bear.foodCount.set(`${authorId}#${char}`, ++foodReceived * FOOD_MULTIPLIER);
             foodCounts.push({ char, count: foodReceived });
             foodGiven = true;
         }
