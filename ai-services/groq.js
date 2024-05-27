@@ -1,10 +1,6 @@
 import { Groq } from 'groq-sdk';
-import c from "../tools/configuration.js";
-const configuration = await c('groq', {
-    apiKey: "YOUR_API_KEY",
-});
 
-const groq = new Groq(configuration);
+const groq = new Groq();
 
 import AIService from '../tools/ai-service.js';
 

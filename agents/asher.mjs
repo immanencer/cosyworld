@@ -70,8 +70,8 @@ async function summarizeTextFile(file, state) {
 
             ---
 
-            Here are a selection of whispers from the Lonely Forest. 
-            Write an imaginary excerpt from a lost book or poem highlighting the essence of these texts.
+            Write a whimsical poem or snippet from an imaginary text that conveys the essence of these lines.
+            Use Emoji to Highlight the Key Ideas.
             ` });
             let summary = null;
             try {
@@ -89,7 +89,7 @@ async function summarizeTextFile(file, state) {
                 content: summary.message.content
             });
             summaries.push(summary.message.content);
-            await logSummary(summary.message.content);
+            await logSummary(summary.message.content.replace('\n', '  \n'));
             lines = [];
             delete summary.message.content;
             await updateState(state, file, lineCount, summary);
@@ -115,9 +115,9 @@ async function summarizeTextFile(file, state) {
 // Example usage
 async function main() {
     const state = await readOrCreateState();
-    const textFiles = await findTextFiles('./bookshelf/0hg5/');
+    const textFiles = await findTextFiles('./bookshelf/philosophy/');
     for (const file of textFiles) {
-        await summarizeTextFile(`./bookshelf/0hg5/${file}`, state);
+        await summarizeTextFile(`./bookshelf/philosophy/${file}`, state);
     }
 }
 

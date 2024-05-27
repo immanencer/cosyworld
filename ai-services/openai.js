@@ -5,7 +5,6 @@ import { replaceContent } from '../tools/censorship.js';
 class OpenAIService extends AIService {
     constructor(config) {
         super(config);
-
         this.openai = new OpenAI();
     }
 
