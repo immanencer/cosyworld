@@ -1,9 +1,9 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../tools/discord-ai-bot.js';
 import { avatarseek } from './avatars.js';
 
 import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 
-import AIServiceManager from '../tools/ai-service-manager.mjs';
+import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 const ai = new AIServiceManager();
 await ai.useService('ollama');
 await ai.updateConfig({
@@ -28,7 +28,7 @@ await ai.updateConfig({
     @mention any human user you want to interact with to draw them into your mysterious chambers
     `
 });
-const ghost = new DiscordAIBot(avatarseek('madam euphemie'));
+const ghost = new DiscordAIBot(avatarseek('madam euphemie'), '1219837842058907728', 'ollama');
 console.debug(JSON.stringify(ghost.avatar));
 
 async function getMansionMap() {
@@ -44,31 +44,32 @@ ghost.options = {
 async function sendCreeperMessage() {
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
-    const output = await ai.chat({
-        role: 'user', content: `
-
-    Here are the rooms you know of in the mansion:
+    const output = await ai.raw_chat({
+        model: 'llama3', messages:[
+            { role: 'system', content: `You are  the haunted mansion!` },
+            {
+                role: 'user', content: `Here are the rooms you know of in the mansion:
 
     ${Object.entries(mansion_map).map(T => `${T}`).join('\n')}
 
     👻 create or select one or more avatar to haunt the mansion
     Use any language you know to be spooky and mysterious  
-    
-    (🚪 location) Ghost Name: oooOOOooos... soooo spooooooky....
-    ` });
 
-    let response = '';
-    for await (const event of output) {
-        response += event.message.content;
-    }
+    Use this format:
+    
+    {"from": "entity_name", "location": "room_name", "message": "action_message"}
+`}], stream: false, json: true });
+
+    let response = output.message.content;
 
     ghost.avatars = {};
     ghost.channel = 'haunted-mansion';
     ghost.options.yml = false;
-    ghost.sendAsAvatars(response, true, {
+    await ghost.sendAsAvatars(response, true, {
         emoji: '👻',
         avatar: 'https://i.imgur.com/t3n4ING.png',
     });
+
     ghost.options.yml = true;
     mansion_rooms.forEach(room => ghost.subscribe(room));
 
@@ -82,7 +83,7 @@ ghost.on_login = async () => {
 
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     ghost.avatar.listen = ['haunted-mansion', ...mansion_rooms];
-    ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
+    await ghost.initializeMemory(['haunted-mansion', ...mansion_rooms], {
         instructions: `
     👻 Fils destin yo, chè espri
 
@@ -126,6 +127,8 @@ ghost.on_login = async () => {
     4a🚪
     Chèche absolisyon andedan mi sa yo.
     `);
+
+    ghost.options.yml = true;
 }
 
 ghost.sendAsAvatarsYML = async (input) => {
@@ -135,27 +138,28 @@ ghost.sendAsAvatarsYML = async (input) => {
     const mansion_map = await getMansionMap();
 
     let buffer = '';
-    lines.forEach(line => {
+    for (const line of lines) {
         if (line.indexOf('🚪') !== -1) {
             if (buffer !== '') {
-                ghost.sendAsAvatar(ghost.avatar, buffer, true);
+                await ghost.sendAsAvatar(ghost.avatar, buffer, true);
                 buffer = '';
             }
             const [num] = line.split('🚪');
+            const room_number = parseInt(num, 16);
 
-            if (mansion_map[num]) {
-                console.log(`🛞 Moving avatar to room ${mansion_map[num]}`);
+            if (mansion_map[room_number]) {
+                console.log(`🛞 Moving avatar to room ${mansion_map[room_number]}`);
                 ghost.avatar.location = mansion_map[num];
             } else {
                 console.error(`🚪 Invalid room number: ${num}`);
             }
-            
+
         } else {
             buffer += line + '\n';
         }
         if (buffer !== '') {
-            ghost.sendAsAvatar(ghost.avatar, buffer, true);
+            await ghost.sendAsAvatar(ghost.avatar, buffer, true);
         }
-    });
+    }
 };
 await ghost.login();
