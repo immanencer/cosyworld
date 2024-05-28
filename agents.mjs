@@ -3,7 +3,7 @@ import agents from './agents/index.mjs';
 import { createTask, pollTaskCompletion } from './tools/taskManager.mjs';
 import { fetchJSON, postJSON } from './tools/fetchJson.mjs';
 
-const POLL_INTERVAL = 1000;
+const POLL_INTERVAL = 2000;
 const AVATARS_API = 'http://localhost:3000/avatars';
 const LOCATIONS_API = 'http://localhost:3000/discord-bot/locations';
 const MESSAGES_API = 'http://localhost:3000/discord-bot/messages';
@@ -60,7 +60,7 @@ async function processMessagesForAvatar(avatar) {
         // get the last message that mentions the avatar
         lastMention = mentions[mentions.length - 1];
 
-        if (avatar.summon && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
+        if (avatar?.summon === "true" && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
             avatar.location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId);
             if (!avatar.location) {
                 console.error(`Avatar ${avatar.name} has no location.`);
@@ -104,7 +104,7 @@ async function processMessagesForAvatar(avatar) {
         
         if (message.author.discriminator === '0000') {
             bot_replies++;
-            if (bot_replies > 5) {
+            if (bot_replies > 10) {
                 continue; 
             }
         } else {

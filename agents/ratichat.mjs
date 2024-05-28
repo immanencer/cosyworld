@@ -12,18 +12,22 @@ const avatars = {
     'sammy': avatarseek('sammy')
 };
 
-const locations = {};
-
 const ratichat = new DiscordAIBot(new AvatarManager('L\'Arbre des Rêves').get(), '1219837842058907728', 'ollama');
 ratichat.avatars = avatars;
+
+const location_dump = Object.keys(avatars).reduce((acc, avatar) => {
+    avatars[avatar].listen = avatars[avatar].listen || [avatars[avatar].location];
+    acc.push(avatars[avatar].location, ...avatars[avatar].listen, avatars[avatar].remember);
+    return acc;
+}, []);
+
+const locations = [...new Set(location_dump)].filter(T => T);
 
 ratichat.sendAsAvatars = ratichat.sendAsAvatarsSimple;
 
 ratichat.on_login = async function () {
 
     try {
-        const channel_map = await this.channelManager.getChannelMap();
-        
 
         // Les Arbres des Rêves
         await this.initializeMemory();
@@ -75,7 +79,7 @@ ratichat.on_login = async function () {
                 messages: [
                     {
                         role: 'system',
-                        content: `${ratichat.avatars[avatar].personality} always respond witha (location)\n\nAnd a message like this`
+                        content: `${ratichat.avatars[avatar].personality}`
                     },
                     {
                         role: 'assistant',
@@ -83,7 +87,7 @@ ratichat.on_login = async function () {
                     },
                     {
                         role: 'user',
-                        content: `Wake up as ${ratichat.avatars[avatar].name}.`
+                        content: `${ratichat.avatars[avatar].name}! Wake up!`
                     }
                 ], stream: false
             });
@@ -103,7 +107,7 @@ ratichat.on_login = async function () {
 };
 
 ratichat.handleMessage = async function (message) {
-    console.log('🌳 Message received:', message);
+    console.log('🌳 Message received:', message.cleanContent);
     if ([this.avatar.name.toLowerCase(), oak_tree_avatar.name.toLowerCase(), ...Object.keys(avatars)].includes(message.author.displayName.toLowerCase())) {
         return false;
     }
@@ -122,7 +126,7 @@ ratichat.handleMessage = async function (message) {
                     role: 'system',
                     content: `${avatar.personality}`
                 },
-                {role: 'assistant', content: memory},
+                { role: 'assistant', content: memory },
                 {
                     role: 'user',
                     content: `You are at (${message.channel.location}). ${message.author.displayName} said "${message.cleanContent}", what do you say or *do*?`,
@@ -131,44 +135,92 @@ ratichat.handleMessage = async function (message) {
         });
         ratichat.sendAsAvatar(avatar, avatar_response.message.content);
 
-        const new_location = await ratichat.aiServiceManager.raw_chat({
-            model: 'llama3',
-            messages: [
-                {
-                    role: 'system',
-                    content: `${avatar.personality}`
-                },
-                {role: 'assistant', content: memory},
-                {
-                    role: 'user',
-                    content: `${message}.`
-                },
-                {
-                    role: 'assistant',
-                    content: `${avatar_response.message.content}`
-                },
-                {
-                    role: 'user',
-                    content: `You are at (${avatar.location}) do you want to move? if so, where? 
+        const moveChance = Math.random();
+
+        if (moveChance < 0.02) {
+
+            const new_location = await ratichat.aiServiceManager.raw_chat({
+                model: 'llama3',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `${avatar.personality}`
+                    },
+                    { role: 'assistant', content: memory },
+                    {
+                        role: 'user',
+                        content: `${message}.`
+                    },
+                    {
+                        role: 'assistant',
+                        content: `${avatar_response.message.content}`
+                    },
+                    {
+                        role: 'user',
+                        content: `You are at (${avatar.location}). Based on your last comments, do you want to move? if so, where?
+                    Only move if it makes sense. 
                     Write a short limerick describing your reason for moving to a new location,
                     then end your message with the following command if you want to move.
+                    Here are the locations you know: 
                     
-                    <|MOVE|>(new location)<|MOVE|>
-                    `
-                }
-            ], stream: false
-        });
+                    ${locations.map((T, index) => `${index}: ${T}`).join('\n')}
 
-        console.log('🌳 New location limerick:\n\n', new_location.message.content);
-        if (new_location.message.content.includes('<|MOVE|>')) {
-            const new_location_name = new_location.message.content.match(/<\|MOVE\|>(.*)<\|MOVE\|>/)[1];
-            if (!locations[new_location_name]) {
-                console.error('🌳 ⛔ Invalid location:', new_location_name);
-                return;
+                    To move, end your message with the index of the location you want to move to.
+
+
+
+                    MOVE 0
+                    `
+                    }
+                ], stream: false
+            });
+
+            console.log('🌳 New location limerick:\n\n', new_location.message.content);
+
+            if (new_location.message.content.includes('MOVE')) {
+                const match = new_location.message.content.split('MOVE')[1];
+                if (!match || match.trim().length === 0) {
+                    console.error('🌳 ⛔ Invalid move command:', new_location.message.content);
+                    return;
+                }
+
+                let locationIndex = match.trim();
+
+                // Ensure the index is a valid number
+                if (isNaN(locationIndex)) {
+                    console.error('🌳 ⛔ Invalid location index:', locationIndex);
+                    return;
+                }
+
+                locationIndex = parseInt(locationIndex, 10);
+
+                // Assuming you have a predefined list of locations
+                if (locationIndex < 0 || locationIndex >= locations.length) {
+                    console.error('🌳 ⛔ Location index out of bounds:', locationIndex);
+                    return;
+                }
+
+                let new_location_name = locations[locationIndex].toLowerCase();
+
+                // Additional logic to handle the new location name
+                console.log('🌳 🚶 Moving to new location:', new_location_name);
+
+                for (let location in locations) {
+                    if (new_location_name.includes(location) || location.includes(new_location_name)) {
+                        new_location_name = location;
+                        break;
+                    }
+                }
+
+                const discord_location = await this.channelManager.getLocation(new_location_name)
+                if (!discord_location) {
+                    console.error('🌳 ⛔ Invalid location:', new_location_name);
+                    return;
+                }
+
+                ratichat.sendAsAvatar(avatar, `*moves to <#${(discord_location.thread || discord_location.channel)}> *`);
+                avatar.location = new_location_name;
             }
-            avatar.location = new_location_name;
-            await this.saveMemory(avatar.remember, new_location_name);
-            ratichat.sendAsAvatar(avatar, `You have moved to ${new_location_name}`);
         }
     }
 }

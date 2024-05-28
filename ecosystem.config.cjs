@@ -44,6 +44,10 @@ module.exports = {
       "script": "./agents/benny.mjs"
     },
     {
+      "name": "badger",
+      "script": "./agents/badger.js"
+    },
+    {
       "name": "ghost",
       "script": "./agents/ghost.mjs"
     },

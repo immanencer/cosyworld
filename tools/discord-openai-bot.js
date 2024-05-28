@@ -110,16 +110,16 @@ class DiscordOllamaBot extends DiscordBot {
         await this.sendAsAvatars(output);
     }
 
-    async initializeMemory(memories, options = { slice: 200, instructions: '' }) {
+    async initializeMemory(memories, options = { slice: -100, instructions: '' }) {
         const memory = memories || (await this.loadMemory()) || [];
 
         // slice the memory to the last 200 messages;
         await this.aiServiceManager.chat({
             role: 'assistant',
             content: `This is what I remember: \n\n    
-            ${memory.slice(-100).join('\n')}
+            ${memory.slice(options.slice).join('\n')}
             
-            ${this.response_instructions || ''}
+            ${options.instructions || this.response_instructions || ''}
             `
         });
 

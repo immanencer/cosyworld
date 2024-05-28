@@ -1,21 +1,18 @@
+import process from 'process';
 import DiscordBot from "../../tools/discord-bot-2.js";
 import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
 console.log('🧠 initializing ai');
-await ai.useService('replicate');
+await ai.useService('ollama');
 
 import calculateTPS from "../../tools/calculateTPS.js";
 
 class Skull extends DiscordBot {
 
-    constructor() {
-        super();
-        this.lastProcessed = 0;
-        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
-    }
-
+    token = process.env.DISCORD_BOT_TOKEN;
+    guild = '1219837842058907728';
     avatar = {
         "emoji": "🐺",
         "name": "Skull",
@@ -25,9 +22,19 @@ class Skull extends DiscordBot {
         "personality": "you are Skull the silent wolf. You only respond SHORT wolf-like *actions* and wolf related emojis. You DO NOT SPEAK!"
     };
 
-    initialized = false;
-    async intitialize() {
+    constructor() {
+        super();
+        this.lastProcessed = 0;
+        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
+    }
 
+
+    async on_login() {
+        await this.initialize();
+    }
+
+
+    async initialize() {
         const content = `You are Skull the silent wolf's memory. Shadow is your brother, ratimics is your owner.
 
         Here are the whispers you have heard:
@@ -37,29 +44,16 @@ class Skull extends DiscordBot {
         Summarize the above in a wolf-language
         `;
 
-        const memory = await ai.raw_chat('llama3', [
-            { role: 'system', content },
-            { role: 'user', content: 'summarize what you remember' }
-        ]);
+        const memory = await ai.raw_chat({model: 'llama3', messages: [
+            { role: 'system', content: this.avatar.personality },
+            { role: 'user', content }
+        ], stream: false });;
         await calculateTPS(memory);
         this.memory = memory.message.content;
 
         console.log('🐺 Skull remembers:', memory.message.content);
-        await ai.updateConfig({
-            system_prompt: `${this.avatar.personality}
-            
-            You are ${this.avatar.name} ${this.avatar.emoji} 
-
-            ${this.memory}
-
-            You are ${this.avatar.name} ${this.avatar.emoji} 
-            
-            ${this.avatar.personality}
-            `
-        });
 
         console.log('🐺 Skull is online');
-        this.initialized = true;
     }
 
 
@@ -75,9 +69,6 @@ class Skull extends DiscordBot {
     message_cache = [];
     action = 'come'
     async on_message(message) {
-        if (!this.initialized) {
-            await this.intitialize();
-        }
         const data = {
             author: message.author.displayName || message.author.globalName,
             content: message.content,
@@ -119,7 +110,7 @@ class Skull extends DiscordBot {
 
         if (this.message_cache.length === 0) return;
 
-        const respond = await ai.raw_chat('llama3', [
+        const respond = await ai.raw_chat({model: 'llama3', messages: [
             { role: 'system', content: `you are ${this.avatar.name}'s executive function. You only respond YES or NO as to whether skull should respond or not` },
             {
                 role: 'user', content: `
@@ -129,7 +120,7 @@ class Skull extends DiscordBot {
             explain your reasoning with a haiku containing ending with YES or NO
             IF YOUR RESPONSE CONTAINS "YES" THEN SKULL WILL RESPOND
             `}
-        ]);
+        ], stream: false });
 
         console.log(respond.message.content);
         if (respond.message.content.toLowerCase().includes('yes')) {
@@ -143,8 +134,11 @@ class Skull extends DiscordBot {
         const result = await ai.chatSync({
             role: 'user',
             content: `
-            Here are the recent messages you have heard: ${this.message_cache.join('\n')},
-            respond to them in wolf language and short wolfish actions`
+            Here are the recent messages you have heard:
+            
+            ${this.message_cache.join('\n\n')}
+
+            respond to them as Skull the silent wolf`
         });
         this.message_cache = [];
         if (result.trim() !== "") {

@@ -1,9 +1,12 @@
 import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.mjs";
+import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
 class Shadow extends DiscordBot {
+    
+    token = process.env.DISCORD_BOT_TOKEN;
+    guild = '1219837842058907728';
     
     constructor() {
         super();

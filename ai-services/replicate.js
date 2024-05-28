@@ -58,11 +58,6 @@ export default class ReplicateService extends AIService {
         });
     };
 
-    async createStream(prompt) {
-        const input = { ...this.config, prompt };
-        return replicate.stream(REPLICATE_CONFIG.model, { input });
-    }
-
     message_handlers = {
         default: async (M) => {
             console.warn('Unknown event:', M.event);
@@ -95,7 +90,6 @@ export default class ReplicateService extends AIService {
     async raw_chat (model, messages) {
         const formattedMessages = messages.map(message => `${message.role}: ${message.content}`).join("\n");
         const prompt = `${formattedMessages}\nassistant:`;
-        const stream = await this.createStream(prompt);
-        return { message: { content: (await this.handleStream(stream)) } };
+        return await replicate.stream(REPLICATE_CONFIG.model, { ...this.config, prompt });
     };
 }

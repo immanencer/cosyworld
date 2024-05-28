@@ -51,20 +51,15 @@ class DiscordBot {
         }
 
         // Ignore messaages from the avatar or any of the avatars
-        if (message.author.id === this.client.user.id) {
-            console.log('🎮 ❌ Ignoring message from self:', message);
-            return false;
-        }
-
-        if (message.author.displayName.includes(this.avatar.name)) {
-            console.log('🎮 ❌ Ignoring message from self:', message);
+        if (message.author.id === this.client.user.id || message.author.displayName.includes(this.avatar.name)) {
+            console.log('🎮 ❌ Ignoring message from self');
             return false;
         }
 
         if (this.avatars) {
             for (const avatar of Object.values(this.avatars)) {
                 if (message.author.displayName.includes(avatar.name)) {
-                    console.log('🎮 ❌ Ignoring message from self:', message);
+                    console.log('🎮 ❌ Ignoring message from avatars');
                     return false;
                 }
             }
@@ -72,7 +67,7 @@ class DiscordBot {
 
         // Ignore messages from the bot itself
         if ((message.author.displayName || message.author.username) === (this.client.user.displayName || this.client.user.username)) {
-            console.log('🎮 ❌ Ignoring message from self:', message);
+            console.log('🎮 ❌ Ignoring message from bot.');
             return false;
         }
 
@@ -226,8 +221,6 @@ class DiscordBot {
             }
         }
 
-        // Send the entire message to the log channel
-        console.log(`🎮 📤 Sending as ${this.avatar.name} (${this.avatar.location})`);
         return this.sendAsAvatar(this.avatar, output);
     }
 
@@ -260,13 +253,14 @@ class DiscordBot {
             if (actions.length === 0) {
                 console.warn('🎮 ⚠️ No actions found in output:', output);
                 const avatar = this.avatar || avatarseek();
-                console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
                 return this.sendAsAvatar(avatar, output);
             }
 
             console.log(`🎮 📤 Sending ${actions.length} action: ${JSON.stringify(actions)}`)
 
             for (const action of actions) {
+                action.location = action.location || action.in || this.avatar.location;
+                action.name = action.name || action.from || this.avatar.name;
                 if (!action || !action.name || !action.location || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
                     continue;
@@ -286,7 +280,6 @@ class DiscordBot {
         const avatar = this.avatar || avatarseek(zombie);
 
         if (this.options.yml) {
-            console.log('🎮 📤 Sending as avatars YML');
             return this.sendAsAvatarsYML(output, unhinged);
         }
         let jsonObjects = output.match(/{[^}]*}/g);
@@ -304,16 +297,17 @@ class DiscordBot {
                     console.error('🎮 ❌ Error parsing JSON object:', error);
                     console.error('🎮 ❌ Error parsing JSON object:', jsonObject);
                 }
-            });
+            }).filter(T => !!T);
 
             if (actions.length === 0) {
-                console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
                 return this.sendAsAvatar(avatar, output, zombie);
             }
 
             console.log(`🎮 📤 Sending as avatars: ${actions.length}`)
 
             for await (const action of actions) {
+                action.location = action.location || action.in || this.avatar.location;
+                action.name = action.name || action.from || this.avatar.name;
                 if (!action || !action.name || !action.location || !action.message) {
                     console.error('🎮 ❌ Invalid action:', action);
                     continue;
@@ -332,7 +326,6 @@ class DiscordBot {
         }
 
         if (!unhinged) {
-            console.log(`🎮 📤 Sending as ${avatar.name} (${avatar.location})`);
             return this.sendAsAvatar(avatar, output);
         }
     }
@@ -374,7 +367,6 @@ class DiscordBot {
             location = await this.channelManager.getLocation(`${avatar.location}`.toLowerCase());
         }
 
-        console.log(`🎮 📤 Sending as ${avatar.name} (${location})`);
         const webhook = await this.getOrCreateWebhook(location.channel);
         if (webhook) {
             let chunks = chunkText(message);

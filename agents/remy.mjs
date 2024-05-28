@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../tools/discord-ai-bot.js';
 
 
 const avatar =  {
@@ -13,6 +13,6 @@ const avatar =  {
         `,
     };
 
-const benny = new DiscordAIBot(avatar, );
+const benny = new DiscordAIBot(avatar, '1219837842058907728', 'ollama');
 benny.login();
 benny.subscribe(avatar.location);

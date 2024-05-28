@@ -23,6 +23,26 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐺 shadow",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}\\agents\\wolfpack\\shadow.mjs",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "👻 ghost",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}\\agents\\ghost.mjs",
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "📚 librarian",
             "skipFiles": [
                 "<node_internals>/**"

@@ -17,7 +17,7 @@ class OllamaService extends AIService {
 system "${config.system_prompt || 'you are an alien intelligence from the future'}"`;
 
         const model = generateHash(modelfile);
-        console.debug('🦙 Model:', this.model);
+        console.debug('🦙 Model:', model);
 
         if (!this.model_cache[model]) {
             try {
@@ -33,9 +33,8 @@ system "${config.system_prompt || 'you are an alien intelligence from the future
         return model;
     }
 
-    async raw_chat({model, messages, stream}) {
-        this.updateConfig({ model });
-        return await ollama.chat({ model, messages, stream });
+    async raw_chat({model, messages, stream, json}) {
+        return await ollama.chat({ model: model || 'llama3', messages, stream, json });
     }
 
     async chat(message) {
@@ -44,7 +43,7 @@ system "${config.system_prompt || 'you are an alien intelligence from the future
         if (message.role === 'assistant' || message.role === 'system') {
             return (async function*() { return; })();
         }
-        return await ollama.chat({ model: this.model, messages: this.messages.slice(-50), stream: true });
+        return await ollama.chat({ model: this.model || 'llama3', messages: this.messages.slice(-50), stream: true });
     }
 
     // Others if needed

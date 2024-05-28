@@ -219,10 +219,13 @@ class ChannelManager {
         const channel = await this.discord_client.channels.fetch(channel_id);
         if (!channel.isTextBased() || !channel.threads) return [];
         const thread_list = (await channel.threads.fetch()).threads;
+        
         for (const [id, thread] of thread_list) {
-            console.log('🎮 Found thread ' + id);
             threads.push(thread);
         }
+        
+        console.log(`'🎮 Found ${threads.length} threads.'`);
+
         return threads;
     }
 
@@ -238,9 +241,9 @@ class ChannelManager {
         const thread = await channel.threads.fetch(location.thread);
         const history = await thread.messages.fetch({ limit: 100 });
         for (const [id, message] of history) {
-            console.log('🎮 Found message ' + id);
             messages.push(message);
         }
+        console.log(`🎮 Found ${messages.length} messages`);
         return messages.reverse();
     }
 

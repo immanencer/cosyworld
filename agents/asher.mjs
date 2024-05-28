@@ -10,7 +10,7 @@ asher.on_login = async () => {
 };
 
 asher.on_message = async (message) => {
-    console.log('🌳 Message received:', message);
+    console.log('🌳 Message received:', message.cleanContent);
     if (message.author === asher.user) {
         return false;
     }

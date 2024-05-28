@@ -1,5 +1,4 @@
 import { Client, GatewayIntentBits } from 'discord.js';
-import configuration from '../tools/configuration.js';
 
 import db from '../database/index.js';
 
@@ -8,7 +7,7 @@ const ai = new OllamaService();
 
 const collectionName = 'messages';
 
-const discordToken = (await configuration('discord-bot')).token;
+const discordToken = process.env.DISCORD_BOT_TOKEN;
 
 // Discord Client Setup
 const client = new Client({
@@ -31,7 +30,7 @@ client.on('messageCreate', async (message) => {
         message_id: message.id,
         author: {
             id: message.author.id,
-            username: message.author.username,
+            username: message.author.displayName,
             discriminator: message.author.discriminator,
             avatar: message.author.displayAvatarURL()
         },

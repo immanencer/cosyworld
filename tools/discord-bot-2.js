@@ -30,22 +30,25 @@ class MinimalistDiscordBot {
 
         this.client.once(Events.ClientReady, async () => {
             console.log(`🎮 Bot is ready! Logged in as ${this.client.user.tag}`);
-            this.onLogin();
-
+            await this.onLogin();
         });
 
         this.client.on(Events.MessageCreate, async (message) => {
-            if (this.initialized === false) {
-                console.log('🎮 Initializing channels...');
-                await this.channels.initialize(message.guildId);
-                this.initialized = true;
-            }
             console.log(`🎮 Message received from ${message.author.displayName || message.author.globalName}`);
             await this.onMessage(message);
         });
     }
 
     async onLogin() {
+
+        if (!this.guild) {
+            console.error('🎮 ❌ No guild provided');
+            return;
+        }
+
+        console.log('🎮 Initializing channels...');
+        await this.channels.initialize(this.guild);
+
         console.log('🎮 Handling login...');
         if (this.on_login) await this.on_login();
     }

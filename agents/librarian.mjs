@@ -8,7 +8,7 @@ import { avatarseek } from './avatars.js';
 import { replaceContent } from "../tools/censorship.js";
 import DiscordAIBot from "../tools/discord-ai-bot.js";
 
-const librarian = new DiscordAIBot('llama');
+const librarian = new DiscordAIBot('llama', '1219837842058907728', 'ollama');
 librarian.on_login = async () => librarian.sendAsAvatar(...(await ingest()));
 librarian.login();
 
