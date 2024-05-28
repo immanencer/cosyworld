@@ -58,7 +58,7 @@
                 "<node_internals>/**"
             ],
             "envFile": "${workspaceFolder}/.env",
-            "program": "${workspaceFolder}\\agents\\wolves\\whisper.js"
+            "program": "${workspaceFolder}\\agents\\wolfpack\\whisper.mjs"
         },
         {
             "type": "node",

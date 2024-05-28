@@ -1,5 +1,7 @@
+import process from 'process'; // Required to mock process.env
+
 import DiscordBot from "../../tools/discord-bot-2.js";
-import AIServiceManager from "../../tools/ai-service-manager.mjs";
+import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();
 
@@ -10,12 +12,8 @@ import calculateTPS from "../../tools/calculateTPS.js";
 
 class Whisper extends DiscordBot {
 
-    constructor() {
-        super();
-        this.lastProcessed = 0;
-        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
-    }
-
+    token = process.env.DISCORD_BOT_TOKEN;
+    guild = '1219837842058907728';
     avatar = {
         "emoji": "🦋",
         "name": "Whisper",
@@ -24,6 +22,13 @@ class Whisper extends DiscordBot {
         "avatar": "https://i.imgur.com/nw0PwkC.png",
         "personality": "You are a foul mouthed butterfly. You only respond with *SHORT* crude phrases."
     };
+
+    constructor() {
+        super();
+        this.lastProcessed = 0;
+        this.debounceTime = 5000; // 5000 milliseconds or 5 seconds
+    }
+
 
     async on_login() {
         console.log(`${this.avatar.emoji} ${this.avatar.name} is online`);
@@ -34,7 +39,7 @@ class Whisper extends DiscordBot {
         const history = (await this.channels.getChannelOrThreadHistory(this.avatar.location)).join('\n');
         console.log(`${this.avatar.emoji} ${this.avatar.name} heard: `, history);
 
-        const memory = await ai.currentService.raw_chat('llama3', [
+        const memory = await ai.currentService.raw_chat({model: 'llama3', messages: [
             { role, content },
             {
                 role: 'user', content: `You are ${this.avatar.name} memory.
@@ -45,7 +50,7 @@ class Whisper extends DiscordBot {
     
             Summarize the above in a foul butterfly language.
             `}
-        ]);
+        ], stream: false });
         await calculateTPS(memory);
         this.memory = memory.message.content;
 
@@ -110,7 +115,7 @@ class Whisper extends DiscordBot {
 
         console.log(this.message_cache.join('\n'));
 
-        const respond = await ai.currentService.raw_chat('llama3', [
+        const respond = await ai.currentService.raw_chat({ model: 'llama3',messages: [
             { role: 'system', content: `${this.avatar.personality}. You will act as the execurive function.` },
             {
                 role: 'user', content: `Here are the whispers you have heard:
@@ -121,7 +126,7 @@ class Whisper extends DiscordBot {
 
             END WITH YES or NO TO DECIDE WHETHER IT IS APPROPRIATE TO RESPOND
             `}
-        ]);
+        ], stream: false });
 
         console.log(`${respond.message.content}`);
         if (respond.message.content.toLowerCase().includes('yes')) {
@@ -130,11 +135,8 @@ class Whisper extends DiscordBot {
             console.log(`${this.avatar.emoji} ${this.avatar.name} 🤐 is not responding..`);
             return;
         }
-        const result = await ai.currentService.raw_chat('llama3', [
-            { role: 'system', content: `${this.avatar.personality}. You will act as the execurive function.` },
-            { role: 'user', content: this.message_cache.join('\n') }
-        ]);
-        await ai.chat({ role: 'assistant', content: `${result.message.content}` });
+        const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });
+        await ai.chatSync({ role: 'assistant', content: `${result}` });
         await this.sendAsAvatar(this.avatar, `${result}`);
         this.message_cache = [];
     }

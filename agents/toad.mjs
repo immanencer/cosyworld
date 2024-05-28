@@ -1,4 +1,4 @@
-import DiscordAIBot from '../tools/discord-ollama-bot.js';
+import DiscordAIBot from '../tools/discord-ai-bot.js';
 
 const toad = new DiscordAIBot({
     emoji: '🐸',
@@ -13,5 +13,5 @@ const toad = new DiscordAIBot({
     
     always respond in SHORT froggish phrases or actions and emojis
     `
-});
+}, '1219837842058907728', 'ollama');
 toad.login();

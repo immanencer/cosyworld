@@ -1,6 +1,5 @@
 import { MongoClient } from 'mongodb';
 
-const POLLING_INTERVAL = 1000;
 
 const client = new MongoClient('mongodb://localhost:27017');
 const db = client.db('cosyworld');
@@ -56,7 +55,6 @@ let running = true;
 await client.connect();
 while (running) {
     await process_next_task();
-    await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL));
 }
 // close the connection
 await client.close();

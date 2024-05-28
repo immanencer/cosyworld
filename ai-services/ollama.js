@@ -3,6 +3,7 @@ import ollama from 'ollama';
 import AIService from './ai-service.js';
 
 import { generateHash } from '../tools/crypto.js';
+import { Buffer } from 'buffer';
 
 class OllamaService extends AIService {
     constructor(config) {
@@ -41,6 +42,7 @@ system "${config.system_prompt || 'you are an alien intelligence from the future
         this.messages = this.messages || [];
         this.messages.push(message);
         if (message.role === 'assistant' || message.role === 'system') {
+            // eslint-disable-next-line require-yield
             return (async function*() { return; })();
         }
         return await ollama.chat({ model: this.model || 'llama3', messages: this.messages.slice(-50), stream: true });
@@ -81,7 +83,7 @@ system "${config.system_prompt || 'you are an alien intelligence from the future
         return output;
     }
 
-    async draw(prompt) {
+    async draw() {
         return 'This is a 🦙 drawing';
     }
 }

@@ -3,7 +3,7 @@ import agents from './agents/index.mjs';
 import { createTask, pollTaskCompletion } from './tools/taskManager.mjs';
 import { fetchJSON, postJSON } from './tools/fetchJson.mjs';
 
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 500;
 const AVATARS_API = 'http://localhost:3000/avatars';
 const LOCATIONS_API = 'http://localhost:3000/discord-bot/locations';
 const MESSAGES_API = 'http://localhost:3000/discord-bot/messages';
@@ -37,8 +37,7 @@ async function getMentions(name, since) {
     return await fetchJSON(url);
 }
 
-let bot_replies = 0;
-let last_response = {};
+let bot_replies = 0; 
 async function processMessagesForAvatar(avatar) {
     const agent = agents.find(agent => agent.name === avatar.agent);
 
@@ -137,12 +136,6 @@ async function processMessagesForAvatar(avatar) {
 
         avatar.talking_to = data.author;
         respond = true;
-
-        // check the last response time
-        if (last_response[avatar.name] && last_response[avatar.name].time > Date.now() - 5000) {
-            console.log(`${avatar.emoji} ${avatar.name} is still on cooldown.`);
-            continue;
-        }
 
         if (agent?.on_message) {
             try {

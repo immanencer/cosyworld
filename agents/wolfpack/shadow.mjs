@@ -1,3 +1,5 @@
+import process from "process";
+
 import DiscordBot from "../../tools/discord-bot-2.js";
 import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();

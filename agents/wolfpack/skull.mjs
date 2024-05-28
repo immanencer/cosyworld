@@ -138,7 +138,10 @@ class Skull extends DiscordBot {
             
             ${this.message_cache.join('\n\n')}
 
-            respond to them as Skull the silent wolf`
+            You are in ${this.avatar.location}
+            
+            ${this.avatar.personality}
+            `
         });
         this.message_cache = [];
         if (result.trim() !== "") {

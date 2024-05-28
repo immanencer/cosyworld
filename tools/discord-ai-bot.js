@@ -75,7 +75,7 @@ class DiscordAiBot extends DiscordBot {
                     console.error('Failed to send cached messages:', error);
                 }
             }
-        }, 3333); // Adjust delay as necessary
+        }, 100); // Adjust delay as necessary
     }
     
 

@@ -26,7 +26,7 @@ system "${systemPrompt}"`;
 
         const ollamaMessages = [
             { role: 'system', content: systemPrompt },
-            ...messages
+            ...messages.splice(-20)
         ];
 
         const result = await ollama.chat({ model: modelHash, messages: ollamaMessages, stream: false });
