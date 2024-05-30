@@ -7,9 +7,6 @@ class DiscordAiBot extends DiscordBot {
         super({}, guild);
         this.service = service;
         this.avatar = avatar;
-        if (typeof avatar === 'string') {
-            this.avatar = this.avatar_manager.get(avatar);
-        }
         this.system_prompt = this.avatar.personality;
         this.aiServiceManager = new AIServiceManager();
     }

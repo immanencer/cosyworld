@@ -26,7 +26,10 @@ const locations = [...new Set(location_dump)].filter(T => T);
 ratichat.sendAsAvatars = ratichat.sendAsAvatarsSimple;
 
 ratichat.on_login = async function () {
+    this.rumble();
+}
 
+ratichat.rumble = async function () {
     try {
 
         // Les Arbres des Rêves
@@ -109,6 +112,10 @@ ratichat.on_login = async function () {
 ratichat.handleMessage = async function (message) {
     console.log('🌳 Message received:', message.cleanContent);
     if ([this.avatar.name.toLowerCase(), oak_tree_avatar.name.toLowerCase(), ...Object.keys(avatars)].includes(message.author.displayName.toLowerCase())) {
+        return false;
+    }
+    if (message.author.displayName.toLowerCase().includes('steamclock')) {
+        this.rumble();
         return false;
     }
 

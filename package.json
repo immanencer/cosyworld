@@ -15,12 +15,17 @@
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "got": "^14.3.0",
     "groq-sdk": "^0.3.3",
     "js-yaml": "^4.1.0",
     "mongodb": "^6.6.2",
+    "oauth-1.0a": "^2.2.6",
     "ollama": "^0.5.0",
     "openai": "^4.38.2",
-    "replicate": "^0.29.1"
+    "replicate": "^0.29.1",
+    "twitter-api-sdk": "^1.2.1",
+    "twitter-api-v2": "^1.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",

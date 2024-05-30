@@ -48,7 +48,7 @@
                 "<node_internals>/**"
             ],
             "envFile": "${workspaceFolder}/.env",
-            "program": "${workspaceFolder}\\agents\\librarian.js"
+            "program": "${workspaceFolder}\\agents\\librarian.mjs"
         },
         {
             "type": "node",
@@ -119,6 +119,16 @@
             ],
             "envFile": "${workspaceFolder}/.env",
             "program": "${workspaceFolder}\\server\\index.mjs"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐦 bard",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "envFile": "${workspaceFolder}/.env",
+            "program": "${workspaceFolder}\\agents\\bard.mjs"
         },
         {
             "type": "node",

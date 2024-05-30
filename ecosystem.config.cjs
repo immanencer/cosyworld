@@ -44,10 +44,6 @@ module.exports = {
       "script": "./agents/benny.mjs"
     },
     {
-      "name": "badger",
-      "script": "./agents/badger.js"
-    },
-    {
       "name": "ghost",
       "script": "./agents/ghost.mjs"
     },
@@ -62,6 +58,10 @@ module.exports = {
     {
       "name": "mr-bear",
       "script": "./agents/mr-bear.mjs"
+    },
+    {
+      "name": "bard",
+      "script": "./agents/bard.mjs"
     }
   ],
   restart_delay: 10000, // 10 seconds delay before restarting

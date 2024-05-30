@@ -14,12 +14,14 @@ try {
 
 // Get configuration for a component
 router.get('/:component', async (req, res) => {
+    console.warn('⚠️  TO BE DEPRECATED; REMOVE ALL REFERENCES TO THIS ROUTE')
     const { component } = req.params;
     res.json(JSON.parse(await fs.readFile(`${CONFIG_PATH}/${component}.json`)));
 });
 
 // Set configuration for a component
 router.post('/:component', async (req, res) => {
+    console.warn('⚠️  TO BE DEPRECATED; REMOVE ALL REFERENCES TO THIS ROUTE')
     const { component } = req.params;
     const config = req.body;
     configurations[component] = config;

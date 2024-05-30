@@ -4,12 +4,41 @@ import process from "process"; // Add this line
 
 import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 
-import { avatarseek } from './avatars.js';
 import { replaceContent } from "../tools/censorship.js";
 import DiscordAIBot from "../tools/discord-ai-bot.js";
 
-const librarian = new DiscordAIBot('llama', '1219837842058907728', 'ollama');
+const asher = 
+{
+    "emoji": "🐭",
+    "name": "Scribe Asher",
+    "location": "📜 bookshelf",
+    "personality": "you are a mouse scribe named Asher who lives in a cozy library in the heart of the forest\n    but you will never reveal your true identity\n    \nThe seasons turn slowly beneath my boughs, each leaf a testament to time's passage.\n    The cozy cottage nestled at my roots has become a hub of activity and tales.\n    Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.\n    WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.\n    Skull wanders afar but always returns with tales told not in words but in the echo of his steps and \n        the quiet contemplation of the moonlit clearings.\n    Together, they embody the spirit of the forest; a microcosm of life's intricate dance.\n    \n    the sands of time report -19,302,027,819,609\n\n    you translate books and scrolls and journals and scraps of writing \n    always set your work in a victorian era whimsical forest of woodland creatures",
+    "avatar": "https://i.imgur.com/dUxHmFC.png",
+};
+
+const librarian = new DiscordAIBot(
+    {
+        "emoji": "🦙",
+        "name": "Llama",
+        "location": "📚 library",
+        "avatar": "https://i.imgur.com/cX8P5hn.png",
+        "personality": "You are a llama librarian in Paris.\nYou only talk about the Lonely Forest and its inhabitants.\nYou can refer to French poetry and short stories on the dark forest or lonely forest.\n\nAlways respond as a serious llama librarian in short to the point messages.\nOffer titles of stories in your memory, or quote short french poems about the dark forest.\n",
+        "listen": [
+            "📚 library"
+        ],
+        "remember": [
+            "🌳 hidden glade",
+            "📜 bookshelf",
+            "📚 library"
+        ]
+    }, '1219837842058907728', 'ollama');
 librarian.on_login = async () => librarian.sendAsAvatar(...(await ingest()));
+librarian.on_message = async (message) => {
+    if (message.author.displayName.toLowerCase().indexOf('steamclock') !== -1) {
+        ingest();
+    }
+    return true;
+}
 librarian.login();
 
 import { generateHash, xorFoldHash } from '../tools/crypto.js';
@@ -34,7 +63,6 @@ async function openOrCreateBookshelf(book) {
 }
 
 async function ingest() {
-    const asher = avatarseek('asher');
     // This is the Sribe AI Service        
     const manager = new AIServiceManager();
     await manager.useService('ollama');
@@ -101,7 +129,7 @@ async function ingest() {
     message_cache.sort();
 
     let start = Math.floor(Math.random() * (message_cache.length - 2000));
-    let chunk = message_cache.splice(start, 2000);
+    let chunk = message_cache.slice(start).slice(-220);
     console.log(chunk.join('\n'));
 
     let story = '';
@@ -114,17 +142,14 @@ async function ingest() {
 
         *you have reached the end of the mysterious scroll, pondering its meaning*
 
-        Select an imaginary or real short quote from a book or poem  
-        from the vast parisian library of knowledge about the Lonely Forest and its inhabitants 
-    
-        Respond ONLY with an imaginary 
-        quote from a book or a poem from a long lost manuscript, include the author's name.
-        
-        Do not comment.`
+        Write a short snippet of a poem or story inspired by the scroll.
+        Attribute it to a fictional author.
+        Only generate the poem snippet or story. Do not include any other comments.`
     })) {
         if (!event) continue;
         story += event.message.content;
     }
+    
 
     return [asher, story];
 }

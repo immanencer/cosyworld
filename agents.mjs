@@ -103,18 +103,20 @@ async function processMessagesForAvatar(avatar) {
         
         if (message.author.discriminator === '0000') {
             bot_replies++;
-            if (bot_replies > 10) {
+            if (bot_replies > 20) {
                 continue; 
             }
         } else {
             bot_replies = 0;
         }
 
+        const location_name = locations.find(loc => loc.id === data.location);
+
         // Check the author and categorize the message appropriately
         if (data.author.includes(avatar.name)) {
             conversation.push({ role: 'assistant', content: data.content }); // Flit's messages as assistant responses
         } else {
-            conversation.push({ role: 'user', content: `(${data.location}) ${data.author}: ${data.content}` }); // Other user messages
+            conversation.push({ role: 'user', content: `in ${location_name.name} ${data.author} said: ${data.content}` }); // Other user messages
         }
 
         if (!avatar?.location?.id) {
