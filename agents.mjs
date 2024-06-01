@@ -92,7 +92,6 @@ async function processMessagesForAvatar(avatar) {
                 body: JSON.stringify({ location: avatar.location.id })
             });
         }
-        lastProcessedMessageIdByAvatar[avatar.name] = lastMention._id;
     }
 
     let messages;
@@ -118,6 +117,7 @@ async function processMessagesForAvatar(avatar) {
             content: message.content,
             location: message.channelId
         };
+        lastProcessedMessageIdByAvatar[avatar.name] = message._id;
 
         if (bot_replies > 5) {
             console.log('Too many bot replies, skipping messages.');
@@ -172,13 +172,13 @@ async function processMessagesForAvatar(avatar) {
     }
 
     if (!respond) return;
-    let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if your avatar should respond. To respond, end your message with "I CHOOSE TO SPEAK". To remain silent end your message with "I CHOOSE SILENCE'}]);
+    let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if you should respond.End your message with "SPEAK" to speak, or "SILENCE" to remain silent.'}]);
     if (!responder) {
         console.error(`Failed to get response from ${avatar.name}.`);
         return;
     }
     console.log(avatar.emoji, avatar.name, 'thinks:\n', responder);
-    if (responder.toLowerCase().includes('i choose to speak')) {
+    if (responder.toLowerCase().includes('speak')) {
         console.log(`${avatar.emoji} ${avatar.name} is responding.`);
     }
     else {
