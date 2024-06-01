@@ -1,3 +1,5 @@
+import process from 'process';
+
 import { TwitterApi }  from 'twitter-api-v2';
 
 import express from 'express';

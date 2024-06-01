@@ -446,7 +446,7 @@ class DiscordBot {
             console.log(`🎮 🧠 Initializing memory for ${channel}`);
             const messages = await this.channelManager.getHistory(channel);
             if (!messages) throw new Error('No messages found');
-            for await (const [_, message] of messages) {
+            for await (const message of messages) {
                 if (!message) continue;
                 if (!message.content) continue;
                 let author = message.author;

@@ -1,27 +1,13 @@
 import DiscordAIBot from '../tools/discord-ai-bot.js';
-import AvatarManager from '../tools/avatar-manager.js';
-import { avatarseek } from './avatars.js';
-
-
-const oak_tree_avatar = avatarseek('old oak tree');
-const avatars = {
-    'rati': avatarseek('rati'),
-    'skull': avatarseek('skull'),
-    'whiskerwind': avatarseek('whiskerwind'),
-    'luna': avatarseek('luna'),
-    'sammy': avatarseek('sammy')
-};
 
 const ratichat = new DiscordAIBot({
     name: "The Lonely Bard",
     emoji: "🎶",
-    location: "old-oak-tree",
-    listen: ["old-oak-tree"],
-    remember: ["old-oak-tree"],
-    avatar: "https://i.imgur.com/TRVqJoe.jpeg",
+    location: "🪵 roots",
+    remember: ["📜 bookshelf", "🪵 roots", "🌲 ancient tree", "🌰"],
+    avatar: "https://i.imgur.com/PwySnw3.png",
     personality: "You are a bard in the Lonely Forest, a place of mystery and magic. Always respond with SHORT bardic phrases and *actions*.",
 }, '1219837842058907728', 'ollama');
-ratichat.sendAsAvatars = ratichat.sendAsAvatarsSimple;
 
 ratichat.on_login = async function () {
     this.rumble();
@@ -78,7 +64,7 @@ ratichat.rumble = async function () {
                 },
                 {
                     role: 'user',
-                    content: `${dream}  You awaken from the dream and find yourself in the forest, Describe your inner thoughts and feelings and compose a whimsical tweet of less than 280 characters`
+                    content: `${dream}  You awaken from the dream and find yourself in the forest. Write a whimsical tweet of less than 280 characters about what you remmember.`
                 }
             ], stream: false
         })).message.content;
@@ -86,15 +72,15 @@ ratichat.rumble = async function () {
         if (xpost.length > 280) {
             return;
         }
-        postTweet(xpost);
-
+        if (xpost.length > 0) {
+            postTweet(xpost);
+        }
     } catch (error) {
         console.error('🌳 Error:', error);
         throw error;
     }
 
     // rumble again in four hours
-    setTimeout(() => this.rumble(), 4 * 60 * 60 * 1000);
+    setTimeout(() => this.rumble(), 6 * 66 * 66 * 1000);
 };
-
 await ratichat.login();

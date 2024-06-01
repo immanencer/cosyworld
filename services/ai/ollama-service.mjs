@@ -8,7 +8,7 @@ export default class OllamaService {
     }
 
     async chat({ systemPrompt, messages }) {
-        const modelfile = `from ${this.model || 'llama3:instruct'}
+        const modelfile = `from ${this.model || 'llama3'}
 system "${systemPrompt}"`;
 
         const modelHash = this.generateHash(modelfile);
@@ -26,7 +26,7 @@ system "${systemPrompt}"`;
 
         const ollamaMessages = [
             { role: 'system', content: systemPrompt },
-            ...messages.splice(-20)
+            ...messages
         ];
 
         const result = await ollama.chat({ model: modelHash, messages: ollamaMessages, stream: false });
