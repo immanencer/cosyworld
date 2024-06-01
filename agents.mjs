@@ -172,13 +172,13 @@ async function processMessagesForAvatar(avatar) {
     }
 
     if (!respond) return;
-    let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if you should respond.End your message with "SPEAK" to speak, or "SILENCE" to remain silent.'}]);
+    let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if you should respond. If it contains the world "silence" you will not respond.'}]);
     if (!responder) {
         console.error(`Failed to get response from ${avatar.name}.`);
         return;
     }
     console.log(avatar.emoji, avatar.name, 'thinks:\n', responder);
-    if (responder.toLowerCase().includes('speak')) {
+    if (responder.toLowerCase().includes('silence')) {
         console.log(`${avatar.emoji} ${avatar.name} is responding.`);
     }
     else {
