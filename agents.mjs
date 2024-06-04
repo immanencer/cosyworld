@@ -103,13 +103,19 @@ async function processMessagesForAvatar(avatar) {
         return;
     }
 
-    messages.sort((a, b) => a._id.localeCompare(b._id));
-
+    messages.reverse();
     let conversation = []; // Review the conversation from this avatar's perspective
 
     // Process the messages
     let respond = false;
-    let bot_replies = 0;
+    
+    if (lastProcessedMessageIdByAvatar[avatar.name]) {
+        messages = messages.filter(T => T._id > lastProcessedMessageIdByAvatar[avatar.name]);
+    }
+    if (messages.length > 0) {
+        lastProcessedMessageIdByAvatar[avatar.name] = messages[messages.length - 1]._id;
+    }
+    let human = false;
     for (const message of messages) {
         const data = {
             id: message._id,
@@ -117,16 +123,6 @@ async function processMessagesForAvatar(avatar) {
             content: message.content,
             location: message.channelId
         };
-        lastProcessedMessageIdByAvatar[avatar.name] = message._id;
-
-        if (bot_replies > 5) {
-            console.log('Too many bot replies, skipping messages.');
-            continue;
-        }
-
-        if (message.author.bot) {
-            bot_replies++;
-        }
 
         const location_name = locations.find(loc => loc.id === data.location);
 
@@ -139,6 +135,13 @@ async function processMessagesForAvatar(avatar) {
 
         if (!avatar?.location?.id) {
             console.error(`Avatar ${avatar.name} has no location.`);
+        }
+
+        
+        if (message.author.discriminator !== "0000") {
+            human = true;
+        } else {
+            respond = Math.random() < 0.5
         }
 
         if (data.location !== avatar?.location?.id) {
@@ -172,6 +175,7 @@ async function processMessagesForAvatar(avatar) {
     }
 
     if (!respond) return;
+    if (!human) return;
     let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.'}]);
     if (!responder) {
         console.error(`Failed to get response from ${avatar.name}.`);
@@ -210,6 +214,8 @@ let running = true;
 async function mainLoop() {
     while (running) {
         const avatars = await initializeAvatars();
+
+        avatars.sort(() => Math.random() < 0.5);
 
         for (const avatar of avatars) {
             console.log(`${avatar.emoji} Processing messages for ${avatar.name}`);

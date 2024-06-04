@@ -51,10 +51,10 @@ app.get('/messages', async (req, res) => {
     }
     try {
         const messages = await db.collection('messages')
-            .find(query)
-            .sort({ createdAt: -1 })
-            .limit(100)
-            .toArray();
+        .find(query)
+        .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+        .limit(100)
+        .toArray();
 
         res.status(200).send(messages);
     } catch (error) {
