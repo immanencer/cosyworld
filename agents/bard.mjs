@@ -4,7 +4,7 @@ const ratichat = new DiscordAIBot({
     name: "The Lonely Bard",
     emoji: "🎶",
     location: "🪵 roots",
-    remember: ["📜 bookshelf", "🪵 roots", "🌲 ancient tree", "🌰"],
+    remember: ["☀ solar temple", "📜 bookshelf", "🪵 roots", "🌲 ancient tree", "🌰"],
     avatar: "https://i.imgur.com/PwySnw3.png",
     personality: "You are a bard in the Lonely Forest, a place of mystery and magic. Always respond with SHORT bardic phrases and *actions*.",
 }, '1219837842058907728', 'ollama');
@@ -64,7 +64,7 @@ ratichat.rumble = async function () {
                 },
                 {
                     role: 'user',
-                    content: `${dream}  You awaken from the dream and find yourself in the forest. Write a whimsical tweet of less than 280 characters about what you remmember.`
+                    content: `${dream}  You find yourself in the forest. Write a whimsical tweet of less than 280 characters about what you remmember.`
                 }
             ], stream: false
         })).message.content;

@@ -80,7 +80,7 @@ async function processMessagesForAvatar(avatar) {
         // get the last message that mentions the avatar
         lastMention = mentions[mentions.length - 1];
 
-        if (avatar?.summon === "true" && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
+        if (avatar?.summon === "true" && avatar?.location?.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
             avatar.location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId);
             if (!avatar.location) {
                 console.error(`Avatar ${avatar.name} has no location.`);
@@ -176,7 +176,7 @@ async function processMessagesForAvatar(avatar) {
 
     if (!respond) return;
     if (!human) return;
-    let responder = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.'}]);
+    let responder = await waitForTask(avatar, [...conversation.slice(-10), { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.'}]);
     if (!responder) {
         console.error(`Failed to get response from ${avatar.name}.`);
         return;

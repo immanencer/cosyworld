@@ -16,7 +16,10 @@ class AI {
             case 'ollama/llama3':
                 this.service = new OllamaService();
                 break;
-            // Add more cases here for other services
+            case 'qwen2':
+            case 'ollama/qwen2':
+                this.service = new OllamaService('qwen2');
+                break;
             default:
                 throw new Error(`Unknown model: ${this.model}`);
         }

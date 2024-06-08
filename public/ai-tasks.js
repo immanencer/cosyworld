@@ -38,7 +38,7 @@ export async function fetchTasks() {
         const tasks = await response.json();
         const tasksContainer = document.getElementById('tasks');
         tasksContainer.innerHTML = '';
-        tasks.splice(-10).forEach(task => {
+        tasks.slice(-10).forEach(task => {
             const taskDiv = document.createElement('div');
             taskDiv.className = 'task';
             taskDiv.innerHTML = `

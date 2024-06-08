@@ -3,13 +3,14 @@ import ollama from 'ollama';
 const model_cache = {};
 
 export default class OllamaService {
-    constructor() {
+    constructor(model = 'llama3') {
+        this.model = model;
         // Initialization for Ollama (if any)
     }
 
     async chat({ systemPrompt, messages }) {
-        const modelfile = `from ${this.model || 'llama3'}
-system "${systemPrompt}"`;
+        const modelfile = `FROM ${this.model}
+SYSTEM "${systemPrompt}"`;
 
         const modelHash = this.generateHash(modelfile);
 
