@@ -53,7 +53,8 @@ async function sendCreeperMessage() {
     ${Object.entries(mansion_map).map(T => `${T}`).join('\n')}
 
     👻 create or select one or more avatar to haunt the mansion
-    Use any language you know to be spooky and mysterious  
+    Use any language you know to be spooky and mysterious.
+    Only use rooms you KNOW to exist.
 
     Use this format:
     

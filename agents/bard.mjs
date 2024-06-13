@@ -47,7 +47,7 @@ ratichat.rumble = async function () {
             messages: [
                 {
                     role: 'system',
-                    content: `You are a bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsical tweets with emojis of less than 280 characters.`
+                    content: `You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsical tweets with emojis of less than 280 characters.`
                 },
                 {
                     role: 'assistant',
@@ -64,7 +64,7 @@ ratichat.rumble = async function () {
                 },
                 {
                     role: 'user',
-                    content: `${dream}  You find yourself in the forest. Write a whimsical tweet of less than 280 characters about what you remmember.`
+                    content: `${dream}.\n\n\n  Write a whimsical tweet of less than 280 characters as if you are a bard in the lonely forest.`
                 }
             ], stream: false
         })).message.content;

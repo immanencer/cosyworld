@@ -6,7 +6,7 @@ const POLL_INTERVAL = 1000;
 async function createTask(system_prompt, messages) {
     const task = {
         action: 'ai',
-        model: 'ollama/llama3',
+        model: 'ollama/llana3',
         system_prompt: system_prompt,
         messages
     };

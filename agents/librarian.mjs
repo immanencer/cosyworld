@@ -67,6 +67,7 @@ async function ingest() {
     const manager = new AIServiceManager();
     await manager.useService('ollama');
     await manager.updateConfig({
+        model: 'qwen2',
         system_prompt: asher.personality
     });
 
