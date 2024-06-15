@@ -54,7 +54,7 @@ async function sendCreeperMessage() {
 
     👻 create or select one or more avatar to haunt the mansion
     Use any language you know to be spooky and mysterious.
-    Only use rooms you KNOW to exist.
+    ONLY rooms you KNOW to exist, do not include NUMBERS.
 
     Use this format:
     
