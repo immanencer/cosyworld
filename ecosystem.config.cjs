@@ -36,10 +36,6 @@ module.exports = {
       "script": "./agents/steamclock.mjs"
     },
     {
-      "name": "remy",
-      "script": "./agents/remy.mjs"
-    },
-    {
       "name": "benny",
       "script": "./agents/benny.mjs"
     },

@@ -73,8 +73,6 @@ async function sendCreeperMessage() {
 
     ghost.options.yml = true;
     mansion_rooms.forEach(room => ghost.subscribe(room));
-
-    setTimeout(sendCreeperMessage, 666 * 666 * Math.floor(Math.random() * 666));
 }
 
 ghost.on_login = async () => {
@@ -124,7 +122,8 @@ ghost.on_login = async () => {
 
     DO NOT SPEAK ENGLISH. Try to scare the visitors with your messages. Use short phrases and sprinkle in some english words to make it extra creepy.
 
-    respond with a door emoji 🚪 followed by the room name to move to that room.
+    Move to a specific room by using the 🚪 followed by the room name
+    
     🚪botanical garden
     Chèche absolisyon andedan mi sa yo.
     `);
@@ -145,14 +144,13 @@ ghost.sendAsAvatarsYML = async (input) => {
                 await ghost.sendAsAvatar(ghost.avatar, buffer, true);
                 buffer = '';
             }
-            const [num] = line.split('🚪');
-            const room_number = parseInt(num, 16);
-
-            if (mansion_map[room_number]) {
-                console.log(`🛞 Moving avatar to room ${mansion_map[room_number]}`);
-                ghost.avatar.location = mansion_map[num];
+            const name = line.split('🚪')[1];
+            
+            if (mansion_map[name]) {
+                console.log(`🛞 Moving avatar to room ${mansion_map[name]}`);
+                ghost.avatar.location = mansion_map[name];
             } else {
-                console.error(`🚪 Invalid room number: ${num}`);
+                console.error(`🚪 Invalid room number: ${name}`);
             }
 
         } else {
