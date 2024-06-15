@@ -36,20 +36,12 @@ module.exports = {
       "script": "./agents/steamclock.mjs"
     },
     {
-      "name": "benny",
-      "script": "./agents/benny.mjs"
-    },
-    {
       "name": "ghost",
       "script": "./agents/ghost.mjs"
     },
     {
       "name": "librarian",
       "script": "./agents/librarian.mjs"
-    },
-    {
-      "name": "toad",
-      "script": "./agents/toad.mjs"
     },
     {
       "name": "mr-bear",
