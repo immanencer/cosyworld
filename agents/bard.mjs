@@ -14,7 +14,7 @@ ratichat.on_login = async function () {
 }
 
 async function postTweet(text) {
-    const response = await fetch('http://localhost:3000/x/tweet', {
+    const response =  await fetch('http://localhost:3000/x/tweet', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

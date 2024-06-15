@@ -152,8 +152,6 @@ async function mainLoop() {
     while (running) {
         const avatars = await initializeAvatars();
 
-        avatars.sort(() => Math.random() - 0.5);
-
         for (const avatar of avatars) {
             await processMessagesForAvatar(avatar);
         }
