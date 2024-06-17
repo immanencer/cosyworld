@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from 'discord.js';
+import { process } from 'node';
 
 import db from '../database/index.js';
 
@@ -23,7 +24,6 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.channel.name.indexOf('🚧') === 0) return false;
     if (message.channel.name.indexOf('🥩') === 0) return false;
     if (message.channel.name.indexOf('🐺') === 0) return false;
     const messageData = {

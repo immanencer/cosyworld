@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Server Visualization</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-            border-radius: 2%;
-        }
-    </style>
+    <title>Dungeon Map</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="serverCanvas" width="800" height="600"></canvas>
-    <script src="script.js" type="module"></script>
+    <div class="container">
+        <h1>Dungeon Map</h1>
+    </div>
+    <div class="svg-container">
+        <svg id="dungeonMap" width="800" height="460"></svg>
+    </div>
+    <script src="map.js"></script>
 </body>
 </html>

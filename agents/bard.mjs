@@ -4,7 +4,7 @@ const ratichat = new DiscordAIBot({
     name: "The Lonely Bard",
     emoji: "🎶",
     location: "🪵 roots",
-    remember: ["☀ solar temple", "📜 bookshelf", "🪵 roots", "🌲 ancient tree", "🌰"],
+    remember: ["☀ solar temple", "🌑 dark abyss", "haunted-mansion", "old-oak-tree", "📜 bookshelf", "🪵 roots", "🌲 ancient tree", "🌰"],
     avatar: "https://i.imgur.com/PwySnw3.png",
     personality: "You are a bard in the Lonely Forest, a place of mystery and magic. Always respond with SHORT bardic phrases and *actions*.",
 }, '1219837842058907728', 'ollama');

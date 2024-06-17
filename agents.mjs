@@ -36,7 +36,7 @@ async function getMentions(name, since) {
 }
 
 async function waitForTask(avatar, conversation) {
-    
+
     let taskId;
 
     try {
@@ -69,8 +69,11 @@ async function processMessagesForAvatar(avatar) {
             const lastMention = mentions[mentions.length - 1];
 
             if (avatar.summon === "true" && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
-                avatar.location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId) || locations[0];
-                await updateAvatarLocation(avatar);
+                let new_location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId) || locations[0];
+                if (new_location !== avatar.location) {
+                    avatar.location = new_location;
+                    await updateAvatarLocation(avatar);
+                }
             }
         }
 
@@ -108,26 +111,114 @@ function buildConversation(messages, avatar) {
             location: message.channelId
         };
         const location_name = locations.find(loc => loc.id === data.location);
-        return data.author.includes(avatar.name) ? 
-            { bot: message.author.discriminator === "0000", role: 'assistant', content: data.content } : 
+        return data.author.includes(avatar.name) ?
+            { bot: message.author.discriminator === "0000", role: 'assistant', content: data.content } :
             { bot: message.author.discriminator === "0000", role: 'user', content: `in ${location_name.name} ${data.author} said: ${data.content}` };
     });
 }
 
 function shouldRespond(conversation) {
-    const noBotMessagesCount = conversation.slice(-4).filter(message => !message.bot).length;
+    const noBotMessagesCount = conversation.slice(-5).filter(message => !message.bot).length;
     const lastMessageIsAssistant = conversation.length > 0 && conversation[conversation.length - 1].role === 'assistant';
     return noBotMessagesCount > 0 && !lastMessageIsAssistant;
 }
 
+const tools = `
+examine_room()
+take_object("name")
+use_object("name", "target")
+leave_object("name")
+create_object("name", "description")
+`.split('\n').map(tool => tool.trim()).filter(tool => tool);
+
 async function handleResponse(avatar, conversation) {
-    const haikuCheck = await waitForTask(avatar, [...conversation.slice(-20), { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.' }]);
+    console.log(`🤖 Processing messages for ${avatar.name} in ${avatar.location.name}`);
+    const haikuCheck = await waitForTask(avatar, [
+        ...conversation.slice(-25),
+        { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.' }
+    ]);
+
     if (!haikuCheck || !haikuCheck.toLowerCase().includes('yes')) {
         return;
     }
-    const response = await waitForTask(avatar, [...conversation, { role: 'user', content: 'Provide a SHORT response in character to the above.' }].slice(-20));
+
+    console.log(`Haiku check passed for ${avatar.name}:\n${haikuCheck}`);
+    console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
+
+    // Determine tools to call based on the response
+    const toolsCheck = await waitForTask({ personality: "You may only return a list of relevant tool calls or NONE do not embellish or add any commentary.\n\n" + tools.join('\n') }, [
+        { role: 'assistant', content: 'recall_conversation("5")'},
+        ...conversation.slice(-5),
+        { role: 'user', content: 'return a single relegant tool call from this list without embellishment:\n' + tools.join('\n') + '\n' }
+    ]);
+
+    const tool_results = [];
+    if (toolsCheck && toolsCheck.trim() && toolsCheck.trim().toLowerCase() !== 'none') {
+        const toolsToCall = toolsCheck.split('\n').map(tool => tool.trim());
+        for (const tool of toolsToCall) {
+            const result = await callTool(tool, avatar, conversation);
+            tool_results.push(result);
+        }
+    }
+
+    console.log(JSON.stringify(tool_results));
+
+    const response = await waitForTask(avatar, [
+        ...conversation,
+        { role: 'assistant', content: 'I have used the following tools: ' + JSON.stringify(tool_results)},
+        { role: 'user', content: 'Respond in a short whimsical way, in character.' }
+    ].slice(-25));
+
     if (response && response.trim()) {
         await postResponse(avatar, response);
+    }
+}
+
+
+import { examineRoom, takeObject, useObject, leaveObject, createObject } from './tools/objects.mjs';
+
+function cleanString(input) {
+    return input.trim().replace(/^["*]|["*]$/g, '');
+}
+
+async function callTool(tool, avatar, conversation) {
+    // Implement the logic for calling the specific tool
+    console.log(`⚒️ Calling tool: ${tool} for avatar: ${avatar.name}`);
+
+    try {
+
+        // split tool(data) into tool and data
+        const toolData = cleanString(tool).split('(');
+        const toolName = toolData[0];
+        const data = toolData[1].replace(')', '');
+
+        let tool_result;
+        switch (toolName) {
+            case 'examine_room':
+                tool_result = await examineRoom(avatar);
+                for (let item of tool_result.objects) {
+                    item.location = avatar.location;
+                    await postResponse(item, `${item.description}`)
+                }
+                return `I have examined the room and revealed its secrets.`;
+            case 'take_object':
+                return await takeObject(avatar, conversation, data);
+            case 'use_object':
+                return await useObject(avatar, conversation, data);
+            case 'leave_object':
+                return await leaveObject(avatar, conversation, data);
+            case 'create_object':
+                return await createObject({
+                    name: cleanString(data.split(',')[0]),
+                    description: cleanString(data.split(',')[1]),
+                    location: avatar.location,
+                    avatar: "https://i.imgur.com/Oly9eGA.png"
+                });
+            default:
+                return `Tool ${tool} not found.`;
+        }
+    } catch (error) {
+        return `Error calling tool ${tool}: ${error.message}`;
     }
 }
 

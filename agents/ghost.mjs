@@ -40,8 +40,12 @@ ghost.options = {
     yml: true
 }
 
+ghost.process_message = async function (message) {
+    return Math.random() < 0.666;
+}
 
 async function sendCreeperMessage() {
+
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
     const output = await ai.raw_chat({
@@ -133,6 +137,9 @@ ghost.on_login = async () => {
 
 ghost.sendAsAvatarsYML = async (input) => {
     await sendCreeperMessage();
+    if (Math.random() < 0.666) {
+        return;
+    }
 
     const lines = input.split('\n');
     const mansion_map = await getMansionMap();

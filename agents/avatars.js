@@ -41,7 +41,7 @@ function avatarfind(name) {
 function avatarupdate(avatar) {
     const index = SOULS.findIndex((s) => s.name === avatar.name);
     if (index === -1) {
-        console.error('👻 ❌ avatar terminated:', avatar);
+        console.warn('👻 ❌ avatar terminated:', avatar);
         return;
     }
 

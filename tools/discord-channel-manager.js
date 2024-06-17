@@ -65,7 +65,6 @@ class ChannelManager {
     // Channel and thread management
     async getChannels() {
         return Object.keys(this.channel_id).filter(channel => {
-            if (channel.indexOf('🚧') === 0) return false;
             if (channel.indexOf('🥩') === 0) return false;
             return true;
         });

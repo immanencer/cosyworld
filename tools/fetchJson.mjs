@@ -22,7 +22,7 @@ async function postJSON(url, data, retries = 3, backoff = 1000) {
     }
 }
 
-async function fetchJSON(url, retries = 3, backoff = 1000) {
+async function fetchJSON(url, retries = 5, backoff = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url);
