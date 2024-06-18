@@ -227,6 +227,7 @@ async function callTool(tool, avatar, conversation) {
                         { role: 'user', content: 'here are your statistics: ' + JSON.stringify(item) + '\n\ndescribe yourself in a SHORT whimsical sentence or *action*.'}
                     ]);
                     console.log('🤖 description\n' + description);
+                    item.name = item.name + (item.takenBy ? ' (held by ' + item.takenBy + ')' : '');
                     await postResponse(item, `${description}`);
                 }
                 return `I have examined the room and revealed its secrets.`;
@@ -240,7 +241,8 @@ async function callTool(tool, avatar, conversation) {
                 return await createObject({
                     name: cleanString(data.split(',')[0]),
                     description: cleanString(data.split(',')[1]),
-                    location: avatar.location,
+                    location: avatar.location.name,
+                    // The Celestial Sphere
                     avatar: "https://i.imgur.com/Oly9eGA.png"
                 });
             default:
