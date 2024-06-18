@@ -92,7 +92,7 @@ async function updateAvatarLocation(avatar) {
     console.log(`${avatar.emoji} ${avatar.name} is now in ${avatar.location.name}.`);
     await fetchJSON(`${AVATARS_API}/${avatar._id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ location: avatar.location.id })
+        body: JSON.stringify({ location: avatar.location.name })
     });
 }
 
@@ -125,10 +125,10 @@ function shouldRespond(conversation) {
 
 const tools = `
 examine_room()
-take_object("name")
-use_object("name", "target")
-leave_object("name")
-create_object("name", "description")
+take_object("Object Name")
+use_object("Taken Object Name", "Target")
+leave_object("Object Name")
+create_object("Object Name", "A whimsical and colorful description of the object.")
 `.split('\n').map(tool => tool.trim()).filter(tool => tool);
 
 async function handleResponse(avatar, conversation) {
@@ -145,11 +145,12 @@ async function handleResponse(avatar, conversation) {
     console.log(`Haiku check passed for ${avatar.name}:\n${haikuCheck}`);
     console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
 
+    const objects = getAvatarObjects(avatar);
     // Determine tools to call based on the response
     const toolsCheck = await waitForTask({ personality: "You may only return a list of relevant tool calls or NONE do not embellish or add any commentary.\n\n" + tools.join('\n') }, [
-        { role: 'assistant', content: 'recall_conversation("5")'},
+        { role: 'assistant', content:+'recall_conversation("5")'},
         ...conversation.slice(-5),
-        { role: 'user', content: 'return a single relegant tool call from this list without embellishment:\n' + tools.join('\n') + '\n' }
+        { role: 'user', content:  'You have the following objects' + JSON.stringify(objects)  + ' return a single relevant tool call from this list be sure to modify the parameters:\n' + tools.join('\n') + '\n' }
     ]);
 
     const tool_results = [];
@@ -163,9 +164,10 @@ async function handleResponse(avatar, conversation) {
 
     console.log(JSON.stringify(tool_results));
 
+
     const response = await waitForTask(avatar, [
         ...conversation,
-        { role: 'assistant', content: 'I have used the following tools: ' + JSON.stringify(tool_results)},
+        { role: 'assistant', content: 'I have the following objects' + JSON.stringify(objects) + 'I have used the following tools: ' + JSON.stringify(tool_results)},
         { role: 'user', content: 'Respond in a short whimsical way, in character.' }
     ].slice(-25));
 
@@ -175,10 +177,33 @@ async function handleResponse(avatar, conversation) {
 }
 
 
-import { examineRoom, takeObject, useObject, leaveObject, createObject } from './tools/objects.mjs';
+import { examineRoom, takeObject, getObject, leaveObject, createObject, getAvatarObjects } from './tools/objects.mjs';
 
 function cleanString(input) {
     return input.trim().replace(/^["*]|["*]$/g, '');
+}
+
+async function useObject(avatar, conversation, data) {
+    const target = cleanString(cleanString(data.split(',')[1]));
+    const item = await getObject(cleanString(data.split(',')[0]));
+
+    if (!item) { 
+        return `The ${cleanString(data.split(',')[0])} does not exist.`;
+    }
+
+    if (item.takenBy !== avatar.name) {
+        return `You do not have the ${item.name}.`;
+    }
+
+    const description = await waitForTask({name: item.name, personality: `you are the ${item.name}\n${item.description}`}, [
+        ...conversation.map(T => { T.role = 'user'; return T; }),
+        { role: 'user', content: `Here are your statistics:\n\n${JSON.stringify(item)}\n\ndescribe yourself being used by ${avatar.name} on ${target} in a SHORT whimsical sentence or *action*.`}
+    ]);
+    console.log('🤖 being used\n' + description);
+    item.location = avatar.location;
+    await postResponse(item, `${description}`);
+
+    return `I have used the ${item.name} with the following effect:\n\n ${description}.`;
 }
 
 async function callTool(tool, avatar, conversation) {
@@ -198,11 +223,15 @@ async function callTool(tool, avatar, conversation) {
                 tool_result = await examineRoom(avatar);
                 for (let item of tool_result.objects) {
                     item.location = avatar.location;
-                    await postResponse(item, `${item.description}`)
+                    const description = await waitForTask({name: item.name, personality: `you are the ${item.name}\n${item.description}`}, [
+                        { role: 'user', content: 'here are your statistics: ' + JSON.stringify(item) + '\n\ndescribe yourself in a SHORT whimsical sentence or *action*.'}
+                    ]);
+                    console.log('🤖 description\n' + description);
+                    await postResponse(item, `${description}`);
                 }
                 return `I have examined the room and revealed its secrets.`;
             case 'take_object':
-                return await takeObject(avatar, conversation, data);
+                return await takeObject(avatar, conversation, cleanString(data));
             case 'use_object':
                 return await useObject(avatar, conversation, data);
             case 'leave_object':

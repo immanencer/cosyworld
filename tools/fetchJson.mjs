@@ -30,7 +30,7 @@ async function fetchJSON(url, retries = 5, backoff = 1000) {
             return await response.json();
         } catch (error) {
             if (i < retries - 1) {
-                await delay(backoff * Math.pow(2, i)); // Exponential backoff
+                return await delay(backoff * Math.pow(2, i)); // Exponential backoff
             } else {
                 console.error(`Failed to fetch: ${url}`);
                 return [];

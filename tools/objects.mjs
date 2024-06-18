@@ -15,6 +15,8 @@ async function connectToMongoDB() {
     try {
         await client.connect();
         db = client.db(dbName);
+
+        db.collection('objects').createIndex({ name: 1 }, { unique: true });
         console.log('MongoDB connected');
     } catch (err) {
         console.error('Error connecting to MongoDB:', err);
@@ -25,6 +27,7 @@ async function connectToMongoDB() {
 connectToMongoDB();
 
 async function examineRoom(avatar) {
+    await updateObjectLocations();  
     console.log(`Examining ${avatar.location.name} for ${avatar.name}`);
     let roomDetails = await db.collection('rooms').findOne({ name: avatar.location.name });
 
@@ -48,29 +51,59 @@ async function examineRoom(avatar) {
 }
 
 // Function to take an object
-async function takeObject(avatar, conversation, objectId) {
-    console.log(`Taking object ${objectId} for ${avatar.name}`);
+async function takeObject(avatar, conversation, object_name) {
+    console.log(`Taking object ${object_name} for ${avatar.name}`);
     const result = await db.collection('objects').updateOne(
-        { _id: objectId },
-        { $set: { takenBy: avatar.id } }
+        { name: object_name },
+        { $set: { takenBy: avatar.name } }
     );
-    return result.modifiedCount > 0 ? `Object ${objectId} taken.` : 'Failed to take object.';
+    return result.modifiedCount > 0 ? `Object ${object_name} taken.` : 'Failed to take object.';
 }
 
 // Function to use an object
-async function useObject(avatar, conversation, objectId) {
-    console.log(`Using object ${objectId} for ${avatar.name}`);
-    return `Object ${objectId} used.`;
+async function getObject(name) {
+    await updateObjectLocations();
+    return await db.collection('objects').findOne({ name });
+}
+
+async function getAvatarObjects(avatar) {
+    await updateObjectLocations();  
+    return await db.collection('objects').find({ takenBy: avatar.name }).toArray();
+}
+
+async function getObjectsForLocation(location) {
+    await updateObjectLocations();  
+    return await db.collection('objects').find({ location }).toArray();
+}
+
+async function updateObjectLocations() {
+    // get all owned objects
+    const objects = await db.collection('objects').find({ takenBy: { $ne: null } }).toArray();
+    // get all avatars with owned objects locations
+    const avatars = await db.collection('avatars').find({ name: { $in: objects.map(o => o.takenBy) } }).toArray();
+    // update object locations
+    for (const object of objects) {
+        const avatar = avatars.find(a => a.name === object.takenBy);
+        if (avatar) {
+            await db.collection('objects').updateOne(
+                { name: object.name },
+                { $set: { location: avatar.location } }
+            );
+        }
+    }
+
+    return 'Object locations updated.';
 }
 
 // Function to leave an object
-async function leaveObject(avatar, conversation, objectId) {
-    console.log(`Leaving object ${objectId} for ${avatar.name}`);
+async function leaveObject(avatar, conversation, object_name) {
+    await updateObjectLocations();  
+    console.log(`Leaving object ${object_name} for ${avatar.name}`);
     const result = await db.collection('objects').updateOne(
-        { _id: objectId },
+        { name: object_name },
         { $set: { takenBy: null } }
     );
-    return result.modifiedCount > 0 ? `Object ${objectId} left.` : 'Failed to leave object.';
+    return result.modifiedCount > 0 ? `Object ${object_name} left.` : 'Failed to leave object.';
 }
 // Function to create a new object
 async function createObject(objectData) {
@@ -94,7 +127,8 @@ async function createObject(objectData) {
 export {
     examineRoom,
     takeObject,
-    useObject,
+    getObject,
+    getAvatarObjects,
     leaveObject,
     createObject
 };
