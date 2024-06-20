@@ -68,7 +68,7 @@ async function processMessagesForAvatar(avatar) {
         if (mentions.length > 0) {
             const lastMention = mentions[mentions.length - 1];
 
-            if (avatar.summon === "true" && avatar.location.id !== lastMention.channelId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
+            if (avatar.summon === "true" && avatar.location.id !== lastMention.channelId && avatar.location.id !== lastMention.threadId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
                 let new_location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId) || locations[0];
                 if (new_location !== avatar.location) {
                     avatar.location = new_location;
@@ -94,8 +94,8 @@ async function updateAvatarLocation(avatar) {
     if (!avatar.remember) {
         avatar.remember = [];
     }
-    if (!avatar.remember.includes(avatar.location.name)) {
-        avatar.remember.push(avatar.location.name);
+    if (!avatar.remember.includes(avatar.location.id)) {
+        avatar.remember.push(avatar.location.id);
         if (avatar.remember.length > 5) {
             avatar.remember.shift();
         }
@@ -103,13 +103,16 @@ async function updateAvatarLocation(avatar) {
     console.log(avatar.remember);
     await fetchJSON(`${AVATARS_API}/${avatar._id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ location: avatar.location.name, remember: avatar.remember })
+        body: JSON.stringify({ location: avatar.location.id, remember: avatar.remember })
     });
 }
 
 async function fetchMessages(avatar) {
     let combinedMessages = [];
     // Fetch and combine messages from all remembered locations
+    if (!avatar.remember) {
+        avatar.remember = [avatar.location.id];
+    }
     for (const locationId of avatar.remember) {
         const messages = await getMessages(locationId, null);
         combinedMessages = combinedMessages.concat(messages);
