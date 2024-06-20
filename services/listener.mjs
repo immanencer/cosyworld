@@ -1,5 +1,4 @@
 import { Client, GatewayIntentBits } from 'discord.js';
-import { process } from 'node';
 
 import db from '../database/index.js';
 

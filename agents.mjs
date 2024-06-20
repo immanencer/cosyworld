@@ -90,16 +90,33 @@ async function processMessagesForAvatar(avatar) {
 
 async function updateAvatarLocation(avatar) {
     console.log(`${avatar.emoji} ${avatar.name} is now in ${avatar.location.name}.`);
+    // add the current location to .remember and trim to five
+    if (!avatar.remember) {
+        avatar.remember = [];
+    }
+    if (!avatar.remember.includes(avatar.location.name)) {
+        avatar.remember.push(avatar.location.name);
+        if (avatar.remember.length > 5) {
+            avatar.remember.shift();
+        }
+    }
+    console.log(avatar.remember);
     await fetchJSON(`${AVATARS_API}/${avatar._id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ location: avatar.location.name })
+        body: JSON.stringify({ location: avatar.location.name, remember: avatar.remember })
     });
 }
 
 async function fetchMessages(avatar) {
-    let messages = await getMessages(avatar.location.id, null);
-    messages.reverse();
-    return messages;
+    let combinedMessages = [];
+    // Fetch and combine messages from all remembered locations
+    for (const locationId of avatar.remember) {
+        const messages = await getMessages(locationId, null);
+        combinedMessages = combinedMessages.concat(messages);
+    }
+    // Sort combined messages by createdAt in ascending order (oldest to newest)
+    combinedMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    return combinedMessages;
 }
 
 function buildConversation(messages, avatar) {
@@ -157,7 +174,7 @@ async function handleResponse(avatar, conversation) {
     if (toolsCheck && toolsCheck.trim() && toolsCheck.trim().toLowerCase() !== 'none') {
         const toolsToCall = toolsCheck.split('\n').map(tool => tool.trim());
         for (const tool of toolsToCall) {
-            const result = await callTool(tool, avatar, conversation);
+            const result = await callTool(tool, avatar, conversation.slice(-5));
             tool_results.push(result);
         }
     }
@@ -166,7 +183,7 @@ async function handleResponse(avatar, conversation) {
 
 
     const response = await waitForTask(avatar, [
-        ...conversation,
+        ...conversation.slice(-20),
         { role: 'assistant', content: 'I have the following objects' + JSON.stringify(objects) + 'I have used the following tools: ' + JSON.stringify(tool_results)},
         { role: 'user', content: 'Respond in a short whimsical way, in character.' }
     ].slice(-25));
@@ -218,9 +235,12 @@ async function callTool(tool, avatar, conversation) {
         const data = toolData[1].replace(')', '');
 
         let tool_result;
+        let counter = 0;
+        let message = '';
         switch (toolName) {
             case 'examine_room':
                 tool_result = await examineRoom(avatar);
+                counter = 0;
                 for (let item of tool_result.objects) {
                     item.location = avatar.location;
                     const description = await waitForTask({name: item.name, personality: `you are the ${item.name}\n${item.description}`}, [
@@ -229,8 +249,21 @@ async function callTool(tool, avatar, conversation) {
                     console.log('🤖 description\n' + description);
                     item.name = item.name + (item.takenBy ? ' (held by ' + item.takenBy + ')' : '');
                     await postResponse(item, `${description}`);
+                    counter++;
+                    message += `${item.name} - ${item.description}\n`;
                 }
-                return `I have examined the room and revealed its secrets.`;
+                
+                message =  `I have examined the room and revealed its secrets, there are ${counter} items here.\n\n${message}`;
+                
+                await postJSON(MESSAGES_API, {
+                    message_id: 'default_id',
+                    author: avatar,
+                    content: message,
+                    createdAt: data.createdAt || new Date().toISOString(),
+                    channelId: data.channelId || 'default_channel_id',
+                    guildId: data.guildId || 'default_guild_id'
+                })
+                return message; 
             case 'take_object':
                 return await takeObject(avatar, conversation, cleanString(data));
             case 'use_object':

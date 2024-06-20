@@ -109,6 +109,16 @@ async function leaveObject(avatar, conversation, object_name) {
 async function createObject(objectData) {
     console.log(`Creating new object with name: ${objectData.name}`);
     try {
+        // Check that the Moonlit Lantern and Celestial Sphere are in the same room as the object
+        const moonlitLantern = await db.collection('objects').findOne({ name: 'Moonlit Lantern' });
+        const celestialSphere = await db.collection('objects').findOne({ name: 'Celestial Sphere' });
+
+        if (moonlitLantern && celestialSphere) {
+            if (moonlitLantern.location !== objectData.location || celestialSphere.location !== objectData.location) {
+                console.error('Moonlit Lantern and Celestial Sphere must be in the same room as the object.');
+                return 'Moonlit Lantern and Celestial Sphere must be present or creation will not work.';
+            }
+        }
         // Check if an object with the same name already exists
         const existingObject = await db.collection('objects').findOne({ name: objectData.name });
         if (existingObject) {

@@ -63,6 +63,30 @@ app.get('/messages', async (req, res) => {
     }
 });
 
+app.post('/messages', async (req, res) => {
+    const data = req.body;
+    const message = {
+        message_id: data.id || 'default_id',
+        author: {
+            id: (data.author?.id || 'default_author_id'),
+            username: (data.author?.displayName || 'default_username'),
+            discriminator: (data.author?.discriminator || '0000'),
+            avatar: (data.author?.avatar || 'default_avatar_url')
+        },
+        content: data.content || 'default_content',
+        createdAt: data.createdAt || new Date().toISOString(),
+        channelId: data.channelId || 'default_channel_id',
+        guildId: data.guildId || 'default_guild_id'
+    }
+    try {
+        await db.collection('messages').insertOne(message);
+        res.status(201).send({ message: 'Message logged' });
+    } catch (error) {
+        console.error('Failed to log message:', error);
+        res.status(500).send({ error: 'Failed to log message' });
+    }
+});
+
 // Endpoint to get messages mentioning a fuzzy-matched name since a specified ID
 app.get('/messages/mention', async (req, res) => {
     const { name, since } = req.query;
