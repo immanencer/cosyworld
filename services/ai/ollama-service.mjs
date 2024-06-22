@@ -23,6 +23,8 @@ SYSTEM "${systemPrompt}"`;
                 console.error('💀 🦙 Failed to create model:', error);
                 throw error;
             }
+        } else {
+            console.log('🦙 Model exists:', modelHash);
         }
 
         const ollamaMessages = [

@@ -115,8 +115,7 @@ async function createObject(objectData) {
 
         if (moonlitLantern && celestialSphere) {
             if (moonlitLantern.location !== objectData.location || celestialSphere.location !== objectData.location) {
-                console.error('Moonlit Lantern and Celestial Sphere must be in the same room as the object.');
-                return 'Moonlit Lantern and Celestial Sphere must be present or creation will not work.';
+                return 'Item NOT Created. The Moonlit Lantern and Celestial Sphere are not both present.';
             }
         }
         // Check if an object with the same name already exists

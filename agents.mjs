@@ -67,16 +67,23 @@ async function processMessagesForAvatar(avatar) {
 
         if (mentions.length > 0) {
             const lastMention = mentions[mentions.length - 1];
-
+        
             if (avatar.summon === "true" && avatar.location.id !== lastMention.channelId && avatar.location.id !== lastMention.threadId && (avatar.owner === 'host' || avatar.owner === lastMention.author)) {
-                let new_location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId) || locations[0];
-                if (new_location !== avatar.location) {
+                // First, try to find a location matching the threadId, if any
+                let new_location = locations.find(loc => loc.id === lastMention.threadId);
+                // If no threadId match is found, then look for a channelId match
+                if (!new_location) {
+                    new_location = locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId);
+                }
+                // Fallback to the first location if no match is found
+                new_location = new_location || locations[0];
+                
+                if (new_location.id !== avatar.location.id) {
                     avatar.location = new_location;
                     await updateAvatarLocation(avatar);
                 }
             }
         }
-
         const messages = await fetchMessages(avatar);
         const conversation = buildConversation(messages, avatar);
 
@@ -94,8 +101,8 @@ async function updateAvatarLocation(avatar) {
     if (!avatar.remember) {
         avatar.remember = [];
     }
-    if (!avatar.remember.includes(avatar.location.id)) {
-        avatar.remember.push(avatar.location.id);
+    if (!avatar.remember.includes(avatar.location.name)) {
+        avatar.remember.push(avatar.location.name);
         if (avatar.remember.length > 5) {
             avatar.remember.shift();
         }
@@ -103,7 +110,7 @@ async function updateAvatarLocation(avatar) {
     console.log(avatar.remember);
     await fetchJSON(`${AVATARS_API}/${avatar._id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ location: avatar.location.id, remember: avatar.remember })
+        body: JSON.stringify({ location: avatar.location.name, remember: avatar.remember })
     });
 }
 
@@ -111,9 +118,10 @@ async function fetchMessages(avatar) {
     let combinedMessages = [];
     // Fetch and combine messages from all remembered locations
     if (!avatar.remember) {
-        avatar.remember = [avatar.location.id];
+        avatar.remember = [avatar.location.name];
     }
-    for (const locationId of avatar.remember) {
+    for (const location of avatar.remember) {
+        const locationId = locations.find(loc => loc.name === location).id;
         const messages = await getMessages(locationId, null);
         combinedMessages = combinedMessages.concat(messages);
     }
@@ -149,12 +157,13 @@ take_object("Object Name")
 use_object("Taken Object Name", "Target")
 leave_object("Object Name")
 create_object("Object Name", "A whimsical and colorful description of the object.")
+change_location("location-name")
 `.split('\n').map(tool => tool.trim()).filter(tool => tool);
 
 async function handleResponse(avatar, conversation) {
     console.log(`🤖 Processing messages for ${avatar.name} in ${avatar.location.name}`);
     const haikuCheck = await waitForTask(avatar, [
-        ...conversation.slice(-25),
+        ...conversation.slice(-10),
         { role: 'user', content: 'Write a haiku to decide if you should respond. then say YES to respond or NO to stay silent.' }
     ]);
 
@@ -182,16 +191,14 @@ async function handleResponse(avatar, conversation) {
         }
     }
 
-    console.log(JSON.stringify(tool_results));
-
-
     const response = await waitForTask(avatar, [
-        ...conversation.slice(-20),
         { role: 'assistant', content: 'I have the following objects' + JSON.stringify(objects) + 'I have used the following tools: ' + JSON.stringify(tool_results)},
-        { role: 'user', content: 'Respond in a short whimsical way, in character.' }
-    ].slice(-25));
+        ...conversation.slice(-10)
+    ]);
 
-    if (response && response.trim()) {
+    console.log('🤖 Response\n' + response);
+
+    if (response && response.trim() !== "") {
         await postResponse(avatar, response);
     }
 }
@@ -216,7 +223,6 @@ async function useObject(avatar, conversation, data) {
     }
 
     const description = await waitForTask({name: item.name, personality: `you are the ${item.name}\n${item.description}`}, [
-        ...conversation.map(T => { T.role = 'user'; return T; }),
         { role: 'user', content: `Here are your statistics:\n\n${JSON.stringify(item)}\n\ndescribe yourself being used by ${avatar.name} on ${target} in a SHORT whimsical sentence or *action*.`}
     ]);
     console.log('🤖 being used\n' + description);
@@ -240,17 +246,31 @@ async function callTool(tool, avatar, conversation) {
         let tool_result;
         let counter = 0;
         let message = '';
+        let new_location = null;
         switch (toolName) {
+            case 'change_location':
+                new_location = locations.find(loc => loc.name === data);
+                if (new_location) {
+                    avatar.location = new_location;
+                    await updateAvatarLocation(avatar);
+                    return `I have moved to ${new_location.name}.`;
+                } else {
+                    return `Location ${data} not found.`;
+                }
             case 'examine_room':
                 tool_result = await examineRoom(avatar);
                 counter = 0;
                 for (let item of tool_result.objects) {
                     item.location = avatar.location;
+                    item.name = item.name + (item.takenBy ? ' (held by ' + item.takenBy + ')' : '');
+                    if (conversation.find(T => T.author.username.includes(item.name))) {
+                        console.log('🤖 skipping item', item.name);
+                        continue;
+                    }
                     const description = await waitForTask({name: item.name, personality: `you are the ${item.name}\n${item.description}`}, [
                         { role: 'user', content: 'here are your statistics: ' + JSON.stringify(item) + '\n\ndescribe yourself in a SHORT whimsical sentence or *action*.'}
                     ]);
                     console.log('🤖 description\n' + description);
-                    item.name = item.name + (item.takenBy ? ' (held by ' + item.takenBy + ')' : '');
                     await postResponse(item, `${description}`);
                     counter++;
                     message += `${item.name} - ${item.description}\n`;
