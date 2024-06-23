@@ -78,7 +78,7 @@
                 "<node_internals>/**"
             ],
             "envFile": "${workspaceFolder}/.env",
-            "program": "${workspaceFolder}/agents.mjs"
+            "program": "${workspaceFolder}/agent_manager/main.js"
         },
         {
             "type": "node",

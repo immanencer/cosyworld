@@ -11,7 +11,7 @@ module.exports = {
     },
     {
       "name": "agents",
-      "script": "./agents.mjs"
+      "script": "./agent_manager/main.js"
     },
     {
       "name": "listener",

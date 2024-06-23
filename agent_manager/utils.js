@@ -1,3 +1,7 @@
+export function cleanString(input) {
+    return input.trim().replace(/^["*]|["*]$/g, '');
+}
+
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
