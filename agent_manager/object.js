@@ -92,7 +92,7 @@ export async function createObject(objectData) {
 
         if (moonlitLantern && celestialSphere) {
             if (moonlitLantern.location !== objectData.location || celestialSphere.location !== objectData.location) {
-                return 'Item NOT Created. The Moonlit Lantern and Celestial Sphere are not both present.';
+                return 'Item NOT Created. The Moonlit Lantern and Celestial Sphere must both be present to create.';
             }
         }
         // Check if an object with the same name already exists
@@ -103,7 +103,7 @@ export async function createObject(objectData) {
         }
 
         const result = await db.collection('objects').insertOne(objectData);
-        return result.insertedId ? `Object created with ID: ${result.insertedId}` : 'Failed to create object.';
+        return result.insertedId ? `🔮 ${result.name} successfully created` : 'Failed to create object.';
     } catch (error) {
         console.error('Failed to create object:', error);
         return 'Failed to create object due to an error.';
