@@ -1,4 +1,4 @@
-import { createTask, pollTaskCompletion } from './tools/taskManager.mjs';
+import { waitForTask } from './tools/taskManager.mjs';
 import { fetchJSON, postJSON } from './tools/fetchJson.mjs';
 
 const POLL_INTERVAL = 500;
