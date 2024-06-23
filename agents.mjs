@@ -35,28 +35,6 @@ async function getMentions(name, since) {
     return await fetchJSON(url);
 }
 
-async function waitForTask(avatar, conversation) {
-
-    let taskId;
-
-    try {
-        taskId = await createTask(avatar.personality, conversation);
-    } catch (error) {
-        console.error(`Failed to create task for ${avatar.name}:`, error);
-        return;
-    }
-
-    let result;
-    try {
-        result = await pollTaskCompletion(taskId);
-    } catch (error) {
-        console.error(`Failed to create task for ${avatar.name}:`, error);
-        return;
-    }
-
-    return result;
-}
-
 const lastProcessedMessageIdByAvatar = {};
 async function processMessagesForAvatar(avatar) {
     try {

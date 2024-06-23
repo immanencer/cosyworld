@@ -1,8 +1,5 @@
 import { postJSON, fetchJSON } from './fetchJson.mjs';
 
-const TASKS_API = 'http://localhost:3000/ai/tasks';
-const POLL_INTERVAL = 1000;
-
 async function createTask(system_prompt, messages) {
     const task = {
         action: 'ai',
@@ -40,4 +37,26 @@ function pollTaskCompletion(taskId) {
     });
 }
 
-export { createTask, pollTaskCompletion };
+async function waitForTask(avatar, conversation) {
+
+    let taskId;
+
+    try {
+        taskId = await createTask(avatar.personality, conversation);
+    } catch (error) {
+        console.error(`Failed to create task for ${avatar.name}:`, error);
+        return;
+    }
+
+    let result;
+    try {
+        result = await pollTaskCompletion(taskId);
+    } catch (error) {
+        console.error(`Failed to create task for ${avatar.name}:`, error);
+        return;
+    }
+
+    return result;
+}
+
+export { createTask, pollTaskCompletion, waitForTask };
