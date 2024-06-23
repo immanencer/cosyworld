@@ -28,7 +28,7 @@ export async function examineRoom(avatar) {
 }
 
 // Function to take an object
-export async function takeObject(avatar, conversation, object_name) {
+export async function takeObject(avatar, object_name) {
     console.log(`Taking object ${object_name} for ${avatar.name}`);
     const result = await db.collection('objects').updateOne(
         { name: object_name },

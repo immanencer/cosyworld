@@ -34,6 +34,11 @@ export async function processMessagesForAvatar(avatar) {
 }
 
 async function handleAvatarLocation(avatar, mentions, locations) {
+    if (!avatar) {
+        console.error('Invalid avatar object');
+        return;
+    }
+
     if (!avatar.location) {
         avatar.location = locations[0];
     }
@@ -44,7 +49,11 @@ async function handleAvatarLocation(avatar, mentions, locations) {
             const newLocation = findNewLocation(lastMention, locations);
             if (newLocation && newLocation.id !== avatar.location.id) {
                 avatar.location = newLocation;
-                await updateAvatarLocation(avatar);
+                try {
+                    await updateAvatarLocation(avatar);
+                } catch (error) {
+                    console.error(`Failed to update avatar location for ${avatar.name}:`, error);
+                }
             }
         }
     }
