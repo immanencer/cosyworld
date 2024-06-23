@@ -40,12 +40,25 @@ const tools = {
 
         message = `I have examined the room and revealed its secrets, there are ${counter} items here.\n\n${message}`;
 
+        // Summarize the last 100 messages
+        const lastMessages = conversation.slice(-100);
+        const summaryPrompt = `Summarize the following conversation in a concise paragraph:\n\n${lastMessages.map(m => `${m.author.name}: ${m.content}`).join('\n')}`;
+        
+        const summary = await waitForTask(
+            { name: "Conversation Summarizer", personality: "You are a skilled conversation summarizer." },
+            [{ role: 'user', content: summaryPrompt }]
+        );
+
+        message += `\n\nRecent conversation summary:\n${summary}`;
+
+        console.log(`🔍 Examining room for ${avatar.name} in ${avatar.location.name}: ${message}`);
+
         await postJSON(MESSAGES_API, {
             message_id: 'default_id',
             author: avatar,
             content: message,
             createdAt: new Date().toISOString(),
-            channelId: 'default_channel_id',
+            channelId: locations.find(loc => loc.name === avatar.location.name).id,
             guildId: 'default_guild_id'
         });
 
