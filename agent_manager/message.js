@@ -25,7 +25,7 @@ export async function processMessagesForAvatar(avatar) {
         await handleAvatarLocation(avatar, mentions, locations);
         
         const messages = await fetchMessages(avatar, locations);
-        const conversation = buildConversation(messages, locations);
+        const conversation = buildConversation(avatar, messages, locations);
 
         if (shouldRespond(conversation)) {
             await handleResponse(avatar, conversation);
@@ -81,7 +81,7 @@ async function fetchMessages(avatar, locations) {
     return allMessages.flat().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 }
 
-function buildConversation(messages, locations) {
+function buildConversation(avatar, messages, locations) {
     return messages.map(message => {
         const author = message.author.displayName || message.author.username;
         const location = locations.find(loc => loc.id === message.channelId)?.name || 'unknown location';
