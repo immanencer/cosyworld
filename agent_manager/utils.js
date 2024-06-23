@@ -40,3 +40,13 @@ export async function fetchJSON(url, retries = 5, backoff = 1000) {
         return [];
     }
 }
+
+export function createURLWithParams(baseURL, params) {
+    const url = new URL(baseURL);
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            url.searchParams.append(key, value);
+        }
+    });
+    return url.toString();
+}
