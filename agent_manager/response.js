@@ -8,7 +8,7 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
 export const postResponse = retry(async (avatar, response) => {
-    console.log(`${avatar.emoji} ${avatar.name} responds:`, response);
+    console.log(`${avatar.emoji} ${avatar.name} responds.`);
     await postJSON(ENQUEUE_API, {
         action: 'sendAsAvatar',
         data: {
