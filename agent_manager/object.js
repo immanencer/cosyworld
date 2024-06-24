@@ -73,7 +73,7 @@ export async function updateObjectLocations() {
 }
 
 // Function to leave an object
-export async function leaveObject(avatar, conversation, object_name) {
+export async function leaveObject(avatar, object_name) {
     await updateObjectLocations();  
     console.log(`Leaving object ${object_name} for ${avatar.name}`);
     const result = await db.collection('objects').updateOne(
@@ -110,7 +110,7 @@ export async function createObject(objectData) {
     }
 }
 
-export async function useObject(avatar, conversation, data) {
+export async function useObject(avatar, data) {
     const target = cleanString(cleanString(data.split(',')[1]));
     const item = await getObject(cleanString(data.split(',')[0]));
 

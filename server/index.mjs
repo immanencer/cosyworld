@@ -18,11 +18,18 @@ app.use(session({
 import ai from './routes/ai.mjs';
 app.use('/ai', ai);
 
+import config from './routes/config.mjs';
+app.use('/config',config);
+
+// Custom API routes
+
 import avatars from './routes/avatars.mjs';
 app.use('/avatars', avatars);
 
-import config from './routes/config.mjs';
-app.use('/config',config);
+import forest from './routes/forest.mjs';
+app.use('/forest', forest);
+
+// Third-party API routes
 
 import discordBot from './routes/discord-bot.mjs';
 app.use('/discord-bot', discordBot);
@@ -30,9 +37,9 @@ app.use('/discord-bot', discordBot);
 import summarizer from './routes/summarizer.mjs';
 app.use('/summarizer',summarizer);
 
-
 import x from './routes/x.mjs';
 app.use('/x', x);
+
 
 
 app.listen(PORT, () => {

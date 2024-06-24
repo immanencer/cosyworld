@@ -54,13 +54,28 @@ export async function handleResponse(avatar, conversation) {
 
 async function checkShouldRespond(avatar, conversation) {
     const recentConversation = conversation.slice(-10);
-    const haikuCheck = await waitForTask(avatar, [
+    const haiku = await waitForTask(avatar, [
         ...recentConversation,
-        { role: 'user', content: 'Write a haiku to decide if you should respond. Then say YES to respond or NO to stay silent.' }
+        { role: 'user', content: 'Write a haiku to decide if you should respond.' }
     ]);
 
+    console.log(`Haiku from ${avatar.name}:\n${haiku}`);
+
+    const haikuCheck = await waitForTask({personality: 'You are an excellent judge of intention'}, [
+        { role: 'user', content: `
+            as ${avatar.name}
+            I reflect on my purpose and write this haiku to decide whether to respond
+
+            ${haiku}
+
+            Answer with YES or NO depending on the message of the haiku.
+            `}]
+    );
+
+    console.log(`Haiku check for ${avatar.name}: ${haikuCheck}`);
+
     const shouldRespond = haikuCheck && haikuCheck.toLowerCase().includes('yes');
-    console.log(`Haiku check for ${avatar.name}: ${shouldRespond ? 'Passed' : 'Failed'}\n${haikuCheck}`);
+    console.log(`Haiku check for ${avatar.name}: ${shouldRespond ? 'Passed' : 'Failed'}`);
     return shouldRespond;
 }
 
@@ -97,16 +112,19 @@ If no tool is relevant, return NONE.
 }
 
 async function generateResponse(avatar, conversation, objects, toolResults) {
-    const recentConversation = conversation.slice(-10);
+    const recentConversation = conversation.slice(-20);
     const responsePrompt = `
 I have the following objects: ${JSON.stringify(objects)}.
-I have used the following tools: ${JSON.stringify(toolResults)}
-Based on this information and the recent conversation, generate a response.
+I can use them with use_object("object_name", "target").
+I have used the following tools: ${JSON.stringify(toolResults)}.
 `;
 
+console.log(`responsePrompt: ${responsePrompt}`);
+
     const response = await waitForTask(avatar, [
+        ...recentConversation,
         { role: 'assistant', content: responsePrompt },
-        ...recentConversation
+        { role: 'user', content: 'Generate a response.'}
     ]);
 
     console.log(`🤖 Response from ${avatar.name}:\n${response}`);

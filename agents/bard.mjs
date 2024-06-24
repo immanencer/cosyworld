@@ -9,50 +9,47 @@ const ratichat = new DiscordAIBot({
     personality: "You are a bard in the Lonely Forest, a place of mystery and magic. Always respond with SHORT bardic phrases and *actions*.",
 }, '1219837842058907728', 'ollama');
 
-ratichat.on_login = async function () {
-    this.rumble();
-}
-
 async function postTweet(text) {
-    const response =  await fetch('http://localhost:3000/x/tweet', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({ text })
-    });
-  
-    if (response.ok) {
-      const tweet = await response.json();
-      console.log(tweet);
-    } else {
-      console.error('🌳 Error:', response.statusText);
+    try {
+        const response = await fetch('http://localhost:3000/x/tweet', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ text })
+        });
+
+        if (response.ok) {
+            const tweet = await response.json();
+            console.log('Tweet posted successfully:', tweet);
+        } else {
+            console.error('🌳 Error posting tweet:', response.statusText);
+        }
+    } catch (error) {
+        console.error('🌳 Error posting tweet:', error);
     }
-  }
-  
+}
 
 ratichat.rumble = async function () {
     try {
-
-        // Les Arbres des Rêves
         await this.initializeMemory();
         const dream = await this.aiServiceManager.chatSync({
             role: 'user',
-            content: `Describe your inner thoughts and feelings.`
+            content: `Describe your inner thoughts and feelings as a bard in the Lonely Forest.`
         });
 
-        const oaken_memory = await this.loadMemory(this.avatar.remember)
-        const xpost = (await ratichat.aiServiceManager.raw_chat({
+        const oaken_memory = await this.loadMemory(this.remember);
+        const xpost = await this.aiServiceManager.raw_chat({
             model: 'llama3',
             messages: [
                 {
                     role: 'system',
-                    content: `You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsical tweets with emojis of less than 280 characters.`
+                    content: `You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsy wit wisdom and whispers.`
                 },
                 {
                     role: 'assistant',
                     content: `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
-            The cozy cottage nestled at my roots has become a hub of activity and tales
+            The cozy cottage nestled at my roots has become a hub of activity and tales.
             Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
             WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
             Skull wanders afar but always returns with tales told not in words but in the echo of his steps and
@@ -66,21 +63,38 @@ ratichat.rumble = async function () {
                     role: 'user',
                     content: `${dream}.\n\n\n  Write a whimsical tweet of less than 280 characters as if you are a bard in the lonely forest.`
                 }
-            ], stream: false
-        })).message.content;
+            ],
+            stream: false
+        });
 
-        if (xpost.length > 280) {
-            return;
-        }
-        if (xpost.length > 0) {
-            postTweet(xpost);
+        const tweet = xpost.message.content;
+
+        if (tweet.length > 0 && tweet.length <= 280) {
+            await postTweet(tweet);
+        } else {
+            console.log('Generated tweet was empty or exceeded 280 characters. Skipping post.');
         }
     } catch (error) {
-        console.error('🌳 Error:', error);
-        throw error;
+        console.error('🌳 Error in rumble:', error);
     }
 
-    // rumble again in four hours
-    setTimeout(() => this.rumble(), 6 * 66 * 66 * 1000);
+    // Schedule next rumble
+    setTimeout(() => this.rumble(), 4 * 60 * 60 * 1000); // 4 hours
 };
+
+ratichat.on_login = async function () {
+    console.log('The Lonely Bard has awakened in the Lonely Forest.');
+    await this.rumble();
+};
+
+ratichat.on_message = async function (message) {
+    if (message.content.toLowerCase().startsWith('!bard')) {
+        const response = await this.aiServiceManager.chatSync({
+            role: 'user',
+            content: `Respond to this request from a forest dweller: ${message.content.slice(5)}`
+        });
+        await message.reply(response);
+    }
+};
+
 await ratichat.login();

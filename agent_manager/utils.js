@@ -27,7 +27,7 @@ function delay(ms) {
 export function retry(fn, maxRetries, baseDelay, factor = 2) {
     return async (...args) => {
         let retries = 0;
-        while (true) {
+        while (retries < maxRetries) {
             try {
                 return await fn(...args);
             } catch (error) {

@@ -30,6 +30,8 @@ ratichat.on_login = async function () {
 }
 
 ratichat.rumble = async function () {
+    if (Math.random() < 0.05) return;
+    
     try {
 
         // Les Arbres des Rêves
@@ -90,7 +92,7 @@ ratichat.rumble = async function () {
                     },
                     {
                         role: 'user',
-                        content: `${ratichat.avatars[avatar].name}! Wake up!`
+                        content: `${ratichat.avatars[avatar].name}, what do you say or *do*?`
                     }
                 ], stream: false
             });
@@ -114,7 +116,7 @@ ratichat.handleMessage = async function (message) {
     if ([this.avatar.name.toLowerCase(), oak_tree_avatar.name.toLowerCase(), ...Object.keys(avatars)].includes(message.author.displayName.toLowerCase())) {
         return false;
     }
-    if (message.author.displayName.toLowerCase().includes('steamclock')) {
+    if (message.author.displayName.toLowerCase().includes('steam clock')) {
         this.rumble();
         return false;
     }
