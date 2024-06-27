@@ -71,7 +71,7 @@ To use the Discord bot functionality, you will need a valid token. Without this,
 }
 ```
 
-Ensure that your `.configurations/discord-bot.json` file contains a valid Discord token and server ID:
+Ensure that your `.configurations/discord.json` file contains a valid Discord token and server ID:
 
 ```json
 {
@@ -82,7 +82,7 @@ Ensure that your `.configurations/discord-bot.json` file contains a valid Discor
 
 ## Troubleshooting
 
-If you encounter an error stating that you have an invalid token, check that the `.configurations/discord-bot.json` file is configured correctly with a valid token.
+If you encounter an error stating that you have an invalid token, check that the `.configurations/discord.json` file is configured correctly with a valid token.
 
 ## Conclusion
 

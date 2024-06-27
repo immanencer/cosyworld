@@ -14,7 +14,7 @@ async function fetchCharacters() {
 
 async function fetchLocations() {
     try {
-        const response = await fetch('http://localhost:3000/discord-bot/locations');
+        const response = await fetch('http://localhost:3000/discord/locations');
         locations = await response.json();
         populateLocationSelect();
     } catch (error) {
@@ -66,7 +66,7 @@ async function enqueueRequest() {
         }
     };
 
-    const response = await fetch('http://localhost:3000/discord-bot/enqueue', {
+    const response = await fetch('http://localhost:3000/discord/enqueue', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ async function enqueueRequest() {
 }
 
 async function processQueue() {
-    const response = await fetch('http://localhost:3000/discord-bot/process');
+    const response = await fetch('http://localhost:3000/discord/process');
     const result = await response.json();
     document.getElementById('response').innerText = result.message || result.error;
 }

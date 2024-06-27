@@ -1,6 +1,6 @@
 import { avatarseek } from '../agents/avatars.js';
 
-import DiscordBot from './discord-bot.js';
+import DiscordBot from './discord.js';
 import AIServiceManager from './ai-service-manager.mjs';
 import AvatarManager from './avatar-manager.js';
 import { xorFoldHash } from './crypto.js';

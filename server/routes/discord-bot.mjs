@@ -290,7 +290,7 @@ async function getOrCreateWebhook(channel) {
 // periodic processing
 setInterval(async () => {
     try {
-        const response = await fetch('http://localhost:3000/discord-bot/process');
+        const response = await fetch('http://localhost:3000/discord/process');
         const data = await response.json();
         if (data.message === "No queued requests") return;
         if (data) console.log('🎮 Processing:', data);

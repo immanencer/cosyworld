@@ -64,7 +64,7 @@
         // Main function to draw the map
         async function drawMap() {
             const avatarsData = await fetchData('http://localhost:3000/forest/map');
-            const locationsData = await fetchData('http://localhost:3000/discord-bot/locations');
+            const locationsData = await fetchData('http://localhost:3000/discord/locations');
 
             drawLocations(locationsData);
             drawAvatars(avatarsData.avatars);

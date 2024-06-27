@@ -1,6 +1,6 @@
 export async function fetchLocations() {
     try {
-        const response = await fetch('http://localhost:3000/discord-bot/locations');
+        const response = await fetch('http://localhost:3000/discord/locations');
         if (!response.ok) {
             throw new Error('Network response was not ok ' + response.statusText);
         }

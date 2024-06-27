@@ -32,7 +32,7 @@ app.use('/forest', forest);
 // Third-party API routes
 
 import discordBot from './routes/discord-bot.mjs';
-app.use('/discord-bot', discordBot);
+app.use('/discord', discordBot);
 
 import summarizer from './routes/summarizer.mjs';
 app.use('/summarizer',summarizer);

@@ -98,7 +98,7 @@ const buildConversation = (avatar, messages, locations) =>
         
         return author.includes(avatar.name)
             ? { bot: isBot, role: 'assistant', content: message.content }
-            : { bot: isBot, role: 'user', content: `in ${location} ${author} said: ${message.content}` };
+            : { bot: isBot, role: 'user', content: `(${location}) ${author}: ${message.content}` };
     });
 
 const shouldRespond = (conversation) => {

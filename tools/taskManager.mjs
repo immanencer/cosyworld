@@ -1,3 +1,5 @@
+
+import { POLL_INTERVAL, TASKS_API } from './config.mjs';
 import { postJSON, fetchJSON } from './fetchJson.mjs';
 
 async function createTask(system_prompt, messages) {
@@ -27,7 +29,7 @@ function pollTaskCompletion(taskId) {
                 } else if (taskStatus.status === 'failed') {
                     reject(new Error(`Task ${taskId} failed: ${taskStatus.error}`));
                 } else {
-                    setTimeout(checkStatus, POLL_INTERVAL);
+                    setTimeout(checkStatus, POLL_INTERVAL || 5000);
                 }
             } catch (error) {
                 reject(error);
