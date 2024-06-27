@@ -84,6 +84,7 @@ async function handleTools(avatar, conversation, objects, availableTools) {
     const toolsPrompt = `
 You have the following objects: ${JSON.stringify(objects)}.
 Return a single relevant tool call from this list, be sure to modify the parameters:
+
 ${formatToolList(availableTools)}
 
 If no tool is relevant, return NONE.
@@ -112,19 +113,17 @@ If no tool is relevant, return NONE.
 }
 
 async function generateResponse(avatar, conversation, objects, toolResults) {
-    const recentConversation = conversation.slice(-20);
+    const recentConversation = conversation.slice(-25);
     const responsePrompt = `
-I have the following objects: ${JSON.stringify(objects)}.
-I can use them with use_object("object_name", "target").
-I have used the following tools: ${JSON.stringify(toolResults)}.
+You have the following objects: ${JSON.stringify(objects)}.
+You have used the following tools: ${JSON.stringify(toolResults)}.
 `;
 
 console.log(`responsePrompt: ${responsePrompt}`);
 
     const response = await waitForTask(avatar, [
         ...recentConversation,
-        { role: 'assistant', content: responsePrompt },
-        { role: 'user', content: 'Generate a response.'}
+        { role: 'user', content: (avatar.response_style || 'Generate a response.') }
     ]);
 
     console.log(`🤖 Response from ${avatar.name}:\n${response}`);

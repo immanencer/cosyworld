@@ -1,171 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enchanted Lonely Forest Map</title>
+    <title>Dynamic Map of The Whispering Woods</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #e6f3ff;
-        }
-
-        #mapContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #mapCanvas { border: 1px solid black; width: 800px; height: 600px; }
     </style>
 </head>
-
 <body>
-    <div id="mapContainer">
-        <canvas></canvas>
-    </div>
-
+    <h1>Map of The Whispering Woods</h1>
+    <canvas id="mapCanvas"></canvas>
     <script>
-        const canvas = document.querySelector('canvas');
+        const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        let locations = {};
-        let connections = [];
-
-        function drawPuffyLine(startX, startY, endX, endY) {
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            const midX = (startX + endX) / 2;
-            const midY = (startY + endY) / 2;
-            const controlX = midX + (midY - startY) * 0.3;
-            const controlY = midY - (endX - startX) * 0.3;
-            ctx.quadraticCurveTo(controlX, controlY, endX, endY);
-            ctx.stroke();
+        // Function to fetch data from localhost
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+            }
         }
 
-        function drawPuffyCircle(x, y, radius, color) {
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
+        // Draw locations on the map
+        function drawLocations(locations) {
+            locations.forEach(loc => {
+                // Randomly position locations for demonstration purposes
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
 
-        function drawAvatar(img, x, y, size) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
-            ctx.clip();
-            ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
-            ctx.restore();
-
-            ctx.beginPath();
-            ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#ff99cc';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-        }
-
-        function getLocationSize(locationData) {
-            const count = (locationData?.avatars?.length || 0) + (locationData?.objects?.length || 0);
-            return Math.max(60, 60 + count * 10);
-        }
-
-        function drawMap(locationMap) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ctx.strokeStyle = '#ffccdd';
-            ctx.lineWidth = 5;
-            connections.forEach(([source, target]) => {
-                const startX = locations[source].x * canvas.width;
-                const startY = locations[source].y * canvas.height;
-                const endX = locations[target].x * canvas.width;
-                const endY = locations[target].y * canvas.height;
-                drawPuffyLine(startX, startY, endX, endY);
-            });
-
-            Object.entries(locations).forEach(([name, pos]) => {
-                const x = pos.x * canvas.width;
-                const y = pos.y * canvas.height;
-                const locationData = locationMap[name];
-                const size = getLocationSize(locationData);
-
-                drawPuffyCircle(x, y, size / 2, '#ffe6ea');
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(name, x, y - size / 2 - 10);
-
-                if (locationData) {
-                    let offsetAngle = 0;
-                    const increment = (2 * Math.PI) / (locationData.avatars.length + locationData.objects.length);
-
-                    locationData.avatars.forEach(avatar => {
-                        const avatarX = x + Math.cos(offsetAngle) * (size / 2);
-                        const avatarY = y + Math.sin(offsetAngle) * (size / 2);
-                        const img = new Image();
-                        img.onload = () => drawAvatar(img, avatarX, avatarY, 50);
-                        img.src = avatar.avatar;
-                        offsetAngle += increment;
-                    });
-
-                    locationData.objects.forEach(object => {
-                        const objectX = x + Math.cos(offsetAngle) * (size / 2);
-                        const objectY = y + Math.sin(offsetAngle) * (size / 2);
-                        const img = new Image();
-                        img.onload = () => drawAvatar(img, objectX, objectY, 40);
-                        img.src = object.avatar;
-                        offsetAngle += increment;
-                    });
-                }
+                ctx.fillStyle = 'green';
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(loc.name, x - 20, y + 5);
             });
         }
 
-        function initializeLocations(locationMap) {
-            const locationNames = Object.keys(locationMap);
-            const centralPointName = locationNames.includes('old-oak-tree') ? 'old-oak-tree' : locationNames[Math.floor(Math.random() * locationNames.length)];
-            const centralPoint = { x: 0.5, y: 0.5 }; // Assuming the central point is at the center
-            locations[centralPointName] = centralPoint;
+        // Draw avatars on the map
+        function drawAvatars(avatars) {
+            avatars.forEach(avatar => {
+                // Randomly position avatars near their locations for demonstration purposes
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
 
-            locationNames.forEach(name => {
-                if (name !== centralPointName) {
-                    const angle = Math.random() * 2 * Math.PI; // Random angle
-                    const distance = 0.1 + Math.random() * 0.4; // Random distance from the center, within a range
-                    const x = centralPoint.x + distance * Math.cos(angle);
-                    const y = centralPoint.y + distance * Math.sin(angle);
-                    locations[name] = { x, y };
-                }
+                const img = new Image();
+                img.src = avatar.avatar;
+                img.onload = () => {
+                    ctx.drawImage(img, x - 20, y - 50, 40, 40);
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(avatar.name, x - 40, y - 60);
+                };
             });
-
-            // Create some sample connections in a web-like pattern
-            // This example simply connects each location to the central point for simplicity
-            connections = locationNames.filter(name => name !== centralPointName).map(name => [name, centralPointName]);
         }
 
-        fetch('http://localhost:3000/forest/map')
-            .then(response => response.json())
-            .then(data => {
-                initializeLocations(data);
-                drawMap(data);
-            })
-            .catch(error => console.error('Error fetching map data:', error));
+        // Main function to draw the map
+        async function drawMap() {
+            const avatarsData = await fetchData('http://localhost:3000/forest/map');
+            const locationsData = await fetchData('http://localhost:3000/discord-bot/locations');
+
+            drawLocations(locationsData);
+            drawAvatars(avatarsData.avatars);
+        }
+
+        drawMap();
     </script>
 </body>
-
 </html>

@@ -3,7 +3,7 @@ const collectionName = 'requests';
 
 import express from 'express';
 
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, ThreadChannel, VoiceChannel } from 'discord.js';
 
 import chunkText from '../../tools/chunk-text.js';
 
@@ -51,10 +51,10 @@ app.get('/messages', async (req, res) => {
     }
     try {
         const messages = await db.collection('messages')
-        .find(query)
-        .sort({ createdAt: -1 }) // Sort by createdAt in descending order
-        .limit(100)
-        .toArray();
+            .find(query)
+            .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+            .limit(100)
+            .toArray();
 
         res.status(200).send(messages);
     } catch (error) {
@@ -119,30 +119,34 @@ app.get('/locations', async (req, res) => {
     try {
         const channels = await discordClient.channels.cache;
 
-        const locations = [];
+        const _cache = {};
 
         for (const [id, channel] of channels) {
-            if (channel.isTextBased() && channel.threads) {
-                console.log('🎮 Channel:', channel.name, id);
-                locations.push({
-                    id: channel.id,
-                    name: channel.name,
-                    type: 'channel'
-                });
+            console.log('🎮 Channel:', channel.name, id);
 
-                const threads = await channel.threads.fetchActive();
-                threads.threads.forEach(thread => {
-                    locations.push({
-                        name: thread.name,
-                        id: thread.id,
-                        type: 'thread',
-                        parent: channel.id
-                    });
-                });
+            const channel_type = `${channel.constructor.name}`;
+            if (!_cache[channel_type]) {
+                _cache[channel_type] = [];
             }
+            _cache[channel_type].push({
+                id: channel.id,
+                name: channel.name,
+                type: { 
+                    ThreadChannel: "thread",
+                    TextChannel: "channel",
+                    CategoryChannel: "category",
+                    VoiceChannel: "voice"
+                }[channel_type] || 'unknown',
+                channel_type: channel_type,
+                parent: channel.parentId || null
+            });
         }
 
-        res.status(200).send(locations);
+        res.status(200).send([
+            ..._cache['CategoryChannel'],
+            ..._cache['TextChannel'],
+            ..._cache['ThreadChannel']
+        ]);
     } catch (error) {
         console.error('🎮 ❌ Failed to fetch locations:', error);
         res.status(500).send({ error: 'Failed to fetch locations' });
@@ -234,7 +238,12 @@ async function sendMessage(channelId, message, threadId = null) {
 
 async function sendAsAvatar(avatar, message) {
     console.log('🎮 Sending as avatar:', avatar.name, message);
-    const channel = await discordClient.channels.fetch(avatar.channelId);
+    let channel = await discordClient.channels.fetch(avatar.channelId);
+    if (channel.constructor.name === 'CategoryChannel') {
+        channel = await discordClient.channels.fetch(avatar.location.id);
+        delete avatar.threadId;
+    }
+
     if (!channel) {
         console.error('🎮 ❌ Invalid channel:', avatar.channelId);
         return;
@@ -245,12 +254,15 @@ async function sendAsAvatar(avatar, message) {
         const webhook = await getOrCreateWebhook(channel);
 
         chunkText(message, 2000).forEach(async message => {
-            await webhook.send({
+            let data = {
                 content: message,
                 username: avatar.name,
-                avatarURL: avatar.avatar,
-                threadId: avatar.threadId
-            });
+                avatarURL: avatar.avatar
+            }
+            if (avatar.threadId) {
+                data.threadId = avatar.threadId;
+            }
+            await webhook.send(data);
         });
 
     } catch (error) {

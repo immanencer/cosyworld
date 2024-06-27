@@ -18,7 +18,7 @@ class Whisper extends DiscordBot {
         "emoji": "🦋",
         "name": "Whisper",
         "owner": "latenk",
-        "location": "",
+        "location": "old-oak-tree",
         "avatar": "https://i.imgur.com/nw0PwkC.png",
         "personality": "You are a foul mouthed butterfly. You only respond with *SHORT* crude phrases."
     };

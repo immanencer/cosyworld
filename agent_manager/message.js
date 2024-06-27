@@ -17,7 +17,12 @@ export async function processMessagesForAvatar(avatar) {
             getLocations(),
             getMentions(avatar.name, lastProcessedMessageIdByAvatar.get(avatar.name))
         ]);
-        
+
+        if (locations.length === 0) {
+            console.error('No locations found');
+            return;
+        }
+
         await handleAvatarLocation(avatar, mentions, locations);
         
         const messages = await fetchMessages(avatar, locations);
@@ -41,6 +46,11 @@ async function handleAvatarLocation(avatar, mentions, locations) {
 
     if (!avatar.location) {
         avatar.location = locations[0];
+    }
+
+    if (!avatar.location.id)  {
+            console.error(`Invalid location for ${avatar.name}`);
+            return;
     }
 
     if (mentions.length > 0 && avatar.summon === "true") {

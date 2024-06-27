@@ -1,7 +1,7 @@
 import { MESSAGES_API } from './config.js';
 import { cleanString, postJSON } from './utils.js';
 import { updateAvatarLocation, getLocations } from './avatar.js';
-import { examineRoom, takeObject, useObject, leaveObject, createObject } from './object.js';
+import { examineRoom, takeObject, useObject, leaveObject, createObject, getAvatarObjects } from './object.js';
 import { waitForTask } from './task.js';
 import { postResponse } from './response.js';
 
@@ -101,6 +101,14 @@ export async function callTool(tool, avatar, conversation) {
 
         return await toolFunction(avatar, args.join('('), conversation);
     } catch (error) {
+
+        const objects = getAvatarObjects(avatar);
+        if (objects && objects.length > 0) {
+            const object = objects.find(o => o.name === tool);
+            if (object) {
+                return await useObject(avatar, tool, conversation);
+            }
+        }
         return `Error calling tool ${tool}: ${error.message}`;
     }
 }
