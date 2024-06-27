@@ -4,7 +4,7 @@ import { postJSON, fetchJSON } from './utils.js';
 export async function createTask(system_prompt, messages) {
     const task = {
         action: 'ai',
-        model: 'ollama/llana3',
+        model: 'ollama/llama3',
         system_prompt: system_prompt,
         messages
     };
