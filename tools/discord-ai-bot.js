@@ -1,4 +1,4 @@
-import DiscordBot from './discord.js';
+import DiscordBot from './discord-bot.js';
 import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 import { xorFoldHash } from './crypto.js';
 

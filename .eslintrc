@@ -7,6 +7,7 @@
         "promise/catch-or-return": "error",
         "promise/always-return": "error",
         "async-await/space-after-async": "error",
-        "async-await/space-after-await": "error"
+        "async-await/space-after-await": "error",
+        "no-unused-vars": "off"
     }
 }

@@ -3,7 +3,7 @@ const collectionName = 'requests';
 
 import express from 'express';
 
-import { Client, GatewayIntentBits, ThreadChannel, VoiceChannel } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 
 import chunkText from '../../tools/chunk-text.js';
 

@@ -1,6 +1,6 @@
 import process from 'process'; // Required to mock process.env
 
-import DiscordBot from "../../tools/discord-2.js";
+import DiscordBot from "../../tools/discord-bot-2.js";
 import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
 await ai.initializeServices();

@@ -1,7 +1,7 @@
 import process from 'process';
 
 import { Client, GatewayIntentBits } from 'discord.js';
-import chunkText from '../util/chunk-text.mjs';
+import chunkText from '../tools/chunk-text.js';
 
 const discordClient = new Client({
     intents: [
@@ -38,7 +38,7 @@ export async function sendMessage(channelId, message, threadId = null) {
 }
 
 export async function sendAsAvatar(avatar, message) {
-    console.log('🎮 Sending as avatar:', avatar.name, message);
+    console.log('🎮 🗣️:', `(${avatar.location.name}) ${avatar.name}: ${message}`);
     let channel = await discordClient.channels.fetch(avatar.channelId);
     
     if (channel.type === 'GUILD_CATEGORY') {
@@ -56,7 +56,7 @@ export async function sendAsAvatar(avatar, message) {
     for (const chunk of chunks) {
         await webhook.send({
             content: chunk,
-            username: avatar.name,
+            username: `${avatar.name} ${avatar.emoji}`,
             avatarURL: avatar.avatar,
             threadId: avatar.threadId
         });

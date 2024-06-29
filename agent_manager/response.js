@@ -3,6 +3,7 @@ import { postJSON, retry } from './utils.js';
 import { waitForTask } from './task.js';
 import { callTool, getAvailableTools } from './tool.js';
 import { getAvatarObjects } from './object.js';
+import { conversationTag, parseConversationTag } from './message.js';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -56,20 +57,17 @@ async function checkShouldRespond(avatar, conversation) {
     const recentConversation = conversation.slice(-10);
     const haiku = await waitForTask(avatar, [
         ...recentConversation,
-        { role: 'user', content: 'Write a haiku to decide if you should respond.' }
+        `(${avatar.location.name}) ${avatar.name}: I will write a haiku to decide whether to respond.`
     ]);
 
     console.log(`Haiku from ${avatar.name}:\n${haiku}`);
 
     const haikuCheck = await waitForTask({personality: 'You are an excellent judge of intention'}, [
-        { role: 'user', content: `
-            as ${avatar.name}
-            I reflect on my purpose and write this haiku to decide whether to respond
+`${avatar.name} has written this haiku to decide whether to respond:
 
-            ${haiku}
+${haiku}
 
-            Answer with YES or NO depending on the message of the haiku.
-            `}]
+Answer with YES or NO depending on the message of the haiku.`]
     );
 
     console.log(`Haiku check for ${avatar.name}: ${haikuCheck}`);
@@ -80,7 +78,7 @@ async function checkShouldRespond(avatar, conversation) {
 }
 
 async function handleTools(avatar, conversation, objects, availableTools) {
-    const recentConversation = conversation.slice(-5);
+    const recentConversation = conversation;
     const toolsPrompt = `
 You have the following objects: ${JSON.stringify(objects)}.
 Return a single relevant tool call from this list, be sure to modify the parameters:
@@ -94,7 +92,7 @@ If no tool is relevant, return NONE.
         { personality: "You are a precise tool selector. Respond only with a tool call or NONE." },
         [
             { role: 'assistant', content: 'recall_conversation("5")' },
-            ...recentConversation,
+            ...recentConversation.slice(-5),
             { role: 'user', content: toolsPrompt }
         ]
     );
@@ -113,19 +111,41 @@ If no tool is relevant, return NONE.
 }
 
 async function generateResponse(avatar, conversation, objects, toolResults) {
-    const recentConversation = conversation.slice(-25);
-    const responsePrompt = `
-You have the following objects: ${JSON.stringify(objects)}.
-You have used the following tools: ${JSON.stringify(toolResults)}.
-`;
+    const recentConversation = conversation;
 
-console.log(`responsePrompt: ${responsePrompt}`);
+    // Simplify the objects and toolResults to just their keys
+    const objectKeys = Object.keys(objects).join(', ');
+    const toolResultKeys = Object.keys(toolResults).join(', ');
 
+
+    // Create a concise prompt for the final user message
+    let userPrompt = avatar.response_style
+    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:';
+
+    userPrompt = userPrompt + conversationTag(avatar) + ':';
+    
+    if (objectKeys.length > 0) {
+        console.log(`Objects for ${avatar.name}: ${objectKeys}`);
+        userPrompt += `You have the following objects: ${objectKeys}.`;
+    }
+    if (toolResultKeys.length > 0) {
+        console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
+        userPrompt += `Tool results: ${toolResultKeys}.`;
+    }
+
+    console.log(`User prompt for ${avatar.name}:`, userPrompt);
+
+    // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [
-        ...recentConversation,
-        { role: 'user', content: (avatar.response_style || 'Generate a response.') }
+        ...recentConversation.slice(-24),
+        { role: 'user', content: userPrompt }
     ]);
 
-    console.log(`🤖 Response from ${avatar.name}:\n${response}`);
-    return response;
+    // If the response begins with the conversation tag, remove it
+    const trimmedResponse = response.startsWith(conversationTag(avatar) + ':')
+        ? response.slice(conversationTag(avatar).length + 1).trim()
+        : response;
+
+    console.log(`🤖 Response from ${avatar.name}:\n${trimmedResponse}`);
+    return trimmedResponse;
 }

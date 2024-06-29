@@ -15,11 +15,10 @@ app.use(session({
     cookie: { secure: false } // Set to true if using HTTPS
   }));
 
+import { PROCESS_INTERVAL } from './config.mjs';
+
 import ai from './routes/ai.mjs';
 app.use('/ai', ai);
-
-import config from './routes/config.mjs';
-app.use('/config',config);
 
 // Custom API routes
 
@@ -31,7 +30,7 @@ app.use('/forest', forest);
 
 // Third-party API routes
 
-import discordBot from './routes/discord-bot.mjs';
+import discordBot from './routes/discord.mjs';
 app.use('/discord', discordBot);
 
 import summarizer from './routes/summarizer.mjs';
@@ -44,4 +43,8 @@ app.use('/x', x);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+
+    setInterval(async () => {
+      fetch('http://localhost:3000/discord/process');
+    }, PROCESS_INTERVAL || 5000);
 });

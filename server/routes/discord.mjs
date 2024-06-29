@@ -1,8 +1,10 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
-import { db } from '../../database.mjs';
-import { sendMessage, sendAsAvatar, getLocations, isDiscordReady } from './discord-module.mjs';
-import { PROCESS_INTERVAL } from '../../config.mjs';
+import { db } from '../../database/index.js';
+import { initializeDiscordClient, sendMessage, sendAsAvatar, getLocations, isDiscordReady } from '../../services/discord.mjs';
+import { PROCESS_INTERVAL } from '../config.mjs';
+
+await initializeDiscordClient();
 
 const router = express.Router();
 const REQUESTS_COLLECTION = 'requests';
@@ -166,11 +168,7 @@ setInterval(async () => {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/discord/process');
-        const data = await response.json();
-        if (data.message !== "No queued requests") {
-            console.log('🎮 Processing:', data);
-        }
+        await fetch('http://localhost:3000/discord/process');
     } catch (error) {
         console.error('🎮 ❌ Failed to process:', error);
     }

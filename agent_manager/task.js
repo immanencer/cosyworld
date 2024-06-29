@@ -1,12 +1,13 @@
 import { TASKS_API, POLL_INTERVAL } from './config.js';
 import { postJSON, fetchJSON } from './utils.js';
 
-export async function createTask(system_prompt, messages) {
+export async function createTask(system_prompt, messages, avatar) {
     const task = {
         action: 'ai',
         model: 'ollama/llama3',
         system_prompt: system_prompt,
-        messages
+        messages,
+        avatar
     };
 
     const response = await postJSON(TASKS_API, task);
@@ -43,7 +44,7 @@ export async function waitForTask(avatar, conversation) {
     let taskId;
 
     try {
-        taskId = await createTask(avatar.personality, conversation);
+        taskId = await createTask(avatar.personality, conversation, avatar);
     } catch (error) {
         console.error(`Failed to create task for ${avatar.name}:`, error);
         return;

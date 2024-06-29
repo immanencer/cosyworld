@@ -28,10 +28,14 @@ async function process_next_task() {
     console.log('Processing task:', task._id);
     const ai = new AI(task.model || 'ollama/llama3');
 
+    if (!task.avatar) {
+        task.avatar = { location: { name: 'default' }, name: 'default' };
+    }
+
 
     let response;
     try {
-        response = await ai.generateResponse(task.system_prompt, task.messages);
+        response = await ai.generateResponse(task.system_prompt, task.messages, task.avatar.location.name, task.avatar.name);
     } catch (error) {
         console.error('Error processing task:', error);
         await collection.updateOne(

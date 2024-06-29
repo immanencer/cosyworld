@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 
-import db from '../database/index.js';
+import { db } from '../database/index.js';
 
 import OllamaService from '../ai-services/ollama.js';
 const ai = new OllamaService();

@@ -22,7 +22,8 @@
     "openai": "^4.38.2",
     "pm2": "^5.4.1",
     "replicate": "^0.29.1",
-    "twitter-api-v2": "^1.17.0"
+    "twitter-api-v2": "^1.17.0",
+    "winston": "^3.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
