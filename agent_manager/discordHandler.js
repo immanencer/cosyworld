@@ -59,7 +59,7 @@ export async function handleDiscordInteraction(data, message) {
     if (data.location.type === 'thread') {
         await handleThreadInteraction(avatar, message);
     } else if (data.location.type === 'channel') {
-        await handleChannelInteraction(avatar, avatar.location, message);
+        await handleChannelInteraction(avatar, message);
     } else {
         throw new Error(`Unsupported location type: ${avatar.location.type}`);
     }

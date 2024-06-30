@@ -4,9 +4,9 @@ import { conversationTag } from './message.js';
 export async function generateResponse(avatar, conversation, objects, toolResults) {
     const recentConversation = conversation;
 
-    // Simplify the objects and toolResults to just their keys
-    const objectKeys = Object.keys(objects).join(', ');
-    const toolResultKeys = Object.keys(toolResults).join(', ');
+    // Simplify the objects and toolResults arrays into a concise string
+    const objectKeys = objects.map(T => T.name).join(', ');
+    const toolResultKeys = toolResults.join(', ');
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
@@ -19,10 +19,9 @@ export async function generateResponse(avatar, conversation, objects, toolResult
         userPrompt += `You have the following objects: ${objectKeys}.`;
     }
     if (toolResultKeys.length > 0) {
-        console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
+         console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
         userPrompt += `Tool results: ${toolResultKeys}.`;
     }
-
 
     if (avatar?.feelings.length > 0) {
         userPrompt = `Here are your feelings:\n${avatar.feelings[0]}\n${userPrompt}`;

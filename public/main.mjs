@@ -3,7 +3,7 @@ import { createPerformanceChart, updateChart } from './chartModule.js';
 async function fetchData() {
     let data;
     try {
-        const response = await fetch('http://localhost:3000/summarizer/status');
+        const response = await fetch('https://localhost:8443/summarizer/status');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

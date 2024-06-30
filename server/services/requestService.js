@@ -44,8 +44,8 @@ const processRequest = async (action, data) => {
       return { thread };
     },
     moveAvatarToThread: () => discordService.moveAvatarToThread(data.avatar, data.thread),
-    postMessageInThread: () => discordService.postMessageInThread(data.avatar, data.channelId, data.threadId, data.message),
-    postMessageInChannel: () => discordService.postMessageInChannel(data.avatar, data.channelId, data.message),
+    postMessageInThread: () => discordService.postMessageInThread(data.avatar, data.message),
+    postMessageInChannel: () => discordService.postMessageInChannel(data.avatar, data.message),
     getLocations: async () => {
       const locations = await discordService.getLocations();
       return { locations };

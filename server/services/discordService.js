@@ -38,6 +38,10 @@ export async function sendMessage(channelId, message, threadId = null) {
 
 export async function sendAsAvatar(avatar, message) {
     console.log('🎮 🗣️:', `(${avatar.location.name}) ${avatar.name}: ${message}`);
+
+    if (!message) {
+        throw new Error('Missing message content');
+    }
     let channel = await discordClient.channels.fetch(avatar.channelId);
 
     if (!channel) {
@@ -135,10 +139,10 @@ export async function moveAvatarToThread(avatar, thread) {
     );
 }
 
-export async function postMessageInThread(avatar, channelId, threadId, message) {
-    await sendAsAvatar({...avatar, channelId, threadId }, message);
+export async function postMessageInThread(avatar, message) {
+    await sendAsAvatar({...avatar }, message);
 }
 
-export async function postMessageInChannel(avatar, channelId, message) {
-    await sendAsAvatar({...avatar, channelId }, message);
+export async function postMessageInChannel(avatar, message) {
+    await sendAsAvatar({...avatar }, message);
 }

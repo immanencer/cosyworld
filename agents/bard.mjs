@@ -11,7 +11,7 @@ const ratichat = new DiscordAIBot({
 
 async function postTweet(text) {
     try {
-        const response = await fetch('http://localhost:3000/x/tweet', {
+        const response = await fetch('https://localhost:8443/x/tweet', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
