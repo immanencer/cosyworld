@@ -8,9 +8,6 @@ export async function checkShouldRespond(avatar, conversation) {
         ...recentConversation,
         `Respond with ONLY a haiku to decide whether to respond to the conversation above.`
     ]);
-
-    console.log(`Haiku from ${avatar.name}:\n${haiku}`);
-
     const haikuCheck = await waitForTask({personality: 'You are an excellent judge of intention'}, [
 `${avatar.name} has written this haiku to decide whether to respond:
 
