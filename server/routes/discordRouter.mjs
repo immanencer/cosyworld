@@ -58,6 +58,16 @@ router.get('/locations', async (req, res, next) => {
   }
 });
 
+router.get('/location/name', async (req, res, next) => {
+  try {
+    const locations = await discordService.getLocation(req.query.name);
+    res.status(200).json(locations);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 router.post('/enqueue', validateRequest, async (req, res, next) => {
   try {
     const { action, data } = req.body;

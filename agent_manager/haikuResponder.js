@@ -20,6 +20,7 @@ Answer with YES or NO depending on the message of the haiku.`]
     console.log(`Haiku check for ${avatar.name}: ${haikuCheck}`);
 
     const shouldRespond = haikuCheck && haikuCheck.toLowerCase().includes('yes');
+    avatar.feelings = [haikuCheck, ...[avatar.feelings || []]];
     console.log(`Haiku check for ${avatar.name}: ${shouldRespond ? 'Passed' : 'Failed'}`);
     return shouldRespond;
 }

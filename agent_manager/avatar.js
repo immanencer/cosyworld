@@ -4,7 +4,7 @@ import { fetchJSON } from './fetchJSON.js';
 let cachedLocations = null;
 
 export const getLocations = async () => {
-    if (!cachedLocations) {
+    if (!cachedLocations || cachedLocations.length === 0) {
         cachedLocations = await fetchJSON(LOCATIONS_API);
     }
     return cachedLocations;

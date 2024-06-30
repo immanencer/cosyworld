@@ -23,6 +23,11 @@ export async function generateResponse(avatar, conversation, objects, toolResult
         userPrompt += `Tool results: ${toolResultKeys}.`;
     }
 
+
+    if (avatar?.feelings.length > 0) {
+        userPrompt += `Here are your inner thoughts and emoptions: ${avatar.feelings[0]}`;
+    }
+
     console.log(`User prompt for ${avatar.name}:`, userPrompt);
 
     // Generate response using the original conversation plus the optimized user prompt

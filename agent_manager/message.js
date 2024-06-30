@@ -76,7 +76,7 @@ async function handleAvatarLocation(avatar, mentions, locations) {
                 avatar.location = newLocation;
                 try {
                     await updateAvatarLocation(avatar);
-                    console.log(`${avatar.emoji} ${avatar.name} is now in ${avatar.location.name}.`);
+                    console.log(`${avatar.emoji} ${avatar.name} moved to ${avatar.location.name}.`);
                 } catch (error) {
                     console.error(`Failed to update avatar location for ${avatar.name}:`, error);
                 }
@@ -101,6 +101,13 @@ const findNewLocation = (lastMention, locations) =>
             try {
                 const locationId = locations.find(loc => loc.name === locationName)?.id;
                 if (!locationId) {
+                    // refresh locations
+                    const newLocations = await getLocations();
+                    const newLocationId = newLocations.find(loc => loc.name === locationName)?.id;
+                    if (newLocationId) {
+                        locations = newLocations;
+                        return await getMessages(newLocationId, lastCheckedId);
+                    }   
                     console.warn(`Location not found: ${locationName}`);
                     return [];
                 }
