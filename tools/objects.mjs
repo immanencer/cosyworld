@@ -66,12 +66,12 @@ async function getObject(name) {
     return await db.collection('objects').findOne({ name });
 }
 
-async function getAvatarObjects(avatar) {
+async function getAvatarItems(avatar) {
     await updateObjectLocations();  
     return await db.collection('objects').find({ takenBy: avatar.name }).toArray();
 }
 
-async function getObjectsForLocation(location) {
+async function getItemsForLocation(location) {
     await updateObjectLocations();  
     return await db.collection('objects').find({ location }).toArray();
 }
@@ -137,7 +137,7 @@ export {
     examineRoom,
     takeObject,
     getObject,
-    getAvatarObjects,
+    getAvatarItems,
     leaveObject,
     createObject
 };

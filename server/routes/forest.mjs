@@ -12,25 +12,25 @@ router.get('/map', async (req, res) => {
     await client.connect();
     const db = client.db(dbName);
 
-    // Get all avatars and objects
+    // Get all avatars and items
     const avatars = await db.collection('avatars').find().toArray();
-    const objects = await db.collection('objects').find().toArray();
+    const items = await db.collection('items').find().toArray();
 
-    // Combine avatars and objects by location
+    // Combine avatars and items by location
     const locationMap = {};
 
     avatars.forEach(avatar => {
       if (!locationMap[avatar.location]) {
-        locationMap[avatar.location] = { avatars: [], objects: [] };
+        locationMap[avatar.location] = { avatars: [], items: [] };
       }
       locationMap[avatar.location].avatars.push(avatar);
     });
 
-    objects.forEach(object => {
+    items.forEach(object => {
       if (!locationMap[object.location]) {
-        locationMap[object.location] = { avatars: [], objects: [] };
+        locationMap[object.location] = { avatars: [], items: [] };
       }
-      locationMap[object.location].objects.push(object);
+      locationMap[object.location].items.push(object);
     });
 
     res.json(locationMap);

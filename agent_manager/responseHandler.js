@@ -3,7 +3,7 @@ import { handleDiscordInteraction } from './discordHandler.js';
 import { handleTools } from './toolHandler.js';
 import { generateResponse } from './responseGenerator.js';
 import { checkShouldRespond } from './haikuResponder.js';
-import { getAvatarObjects } from './object.js';
+import { getAvatarItems } from './item.js';
 import { getAvailableTools } from './tool.js';
 
 const MAX_RETRIES = 3;
@@ -21,7 +21,7 @@ export async function handleResponse(avatar, conversation) {
         console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
 
         const [objects, availableTools] = await Promise.all([
-            getAvatarObjects(avatar),
+            getAvatarItems(avatar),
             getAvailableTools()
         ]);
 

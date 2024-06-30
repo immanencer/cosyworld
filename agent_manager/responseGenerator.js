@@ -15,7 +15,7 @@ export async function generateResponse(avatar, conversation, objects, toolResult
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
     if (objectKeys.length > 0) {
-        console.log(`Objects for ${avatar.name}: ${objectKeys}`);
+        console.log(`Items for ${avatar.name}: ${objectKeys}`);
         userPrompt += `You have the following objects: ${objectKeys}.`;
     }
     if (toolResultKeys.length > 0) {

@@ -2,7 +2,7 @@ import { MESSAGES_API } from './config.js';
 import { cleanString } from './utils.js';
 import { postJSON } from './postJSON.js';
 import { updateAvatarLocation, getLocations } from './avatar.js';
-import { examineRoom, takeObject, useObject, leaveObject, createObject, getAvatarObjects } from './object.js';
+import { examineRoom, takeItem, useItem, leaveItem, createItem, getAvatarItems } from './item.js';
 import { waitForTask } from './task.js';
 import { postResponse } from './response.js';
 
@@ -30,7 +30,7 @@ const tools = {
         let message = '';
         let counter = 0;
 
-        for (const item of tool_result.objects) {
+        for (const item of tool_result.items) {
             if (conversation.find(T => T.author.username.includes(item.name))) continue;
 
             item.location = avatar.location;
@@ -51,7 +51,7 @@ const tools = {
         // Summarize the last 100 messages
         const lastMessages = conversation.slice(-100);
         const summaryPrompt = `Summarize the following conversation in a concise paragraph:\n\n${lastMessages.map(m => `${m.author.name}: ${m.content}`).join('\n')}`;
-        
+
         const summary = await waitForTask(
             { name: "Conversation Summarizer", personality: "You are a skilled conversation summarizer." },
             [{ role: 'user', content: summaryPrompt }]
@@ -72,15 +72,15 @@ const tools = {
 
         return message;
     },
-    take_object: takeObject,
-    use_object: useObject,
-    leave_object: leaveObject,
-    create_object: async (avatar, data) => {
+    take_item: takeItem,
+    use_item: useItem,
+    leave_item: leaveItem,
+    create_item: async (avatar, data) => {
         const [name, description] = data.split(',').map(cleanString);
         if (!name || !description) {
             throw new Error('Both name and description are required for creating an object.');
         }
-        return createObject({
+        return createItem({
             name,
             description,
             location: avatar.location.name,
@@ -103,17 +103,16 @@ export async function callTool(tool, avatar, conversation) {
         return await toolFunction(avatar, args.join('('), conversation);
     } catch (error) {
 
-        const objects = getAvatarObjects(avatar);
+        const objects = getAvatarItems(avatar);
         if (objects && objects.length > 0) {
             const object = objects.find(o => o.name === tool);
             if (object) {
-                return await useObject(avatar, tool, conversation);
+                return await useItem(avatar, tool, conversation);
             }
+            return `Error calling tool ${tool}: ${error.message}`;
         }
-        return `Error calling tool ${tool}: ${error.message}`;
     }
 }
-
 export function getAvailableTools() {
     return Object.keys(tools);
 }

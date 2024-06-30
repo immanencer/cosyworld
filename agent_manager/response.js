@@ -1,7 +1,7 @@
 import { retry } from './utils.js';
 import { waitForTask } from './task.js';
 import { callTool, getAvailableTools } from './tool.js';
-import { getAvatarObjects } from './object.js';
+import { getAvatarItems } from './item.js';
 import { conversationTag } from './message.js';
 import { getOrCreateThread, moveAvatarToThread, postMessageInThread } from '../server/services/discordService.js';
 import { createNewAvatar, avatarExists } from './avatarUtils.js';
@@ -62,7 +62,7 @@ export async function handleResponse(avatar, conversation) {
         console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
 
         const [objects, availableTools] = await Promise.all([
-            getAvatarObjects(avatar),
+            getAvatarItems(avatar),
             getAvailableTools()
         ]);
 
@@ -148,7 +148,7 @@ async function generateResponse(avatar, conversation, objects, toolResults) {
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
     if (objectKeys.length > 0) {
-        console.log(`Objects for ${avatar.name}: ${objectKeys}`);
+        console.log(`Items for ${avatar.name}: ${objectKeys}`);
         userPrompt += `You have the following objects: ${objectKeys}.`;
     }
     if (toolResultKeys.length > 0) {
