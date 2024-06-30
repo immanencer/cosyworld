@@ -10,7 +10,7 @@ export async function generateResponse(avatar, conversation, objects, toolResult
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
-    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:';
+    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:\n\n';
 
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
@@ -25,7 +25,7 @@ export async function generateResponse(avatar, conversation, objects, toolResult
 
 
     if (avatar?.feelings.length > 0) {
-        userPrompt += `Here are your inner thoughts and emoptions: ${avatar.feelings[0]}`;
+        userPrompt = `Here are your feelings:\n${avatar.feelings[0]}\n${userPrompt}`;
     }
 
     console.log(`User prompt for ${avatar.name}:`, userPrompt);

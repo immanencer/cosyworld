@@ -89,8 +89,8 @@ router.get('/process', async (req, res, next) => {
 
 router.post('/thread', validateRequest, async (req, res, next) => {
   try {
-    const { threadName } = req.body;
-    const thread = await discordService.getOrCreateThread(threadName);
+    const { threadName, channelName } = req.body.data;
+    const thread = await discordService.getOrCreateThread(threadName, channelName);
     res.status(200).json({ thread });
   } catch (error) {
     next(error);

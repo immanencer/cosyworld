@@ -1,13 +1,10 @@
 import { postJSON } from '../agent_manager/postJSON.js';
-import { ENQUEUE_API } from '../agent_manager/config.js';
+import { ENQUEUE_API, DISCORD_THREAD_API } from '../agent_manager/config.js';
 import { createNewAvatar, avatarExists } from './avatarUtils.js';
 
 
-export async function getOrCreateThread(threadName) {
-    const response = await postJSON(ENQUEUE_API, {
-        action: 'getOrCreateThread',
-        data: { threadName }
-    });
+export async function getOrCreateThread(threadName, channelName = 'haunted-house') {
+    const response = await postJSON(DISCORD_THREAD_API, { threadName, channelName });
     return response.thread;
 }
 
@@ -30,16 +27,16 @@ export async function postMessageInThread(avatar, content) {
     };
 
     if (!data.avatar || !data.channelId || !data.threadId || !data.message) {
-        throw new Error('Missing avatar, channel, thread, or message data');
+           throw new Error('Missing avatar, channel, thread, or message data');
     }
     await postJSON(ENQUEUE_API, { action: 'postMessageInThread', data });
 }
 
 
-export async function postMessageInChannel(avatar, channelId, content) {
+export async function postMessageInChannel(avatar, content) {
   const data = {
       avatar,
-      channelId: channelId,
+      channelId: avatar.location.id,
       message: content
   };
 
@@ -60,23 +57,22 @@ export async function handleDiscordInteraction(data, message) {
     console.log(`${avatar.emoji} ${avatar.name} responds in ${data.location.type}: ${data.location.name}`);
 
     if (data.location.type === 'thread') {
-        await handleThreadInteraction(avatar, data.location, message);
+        await handleThreadInteraction(avatar, message);
     } else if (data.location.type === 'channel') {
-        await handleChannelInteraction(avatar, data.location, message);
+        await handleChannelInteraction(avatar, avatar.location, message);
     } else {
-        throw new Error(`Unsupported location type: ${data.location.type}`);
+        throw new Error(`Unsupported location type: ${avatar.location.type}`);
     }
 
-    await handleMentionedAvatars(message, data.location);
+    await handleMentionedAvatars(message, avatar.location);
 }
 
-async function handleThreadInteraction(avatar, location, message) {
-    const thread = await getOrCreateThread(location.name);
-    await postMessageInThread(avatar, thread, message);
+async function handleThreadInteraction(avatar,message) {
+    await postMessageInThread(avatar, message);
 }
 
-async function handleChannelInteraction(avatar, location, message) {
-    await postMessageInChannel(avatar, location.id, message);
+async function handleChannelInteraction(avatar, message) {
+    await postMessageInChannel(avatar, message);
 }
 
 async function handleMentionedAvatars(message, location) {

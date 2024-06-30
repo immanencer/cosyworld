@@ -31,7 +31,8 @@ const post_schemas = {
     data: Joi.object().required()
   }),
   '/thread': Joi.object({
-    threadName: Joi.string().required()
+    threadName: Joi.string().required(),
+    channelName: Joi.string()
   })
 };
 

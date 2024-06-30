@@ -152,7 +152,7 @@ async function processRequest(action, data) {
             return sendAsAvatar(data.avatar, data.message);
         },
         getOrCreateThread: async () => {
-            const thread = await getOrCreateThread(data.threadName);
+            const thread = await getOrCreateThread(data.threadName, data.channelName);
             return { thread };
         },
         postMessageInThread: async () => {

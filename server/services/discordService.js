@@ -105,14 +105,14 @@ export async function getLocations() {
     ];
 }
 
-export async function getOrCreateThread(threadName) {
+export async function getOrCreateThread(threadName, channelName) {
     // Implementation depends on your Discord.js setup
     // This is a placeholder implementation
     const channel = discordClient.channels.cache.find(ch => ch.name === threadName && ch.isThread());
     if (channel) return channel;
 
     // If thread doesn't exist, create it in the first available text channel
-    const textChannel = discordClient.channels.cache.find(ch => ch.type === 'GUILD_TEXT');
+    const textChannel = discordClient.channels.cache.find(ch => ch.name === channelName && ch.isText());
     if (!textChannel) throw new Error('No text channel available to create thread');
 
     return await textChannel.threads.create({

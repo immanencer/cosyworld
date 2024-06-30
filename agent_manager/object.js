@@ -13,6 +13,7 @@ export async function examineRoom(avatar) {
         console.log(`Room ${avatar.location.name} not found. Creating new room.`);
         const newRoom = {
             name: avatar.location.name,
+            location: avatar.location,
             description: `A newly discovered room called ${avatar.location.name}.`
         };
         await db.collection('rooms').insertOne(newRoom);

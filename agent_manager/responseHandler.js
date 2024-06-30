@@ -29,6 +29,7 @@ export async function handleResponse(avatar, conversation) {
         const response = await generateResponse(avatar, conversation, objects, toolResults);
 
         if (response && response.trim() !== "") {
+            console.log(`🤖 Response for ${avatar.name} in ${avatar.location.name}: ${response}`);
             await postResponse(avatar, response);
         }
     } catch (error) {

@@ -143,7 +143,7 @@ async function generateResponse(avatar, conversation, objects, toolResults) {
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
-    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:';
+    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:\n\n';
 
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
