@@ -40,6 +40,5 @@ export async function generateResponse(avatar, conversation, objects, toolResult
         ? response.slice(conversationTag(avatar).length + 1).trim()
         : response;
 
-    console.log(`🤖 Response from ${avatar.name}:\n${trimmedResponse}`);
     return trimmedResponse;
 }
