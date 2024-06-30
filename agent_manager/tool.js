@@ -97,7 +97,7 @@ export async function callTool(tool, avatar, conversation) {
         const toolFunction = tools[toolName];
 
         if (!toolFunction) {
-            return `Tool ${toolName} not found. Available tools are: ${Object.keys(tools).join(', ')}`;
+            return `Tool ${toolName} not found.`;
         }
 
         return await toolFunction(avatar, args.join('('), conversation);

@@ -42,23 +42,28 @@ export async function sendAsAvatar(avatar, message) {
     if (!message) {
         throw new Error('Missing message content');
     }
-    let channel = await discordClient.channels.fetch(avatar.channelId);
+
+    // Fetch the channel where the message should be sent
+    let channel = await discordClient.channels.fetch(avatar.location.type === 'thread' ? avatar.location.parent : avatar.location.id);
 
     if (!channel) {
-        throw new Error(`Invalid channel: ${avatar.channelId}`);
+        throw new Error(`Invalid channel: ${avatar}`);
     }
 
     try {
         const webhook = await getOrCreateWebhook(channel);
         const chunks = chunkText(message, 2000);
+
+        const headers = {
+            username: `${avatar.name} ${avatar.emoji}`,
+            avatarURL: avatar.avatar
+        };
+        if (avatar.location.type === 'thread') {
+            headers.threadId = avatar.location.id;
+        }
     
         for (const chunk of chunks) {
-            await webhook.send({
-                content: chunk,
-                username: `${avatar.name} ${avatar.emoji}`,
-                avatarURL: avatar.avatar,
-                threadId: avatar.threadId
-            });
+            await webhook.send({ ...headers,  content: chunk });
         }
     } catch (error) {
         console.error('🎮 ❌ Error sending message:', error);
@@ -131,11 +136,12 @@ export async function moveAvatarToThread(avatar, thread) {
     // This function might not need to do anything in Discord itself
     // It might just need to update the avatar's location in your database
     console.log(`Moving avatar ${avatar.name} to thread ${thread.name}`);
+    
     // Implement the logic to update avatar's location in your database
-
+    avatar.location = thread;
     db.collection('avatars').updateOne(
         { _id: avatar._id },
-        { $set: { channelId: thread.id, threadId: thread.id } }
+        { $set: { location: thread } }
     );
 }
 
