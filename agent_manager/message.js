@@ -35,6 +35,9 @@ export async function processMessagesForAvatar(avatar) {
 
         if (locations.length === 0) {
             console.error('No locations found');
+
+            //  wait a few seconds before trying again
+            await new Promise(resolve => setTimeout(resolve, 5000));
             return;
         }
 

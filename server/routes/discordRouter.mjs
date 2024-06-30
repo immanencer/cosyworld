@@ -13,7 +13,7 @@ const router = express.Router();
 // Middleware
 router.use(express.json());
 router.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000, // 1 minute
   max: 1000 // limit each IP to 100 requests per windowMs
 }));
 
