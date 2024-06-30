@@ -1,7 +1,6 @@
 import process from 'process';
-
 import { Client, GatewayIntentBits } from 'discord.js';
-import chunkText from '../tools/chunk-text.js';
+import chunkText from '../../tools/chunk-text.js';
 
 const discordClient = new Client({
     intents: [
@@ -40,11 +39,6 @@ export async function sendMessage(channelId, message, threadId = null) {
 export async function sendAsAvatar(avatar, message) {
     console.log('🎮 🗣️:', `(${avatar.location.name}) ${avatar.name}: ${message}`);
     let channel = await discordClient.channels.fetch(avatar.channelId);
-    
-    if (channel.type === 'GUILD_CATEGORY') {
-        channel = await discordClient.channels.fetch(avatar.location.id);
-        delete avatar.threadId;
-    }
 
     if (!channel) {
         throw new Error(`Invalid channel: ${avatar.channelId}`);
@@ -109,4 +103,42 @@ export async function getLocations() {
         ...(categorizedChannels.TextChannel || []),
         ...(categorizedChannels.ThreadChannel || [])
     ];
+}
+
+export async function getOrCreateThread(threadName) {
+    // Implementation depends on your Discord.js setup
+    // This is a placeholder implementation
+    const channel = discordClient.channels.cache.find(ch => ch.name === threadName && ch.isThread());
+    if (channel) return channel;
+
+    // If thread doesn't exist, create it in the first available text channel
+    const textChannel = discordClient.channels.cache.find(ch => ch.type === 'GUILD_TEXT');
+    if (!textChannel) throw new Error('No text channel available to create thread');
+
+    return await textChannel.threads.create({
+        name: threadName,
+        autoArchiveDuration: 60,
+        reason: 'Created for avatar interaction'
+    });
+}
+
+import { db } from '../../database/index.js';
+export async function moveAvatarToThread(avatar, thread) {
+    // This function might not need to do anything in Discord itself
+    // It might just need to update the avatar's location in your database
+    console.log(`Moving avatar ${avatar.name} to thread ${thread.name}`);
+    // Implement the logic to update avatar's location in your database
+
+    db.collection('avatars').updateOne(
+        { _id: avatar._id },
+        { $set: { channelId: thread.id, threadId: thread.id } }
+    );
+}
+
+export async function postMessageInThread(avatar, channelId, threadId, message) {
+    await sendAsAvatar({...avatar, channelId, threadId }, message);
+}
+
+export async function postMessageInChannel(avatar, channelId, message) {
+    await sendAsAvatar({...avatar, channelId }, message);
 }

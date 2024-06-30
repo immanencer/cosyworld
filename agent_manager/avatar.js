@@ -1,5 +1,5 @@
 import { AVATARS_API, LOCATIONS_API } from './config.js';
-import { fetchJSON } from './utils.js';
+import { fetchJSON } from './fetchJSON.js';
 
 let cachedLocations = null;
 
@@ -37,9 +37,7 @@ export const updateAvatarLocation = async (avatar) => {
     }
 
     console.log(`${avatar.emoji} ${avatar.name} is now in ${avatar.location.name}.`);
-    
     avatar.remember = updateRememberedLocations(avatar);
-    console.log(avatar.remember);
 
     try {
         await updateAvatarOnServer(avatar);

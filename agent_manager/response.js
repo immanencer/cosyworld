@@ -1,26 +1,50 @@
-import { ENQUEUE_API } from './config.js';
-import { postJSON, retry } from './utils.js';
+import { retry } from './utils.js';
 import { waitForTask } from './task.js';
 import { callTool, getAvailableTools } from './tool.js';
 import { getAvatarObjects } from './object.js';
-import { conversationTag, parseConversationTag } from './message.js';
+import { conversationTag } from './message.js';
+import { getOrCreateThread, moveAvatarToThread, postMessageInThread } from '../server/services/discordService.js';
+import { createNewAvatar, avatarExists } from './avatarUtils.js';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+function parseResponse(response) {
+    const match = response.match(/^\(([^)]+)\)\s*(.+?):\s*(.*)$/s);
+    if (match) {
+        return {
+            threadName: match[1],
+            avatarName: match[2],
+            content: match[3]
+        };
+    }
+    return { threadName: 'default', content: response };
+}
+
+function extractMentionedAvatars(content) {
+    const mentionRegex = /\b([A-Z][a-z]+)\b(?=\s+(?:said|mentioned|asked|replied|responded))/g;
+    return [...new Set(content.match(mentionRegex) || [])];
+}
+
 export const postResponse = retry(async (avatar, response) => {
     console.log(`${avatar.emoji} ${avatar.name} responds.`);
-    await postJSON(ENQUEUE_API, {
-        action: 'sendAsAvatar',
-        data: {
-            avatar: {
-                ...avatar,
-                channelId: avatar.location.parent || avatar.location.id,
-                threadId: avatar.location.parent ? avatar.location.id : null
-            },
-            message: response
+    const { threadName, content } = parseResponse(response);
+    
+    let thread = await getOrCreateThread(threadName);
+    
+    if (content.includes(avatar.name)) {
+        await moveAvatarToThread(avatar, thread);
+    } else {
+        await postMessageInThread(avatar, thread, content);
+    }
+    
+    const mentionedAvatars = extractMentionedAvatars(content);
+    for (let newAvatarName of mentionedAvatars) {
+        if (!await avatarExists(newAvatarName)) {
+            const newAvatar = await createNewAvatar(newAvatarName);
+            await postMessageInThread(newAvatar, thread, `${newAvatarName} has joined the conversation.`);
         }
-    });
+    }
 }, MAX_RETRIES, RETRY_DELAY);
 
 const formatToolList = (tools) => tools.map(tool => {
@@ -117,7 +141,6 @@ async function generateResponse(avatar, conversation, objects, toolResults) {
     const objectKeys = Object.keys(objects).join(', ');
     const toolResultKeys = Object.keys(toolResults).join(', ');
 
-
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
     || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:';
@@ -141,7 +164,7 @@ async function generateResponse(avatar, conversation, objects, toolResults) {
         { role: 'user', content: userPrompt }
     ]);
 
-    // If the response begins with the conversation tag, remove it
+    // If the response begins with the current room's conversation tag, remove it
     const trimmedResponse = response.startsWith(conversationTag(avatar) + ':')
         ? response.slice(conversationTag(avatar).length + 1).trim()
         : response;

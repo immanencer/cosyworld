@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { db } from '../../database/index.js';
 import { initializeDiscordClient, sendMessage, sendAsAvatar, getLocations, isDiscordReady } from '../../services/discord.mjs';
 import { PROCESS_INTERVAL } from '../config.mjs';
+import { getOrCreateThread, postMessageInThread } from '../../agent_manager/threadUtils.js';
 
 await initializeDiscordClient();
 
@@ -149,6 +150,16 @@ async function processRequest(action, data) {
                 throw new Error('Missing avatar data or message');
             }
             return sendAsAvatar(data.avatar, data.message);
+        },
+        getOrCreateThread: async () => {
+            const thread = await getOrCreateThread(data.threadName);
+            return { thread };
+        },
+        postMessageInThread: async () => {
+            if (!data.avatar || !data.thread || !data.message) {
+                throw new Error('Missing avatar, thread, or message data');
+            }
+            return postMessageInThread(data.avatar, data.thread, data.message);
         }
     };
 
@@ -159,7 +170,24 @@ async function processRequest(action, data) {
 
     await selectedAction();
 }
+// Add a new route for immediate thread creation
+router.post('/thread', async (req, res) => {
+    if (!isDiscordReady()) {
+        return res.status(5    }
 
+    const { threadName } = req.body;
+
+    if (!threadName) {
+        return res.status(400).send({ error: 'Thread name is required' });
+    }
+
+    try {
+        const thread = await getOrCreateThread(threadName);
+        res.status(200).send({ thread });
+    } catch (error) {
+        console.error('Failed to get or create thread:', err        res.status(500).send({ error: 'Failed to get or create thread' });
+    }
+});
 // Periodic processing
 setInterval(async () => {
     if (!isDiscordReady() || !db) {
@@ -168,7 +196,9 @@ setInterval(async () => {
     }
 
     try {
-        await fetch('http://localhost:3000/discord/process');
+        await fetch('https://localhost:8443/discord/process', {
+            
+        });
     } catch (error) {
         console.error('🎮 ❌ Failed to process:', error);
     }

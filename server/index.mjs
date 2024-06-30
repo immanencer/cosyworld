@@ -1,8 +1,21 @@
 import express from 'express';
 import session from 'express-session';
+import https from 'https';
+import fs from 'fs';
 
 const app = express();
-const PORT = 3000;
+const PORT = 8443; // Standard HTTPS port
+
+// Load SSL certificate and key
+const privateKey = fs.readFileSync('./ssl_certificates/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('./ssl_certificates/cert.pem', 'utf8');
+const ca = fs.readFileSync('./ssl_certificates/chain.pem', 'utf8');
+
+const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+};
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
@@ -12,10 +25,12 @@ app.use(session({
     secret: 'lskjjdhfka33*W(&@UJKLEnljdh2u29;ojwdqlks',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true if using HTTPS
-  }));
-
-import { PROCESS_INTERVAL } from './config.mjs';
+    cookie: { 
+        secure: true, // Set to true for HTTPS
+        httpOnly: true,
+        sameSite: 'strict'
+    }
+}));
 
 import ai from './routes/ai.mjs';
 app.use('/ai', ai);
@@ -30,21 +45,19 @@ app.use('/forest', forest);
 
 // Third-party API routes
 
-import discordBot from './routes/discord.mjs';
-app.use('/discord', discordBot);
+import { discordRouter, startPeriodicProcessing } from './routes/discordRouter.mjs';
+app.use('/discord', discordRouter);
+startPeriodicProcessing();
 
 import summarizer from './routes/summarizer.mjs';
-app.use('/summarizer',summarizer);
+app.use('/summarizer', summarizer);
 
 import x from './routes/x.mjs';
 app.use('/x', x);
 
+// Create HTTPS server
+const httpsServer = https.createServer(credentials, app);
 
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-
-    setInterval(async () => {
-      fetch('http://localhost:3000/discord/process');
-    }, PROCESS_INTERVAL || 5000);
+httpsServer.listen(PORT, () => {
+    console.log(`HTTPS Server is running on port ${PORT}`);
 });

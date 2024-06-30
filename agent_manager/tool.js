@@ -1,5 +1,6 @@
 import { MESSAGES_API } from './config.js';
-import { cleanString, postJSON } from './utils.js';
+import { cleanString } from './utils.js';
+import { postJSON } from './postJSON.js';
 import { updateAvatarLocation, getLocations } from './avatar.js';
 import { examineRoom, takeObject, useObject, leaveObject, createObject, getAvatarObjects } from './object.js';
 import { waitForTask } from './task.js';
