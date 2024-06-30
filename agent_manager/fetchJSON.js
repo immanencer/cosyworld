@@ -13,7 +13,6 @@ export const fetchJSON = retry(async (url) => {
         }
         return await response.json();
     } catch (error) {
-        console.error(`Failed to fetch: ${url}`, error);
         return [];
     }
 }, 5, 1000);
