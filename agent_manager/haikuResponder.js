@@ -4,7 +4,7 @@ export async function checkShouldRespond(avatar, conversation) {
     const recentConversation = conversation.slice(-10);
     const haiku = await waitForTask(avatar, [
         ...recentConversation,
-        `(${avatar.location.name}) ${avatar.name}: I will write a haiku to decide whether to respond.`
+        `Respond with ONLY a haiku to decide whether to respond to the conversation above.`
     ]);
 
     console.log(`Haiku from ${avatar.name}:\n${haiku}`);
