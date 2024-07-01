@@ -9,6 +9,11 @@ const collectionName = 'messages';
 
 const discordToken = process.env.DISCORD_BOT_TOKEN;
 
+import AIServiceManager from '../tools/ai-service-manager.js';
+
+const manager = new AIServiceManager();
+await manager.useService('ollama');
+
 // Discord Client Setup
 const client = new Client({
     intents: [
