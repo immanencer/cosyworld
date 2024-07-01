@@ -1,6 +1,8 @@
 import ollama from 'ollama';
 import crypto from 'crypto';
 
+const model_cache = {};
+
 export default class OllamaService {
   static #modelCache = new Set();
 

@@ -58,7 +58,13 @@ async function process_next_task() {
 let running = true;
 await client.connect();
 while (running) {
+let running = true;
+await client.connect();
+while (running) {
     await process_next_task();
 }
+// close the connection
+await client.close();
+
 // close the connection
 await client.close();
