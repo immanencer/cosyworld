@@ -48,7 +48,7 @@ async function updateAvatarsWithNew(inputAvatar) {
     // Connect to the MongoDB client
     await client.connect();
     const database = client.db(dbName);
-    const objects = database.collection("objects");
+    const items = database.collection("objects");
 
     // Generate a new avatar
     const newAvatar = await generateNewAvatar(inputAvatar);
@@ -57,13 +57,13 @@ async function updateAvatarsWithNew(inputAvatar) {
     const imgur_link = await uploadToImgur(buffer, "image/png"); // Upload the new avatar to Imgur
     console.log("New avatar generated and uploaded to Imgur: " + imgur_link);
 
-    // Update all objects with the specified avatar
-    const updateResult = await objects.updateMany(
+    // Update all items with the specified avatar
+    const updateResult = await items.updateMany(
       { avatar: inputAvatar }, // Filter documents with the specific avatar
       { $set: { avatar: newAvatar } } // Set the new avatar
     );
 
-    console.log(`Successfully updated ${updateResult.modifiedCount} objects.`);
+    console.log(`Successfully updated ${updateResult.modifiedCount} items.`);
   } catch (error) {
     console.error("Failed to update avatars:", error);
   } finally {

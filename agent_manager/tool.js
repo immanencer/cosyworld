@@ -3,7 +3,7 @@ import { cleanString } from './utils.js';
 import { postJSON } from './postJSON.js';
 import { getLocations } from './locationHandler.js';
 import { updateAvatarLocation } from './avatar.js';
-import { searchRoom, takeItem, useItem, leaveItem, createItem, getAvatarItems } from './item.js';
+import { searchRoom, takeItem, useItem, leaveItem as dropItem, createItem as craftItem, getAvatarItems } from './item.js';
 import { waitForTask } from './task.js';
 import { postResponse } from './response.js';
 
@@ -16,7 +16,7 @@ try {
 }
 
 const tools = {
-    change_location: async (avatar, data) => {
+    move: async (avatar, data) => {
         console.log(`${avatar.emoji} ${avatar.name} 🏃💨 ${data}`);
         const new_location = locations.find(loc => loc.name === data);
         if (new_location) {
@@ -26,7 +26,7 @@ const tools = {
         }
         return `Location ${data} not found.`;
     },
-    examine_room: async (avatar, _, conversation) => {
+    search: async (avatar, _, conversation) => {
         const tool_result = await searchRoom(avatar);
         let message = '';
         let counter = 0;
@@ -64,15 +64,15 @@ const tools = {
 
         return message;
     },
-    take_item: takeItem,
-    use_item: useItem,
-    leave_item: leaveItem,
-    create_item: async (avatar, data) => {
+    take: takeItem,
+    use: useItem,
+    drop: dropItem,
+    craft: async (avatar, data) => {
         const [name, description] = data.split(',').map(cleanString);
         if (!name || !description) {
             throw new Error('Both name and description are required for creating an object.');
         }
-        return createItem({
+        return craftItem({
             name,
             description,
             location: avatar.location.name,

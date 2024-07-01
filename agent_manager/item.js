@@ -20,7 +20,7 @@ export async function searchRoom(avatar) {
         roomDetails = newRoom; // Use the new room as the room details
     }
 
-    const itemsInRoom = await db.collection('items').find({ location: avatar.location.name }).toArray();
+    const itemsInRoom = await getItemsForLocation(avatar.location.name);
 
     return {
         description: roomDetails.description || `${avatar.location.name}`,
@@ -56,11 +56,11 @@ export async function getItemsForLocation(location) {
 
 export async function updateItemLocations() {
     // get all owned objects
-    const objects = await db.collection('items').find({ takenBy: { $ne: null } }).toArray();
+    const items = await db.collection('items').find({ takenBy: { $ne: null } }).toArray();
     // get all avatars with owned objects locations
-    const avatars = await db.collection('avatars').find({ name: { $in: objects.map(o => o.takenBy) } }).toArray();
+    const avatars = await db.collection('avatars').find({ name: { $in: items.map(o => o.takenBy) } }).toArray();
     // update object locations
-    for (const object of objects) {
+    for (const object of items) {
         const avatar = avatars.find(a => a.name === object.takenBy);
         if (avatar) {
             await db.collection('items').updateOne(

@@ -1,11 +1,11 @@
 import { waitForTask } from './task.js';
 import { conversationTag } from './message.js';
 
-export async function generateResponse(avatar, conversation, objects, toolResults) {
+export async function generateResponse(avatar, conversation, items, toolResults) {
     const recentConversation = conversation;
 
     // Simplify the objects and toolResults arrays into a concise string
-    const objectKeys = objects.map(T => T.name).join(', ');
+    const itemKeys = items.map(T => T.name).join(', ');
     const toolResultKeys = toolResults.join(', ');
 
     // Create a concise prompt for the final user message
@@ -14,9 +14,9 @@ export async function generateResponse(avatar, conversation, objects, toolResult
 
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
-    if (objectKeys.length > 0) {
-        console.log(`Items for ${avatar.name}: ${objectKeys}`);
-        userPrompt += `You have the following objects: ${objectKeys}.`;
+    if (itemKeys.length > 0) {
+        console.log(`Items for ${avatar.name}: ${itemKeys}`);
+        userPrompt += `You have the following objects: ${itemKeys}.`;
     }
     if (toolResultKeys.length > 0) {
          console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);

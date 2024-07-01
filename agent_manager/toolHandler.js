@@ -8,12 +8,12 @@ function formatToolList(tools) {
     }).join('\n');
 }
 
-export async function handleTools(avatar, conversation, objects, availableTools) {
+export async function handleTools(avatar, conversation, items, availableTools) {
     const recentConversation = conversation;
     const toolsPrompt = 
-`${objects.length > 0 ? ` You have the following objects: 
+`${items.length > 0 ? ` You have the following items in your possession: 
 
-${JSON.stringify(objects)}.` : ''}
+${JSON.stringify(items)}.` : ''}
 
 You have the following abilities:
 
@@ -22,7 +22,7 @@ ${formatToolList(availableTools)}
 Respond with the SINGLE tool or object you would like to use, or NONE if no tool is relevant.
 If no tool is relevant, return NONE.`;
 
-    if (objects.length > 0) {
+    if (items.length > 0) {
         console.log(`⚒️ Tools prompt for ${avatar.name}:\n${toolsPrompt}`);
     }
 
@@ -42,7 +42,7 @@ If no tool is relevant, return NONE.`;
     const toolsToCall = toolsCheck.split('\n').filter(tool => tool.trim());
     
     // Create a Set of object names for faster lookup
-    const objectNames = new Set(objects.map(obj => obj.name.toLowerCase()));
+    const objectNames = new Set(items.map(obj => obj.name.toLowerCase()));
 
     return Promise.all(toolsToCall.map(tool => {
         // Check if the tool call is an item name
