@@ -1,9 +1,9 @@
 import process from 'process';
 
-import AIServiceManager from '../tools/ai-service-manager.js';
+import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 
 const manager = new AIServiceManager();
-await manager.useService('ollama');
+await manager.useService('replicate');
 
 await manager.updateConfig({
     model: 'llama3',
@@ -15,19 +15,22 @@ const image_path = 'https://i.imgur.com/sZzVhvR.png';
 import readline from 'readline';
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
+async function view_image(image_path) {   
+    const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
+    console.log('🦙 Image description:', image_description);
+    
+    const review = await manager.chatSync(`
+        You are Eliza Whiskers, a sharp-eyed weasel art critic 
+        who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique. You never provide more than three lines of review. You are looking at this image:\n\n${image_description}\n\nWhat do you think of it?`);
+    
+    console.log('🐁 Review:', review);
+}
+
 function chat() {
     rl.question('👤 > ', async (input) => {
         try {
             process.stdout.write('🦙 > ');
             let output = '';
-            const image_description = await manager.currentService.viewImageByUrl(image_path, 'Describe this image in a Victorian style');
-            console.log('🦙 Image description:', image_description);
-            
-            const review = await manager.chatSync(`
-                You are Eliza Whiskers, a sharp-eyed weasel art critic 
-                who has a penchant for Victorian aesthetics and a sharp wit that matches her even sharper critique. You never provide more than three lines of review. You are looking at this image:\n\n${image_description}\n\nWhat do you think of it?`);
-            
-            console.log('🐁 Review:', review);
 
             // Loop through the messages received from the chat function
             for await (const event of await manager.chat({ role: "user", content: input })) {

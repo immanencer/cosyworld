@@ -1,14 +1,14 @@
-// Assuming sendAsSouls is part of a module that exports it
-const { sendAsSouls, processAction, sendAsSoul, sendAsSoulsYML } = require('../agents/souls.js');
+// Assuming sendAsAvatars is part of a module that exports it
+const { sendAsAvatars, processAction, sendAsAvatar, sendAsAvatarsYML } = require('../agents/avatars.js');
 const { parseYaml } = require('js-yaml');
 
 jest.mock('js-yaml', () => ({
   parseYaml: jest.fn()
 }));
 
-describe('sendAsSouls', () => {
-  // Mock souls and options properties
-  const souls = {
+describe('sendAsAvatars', () => {
+  // Mock avatars and options properties
+  const avatars = {
     move: jest.fn()
   };
   const options = {
@@ -17,11 +17,11 @@ describe('sendAsSouls', () => {
 
   const setup = () => {
     const instance = {
-      souls,
+      avatars,
       options,
       processAction: jest.fn(() => Promise.resolve()),
-      sendAsSoul: jest.fn(() => Promise.resolve()),
-      sendAsSoulsYML: jest.fn(() => Promise.resolve())
+      sendAsAvatar: jest.fn(() => Promise.resolve()),
+      sendAsAvatarsYML: jest.fn(() => Promise.resolve())
     };
     return instance;
   };
@@ -35,7 +35,7 @@ describe('sendAsSouls', () => {
     const output = "---\nfrom: userA\nin: room1\nmessage: Hello";
     parseYaml.mockReturnValue({ from: 'userA', in: 'room1', message: 'Hello' });
 
-    await sendAsSouls.call(instance, output, false);
+    await sendAsAvatars.call(instance, output, false);
 
     expect(parseYaml).toHaveBeenCalledWith("---\nfrom: userA\nin: room1\nmessage: Hello");
     expect(instance.processAction).toHaveBeenCalledWith({ from: 'userA', in: 'room1', message: 'Hello' }, false);
@@ -48,7 +48,7 @@ describe('sendAsSouls', () => {
       throw new Error('Invalid YAML');
     });
 
-    await sendAsSouls.call(instance, output, false);
+    await sendAsAvatars.call(instance, output, false);
 
     expect(parseYaml).toHaveBeenCalledWith("---\nfrom userA\nin: room1\nmessage: Hello");
     expect(instance.processAction).not.toHaveBeenCalled();
@@ -60,7 +60,7 @@ describe('sendAsSouls', () => {
     const output = "---\ncomment: just a comment";
     parseYaml.mockReturnValue({ comment: 'just a comment' });
 
-    await sendAsSouls.call(instance, output, false);
+    await sendAsAvatars.call(instance, output, false);
 
     expect(parseYaml).toHaveBeenCalledWith("---\ncomment: just a comment");
     expect(instance.processAction).not.toHaveBeenCalled();

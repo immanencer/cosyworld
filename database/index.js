@@ -13,4 +13,4 @@ try {
     console.error('🎮 ❌ MongoDB Connection Error:', error);
 }
 
-export default db;
+export { db };

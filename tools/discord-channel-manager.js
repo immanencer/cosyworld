@@ -8,6 +8,11 @@ class ChannelManager {
     }
 
     async initialize(guildId) {
+        console.log('🎮 Initializing channel manager');
+        if (!guildId) {
+            console.error('🎮 ❌ No guild ID provided');
+            return;
+        }
         const guild = await this.discord_client.guilds.fetch(guildId);
         const channels = await guild.channels.fetch();
 
@@ -60,7 +65,6 @@ class ChannelManager {
     // Channel and thread management
     async getChannels() {
         return Object.keys(this.channel_id).filter(channel => {
-            if (channel.indexOf('🚧') === 0) return false;
             if (channel.indexOf('🥩') === 0) return false;
             return true;
         });
@@ -214,10 +218,13 @@ class ChannelManager {
         const channel = await this.discord_client.channels.fetch(channel_id);
         if (!channel.isTextBased() || !channel.threads) return [];
         const thread_list = (await channel.threads.fetch()).threads;
+        
         for (const [id, thread] of thread_list) {
-            console.log('🎮 Found thread ' + id);
             threads.push(thread);
         }
+        
+        console.log(`'🎮 Found ${threads.length} threads.'`);
+
         return threads;
     }
 
@@ -233,9 +240,9 @@ class ChannelManager {
         const thread = await channel.threads.fetch(location.thread);
         const history = await thread.messages.fetch({ limit: 100 });
         for (const [id, message] of history) {
-            console.log('🎮 Found message ' + id);
-            messages.push(`(${message.channel.name}) ${message.author.displayName || message.author.username }: ${message.content}`);
+            messages.push(message);
         }
+        console.log(`🎮 Found ${messages.length} messages`);
         return messages.reverse();
     }
 
@@ -279,7 +286,7 @@ class ChannelManager {
                 continue; // Skip to the next channel if there are no threads
             } else {
                 for (const thread of threads) {
-                    if (typeof thread !== 'string') {
+                    if (typeof thread.name !== 'string') {
                         console.error('🎮 ⚠️ Invalid thread name:', JSON.stringify(thread, null, 2));
                         continue; // Skip to the next thread if the thread is not a string
                     }

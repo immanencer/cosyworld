@@ -1,9 +1,7 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
+import process from 'process'; // Add this line to import the process module
 
 import ChannelManager from './discord-channel-manager.js';
-
-import configuration from './configuration.js';
-const config = await configuration('discord-bot');
 
 import chunkText from './chunk-text.js';
 import WebhookManager from './discord-webhook-manager.js';
@@ -18,32 +16,39 @@ class MinimalistDiscordBot {
             ]
         });
 
-        this.token = token || config.token;
+        this.token = token || process.env.DISCORD_TOKEN;
 
         // Setup event listeners
         this.setupEventListeners();
     }
 
+    initialized = false;
     setupEventListeners() {
         this.channels = new ChannelManager(this.client);
         this.webhooks = new WebhookManager(this.channels);
-        this.sendAsSoul = this.webhooks.sendAsSoul.bind(this.webhooks);
+        this.sendAsAvatar = this.webhooks.sendAsAvatar.bind(this.webhooks);
 
         this.client.once(Events.ClientReady, async () => {
             console.log(`🎮 Bot is ready! Logged in as ${this.client.user.tag}`);
-
-            await this.channels.initialize(config.guild);
-            this.onLogin();
-
+            await this.onLogin();
         });
 
-        this.client.on(Events.MessageCreate, (message) => {
+        this.client.on(Events.MessageCreate, async (message) => {
             console.log(`🎮 Message received from ${message.author.displayName || message.author.globalName}`);
-            this.onMessage(message);
+            await this.onMessage(message);
         });
     }
 
     async onLogin() {
+
+        if (!this.guild) {
+            console.error('🎮 ❌ No guild provided');
+            return;
+        }
+
+        console.log('🎮 Initializing channels...');
+        await this.channels.initialize(this.guild);
+
         console.log('🎮 Handling login...');
         if (this.on_login) await this.on_login();
     }

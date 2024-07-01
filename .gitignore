@@ -1,5 +1,6 @@
+.env
 /node_modules/
-/.configurations/
+.configurations
 /.vscode/
 /.state/
 messages.txt
@@ -8,3 +9,6 @@ summarizationLog.md
 summaryState.json
 nag-hamadi-mk2.1.md
 summarizationLog.md
+ssl_certificates/
+*.log
+slash/config.js

@@ -1,9 +1,9 @@
-import Replicate from "replicate";
+import process from "process";
 
-import AIService from "../tools/ai-service.js";
-import c from "../tools/configuration.js";
-const configuration = await c('replicate', {
-    token: "YOUR_API_KEY",
+import AIService from "./ai-service.js";
+
+import Replicate from "replicate";
+const REPLICATE_CONFIG = {
     model: "meta/meta-llama-3-70b-instruct",
     options: {
         top_k: 50,
@@ -15,11 +15,12 @@ const configuration = await c('replicate', {
         presence_penalty: 1.15,
         frequency_penalty: 0.2
     }
+};
+
+
+const replicate = new Replicate({
+    auth: process.env.REPLICATE_API_TOKEN,
 });
-
-
-const replicate = new Replicate();
-replicate.auth = configuration.token;
 
 async function* mapAsyncIterator(iterator, mapFn) {
     for await (const item of iterator) {
@@ -31,12 +32,11 @@ export default class ReplicateService extends AIService {
 
     constructor() {
         super();
-        this.updateConfig(configuration.options);
+        this.updateConfig(REPLICATE_CONFIG);
     }
 
     updateConfig(config) {
-        this.config = { ...this.config, ...config };
-        this.config.prompt_template = (this.config.prompt_template || 'You are a helpful assistant').replace("{system_prompt}", this.config.system_prompt);
+        return this.config = { ...this.config, ...config };
     }
     chat_history = [];
     chat = async (message) => {
@@ -48,11 +48,7 @@ export default class ReplicateService extends AIService {
         }
         this.chat_history.push(message);
 
-        let history = this.chat_history.map((message) => `${message.role}: ${message.content}`).join("\n")
-        // truncate history to 2048 tokens
-        if (history.length > 2048) {
-            history = history.slice(history.length - 2048);
-        }
+        let history = this.chat_history.map((message) => `${message.role}: ${message.content}`).join("\n");
 
         return mapAsyncIterator(await this.createStream(history), (message) => {
             if (message.event === "done") return;
@@ -61,11 +57,6 @@ export default class ReplicateService extends AIService {
             }
         });
     };
-
-    async createStream(prompt) {
-        const input = { ...this.config, prompt };
-        return replicate.stream(configuration.model, { input });
-    }
 
     message_handlers = {
         default: async (M) => {
@@ -77,7 +68,7 @@ export default class ReplicateService extends AIService {
         error: async (M) => {
             console.error('Error:', M.error);
         },
-        done: async (M) => {
+        done: async () => {
             //console.debug('Done');
         }
 
@@ -95,4 +86,10 @@ export default class ReplicateService extends AIService {
         }
         return output.join('');
     }
+    
+    async raw_chat (model, messages) {
+        const formattedMessages = messages.map(message => `${message.role}: ${message.content}`).join("\n");
+        const prompt = `${formattedMessages}\nassistant:`;
+        return await replicate.stream(REPLICATE_CONFIG.model, { ...this.config, prompt });
+    };
 }

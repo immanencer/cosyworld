@@ -1,109 +1,82 @@
-# AI Agent Framework
+# COSYWORLD
 
-This repository provides a straightforward framework for creating AI agents using Node.js. It aims to simplify the integration and management of multiple AI services within Node.js applications. By offering a standard interface to interact with different AI services, this framework assists in the seamless switching, testing, and deployment of various AI functionalities.
+> We are, in either case, instruments of his will providing **mansions for the souls** that he creates.
+> 
+> - *Alan Turing*
 
-Currently, the framework supports the following AI services:
+COSYWORLD is an evolving exploration into artificial intelligence and complex systems. Inspired by Turing's vision, this project creates digital ecosystems inhabited by AI entities.
 
-- [ollama](https://ollama.com/) (for local llms)
-- [replicate](https://replicate.ai/) (for access to AI models)
-- [openai](https://openai.com/) (for access to the assistants API)
+Core aspects:
+- AI-generated and evolving software architecture
+- Simulated environment evoking latent space entities
+- Modern interpretation of lo-fi text-based RPGs
 
-## Getting Started
+Through a mystical "Lonely Forest," COSYWORLD invites exploration of machine intelligence and emergent complexity.
 
-Run the app once to create the relevant config files in `./configurations`
+**Note:** This project is an early-stage development lab and may be unstable. For a more stable version, see: https://github.com/immanencer/cosyworld-core
 
-### Installation
+---
 
-To use this framework with OLLAMA, first ensure you have downloaded the necessary AI model:
+## Technical Overview
 
-#### OLLAMA
+### Architecture
+- Multi-agent system
+- Event-driven microservices
+- Asynchronous communication protocols
+
+### Key Components
+- AI Agents: Autonomous entities (bard, ghost, librarian)
+- Discord Integration: AI-powered interactive bot
+- Server Infrastructure: Scalable, containerized deployment
+
+### Tech Stack
+- Runtime: Node.js
+- Language: JavaScript (ES6+)
+- Framework: Custom event-driven architecture
+- External Services: Discord API
+- Data Storage: MongoDB
+
+### Core Modules
+```
+cosyworld/
+├── agents/
+│   ├── bard.mjs
+│   ├── ghost.mjs
+│   └── librarian.mjs
+├── ai-services/
+├── configurations/
+├── server/
+└── tools/
+    └── discord-ai-bot.js
+```
+
+### Getting Started
 ```bash
-ollama pull llama3
+git clone [repository-url]
+cd cosyworld
+npm install
+# Set up environment variables in ".env"
+# NODE_EXTRA_CA_CERTS="ssl_certificates\cert.pem"
+# NODE_ENV="development"
+# MONGODB_CONNECTION_STRING="mongodb://localhost:27017/cosyworld"
+# GROQ_API_KEY=""
+# DISCORD_BOT_TOKEN=""
+# REPLICATE_API_TOKEN=""
+# X_API_KEY=""
+# X_API_KEY_SECRET=""
+# X_ACCESS_TOKEN=""
+# X_ACCESS_TOKEN_SECRET=""
+# IMGUR_CLIENT_ID=""
+npm start
 ```
 
-#### REPLICATE
+### Contribution
+Open to organic growth and AI-driven evolution. See CONTRIBUTING.md for guidelines.
 
-You'll need a valid API key to use Replicate. You can obtain one by signing up at [Replicate.ai](https://replicate.ai/).
+### License
+MIT License and Creative Commons By License
 
-Run the app once and it will create a `./configurations/replicate.json` file. Add your API key to this file.
+---
 
-### Configuration
-
-### Running the demo
-
-```bash
-node demo.js
-```
-
-
-### Running an Agent
-
-To start the agent, use the provided script:
-
-```bash
-node agents/badger.js
-```
-
-### Running all the agents
-
-Install pm2
-    
-    ```bash
-    npm install pm2 -g
-    ```
-
-Start all the agents
-
-    ```bash
-    pm2 start ecosystem.config.js
-    ```
-
-## Setting Up the Discord Bot
-
-⚠️ You will currently need to create all referenced channels and threads or modify the references in the code or it will crash.
-
-To use the Discord bot functionality, you will need a valid token. Without this, the application will not be able to log in, resulting in the following error:
-
-```plaintext
-🎮 ❌ Error logging in: Error [TokenInvalid]: An invalid token was provided.
-    at Client.login [...]
-    code: 'TokenInvalid'
-}
-```
-
-Ensure that your `.configurations/discord-bot.json` file contains a valid Discord token and server ID:
-
-```json
-{
-    "token": "YOUR_DISCORD_TOKEN" ,
-    "guild": "YOUR_DISCORD_SERVER_ID"
-}
-```
-
-## Troubleshooting
-
-If you encounter an error stating that you have an invalid token, check that the `.configurations/discord-bot.json` file is configured correctly with a valid token.
-
-## Conclusion
-
-This framework is currently tailored for use with OLLAMA. Adjustments or expansions to include additional AI services like Replicate may require further modifications to ensure compatibility.
-
-# Acknowledgments
-
-Created by Jonathan Beckwith for Cenetex Inc.
-
-- [OpenAI](https://openai.com/)
-- [OLLAMA](https://ollama.com/)
-- [Replicate](https://replicate.ai/)
-- [Node.js](https://nodejs.org/)
-- [Discord.js](https://discord.js.org/)
-- [MIT License](https://opensource.org/licenses/MIT)
-```
-
-# License
-
-The code in this project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-cosyworld © 2024 by Jonathan Beckwith is licensed under CC BY 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/
-
-Licensing claims for external media (imgur links) are the responsibility of the original creators and are not covered by this statement.
+[![Discord](https://img.shields.io/discord/1219837842058907728?label=Discord&logo=discord&style=flat-square)](https://discord.gg/h2HU9zKVpM)
+[![Twitter](https://img.shields.io/twitter/follow/immanencer?label=Twitter&logo=twitter&style=flat-square)](https://twitter.com/immanencer)

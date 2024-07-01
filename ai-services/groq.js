@@ -1,12 +1,8 @@
 import { Groq } from 'groq-sdk';
-import c from "../tools/configuration.js";
-const configuration = await c('groq', {
-    apiKey: "YOUR_API_KEY",
-});
 
-const groq = new Groq(configuration);
+const groq = new Groq();
 
-import AIService from '../tools/ai-service.js';
+import AIService from './ai-service.js';
 
 import { replaceContent } from '../tools/censorship.js';
 import { mapAsyncIterator } from '../tools/map-async-iterator.js';
@@ -40,15 +36,6 @@ class GroqService extends AIService {
                 message: { content: message?.choices[0]?.delta?.content || '' }
             }
         });
-    }
-
-    // Others if needed
-    async complete(prompt) {
-        return 'This is a 🦙 completion';
-    }
-
-    async draw(prompt) {
-        return 'This is a 🦙 drawing';
     }
 }
 

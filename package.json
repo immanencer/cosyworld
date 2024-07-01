@@ -4,7 +4,6 @@
   "description": "",
   "main": "ai-service.js",
   "scripts": {
-    "test": "jest",
     "demo": "node ./demo/demo.js",
     "server": "node ./server/index.js",
     "server-dev": "node ./server/index.js"
@@ -14,12 +13,19 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "express-session": "^1.18.0",
     "groq-sdk": "^0.3.3",
-    "js-yaml": "^4.1.0",
+    "joi": "^17.13.3",
+    "mongodb": "^6.6.2",
     "ollama": "^0.5.0",
     "openai": "^4.38.2",
-    "replicate": "^0.29.1"
+    "pm2": "^5.4.1",
+    "replicate": "^0.29.1",
+    "twitter-api-v2": "^1.17.0",
+    "winston": "^3.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",

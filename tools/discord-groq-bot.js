@@ -1,13 +1,13 @@
-import DiscordBot from './discord-bot.js';
-import AIServiceManager from '../tools/ai-service-manager.js';
+import DiscordBot from './discord.js';
+import AIServiceManager from '../tools/ai-service-manager.mjs';
 
 class DiscordGroqBot extends DiscordBot {
-    constructor(soul, systemPrompt) {
+    constructor(avatar, systemPrompt) {
         super();
-        if (!soul) throw new Error('Soul is required');
-        this.soul = soul;
+        if (!avatar) throw new Error('Avatar is required');
+        this.avatar = avatar;
 
-        this.system_prompt = systemPrompt || soul.personality;
+        this.system_prompt = systemPrompt || avatar.personality;
         this.aiServiceManager = new AIServiceManager();
 
     }
@@ -69,7 +69,7 @@ class DiscordGroqBot extends DiscordBot {
 
         await this.aiServiceManager.chat({ role: 'assistant', content: output });
 
-        await this.sendAsSouls(output);
+        await this.sendAsAvatars(output);
     }
 
     async initializeMemory(memories, options = { slice: 200, instructions: '' }) {

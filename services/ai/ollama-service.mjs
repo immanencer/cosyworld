@@ -1,45 +1,98 @@
 import ollama from 'ollama';
+import crypto from 'crypto';
 
 const model_cache = {};
 
 export default class OllamaService {
-    constructor() {
-        // Initialization for Ollama (if any)
-    }
+  static #modelCache = new Set();
 
-    async chat({ systemPrompt, messages }) {
-        const modelfile = `from ${this.model || 'llama3:instruct'}
-system "${systemPrompt}"`;
+  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3') {
+    this.model = model;
+  }
 
-        const modelHash = this.generateHash(modelfile);
+  async chatCompletion(params) {
+    const {
+      systemPrompt,
+      messages,
+      modelOverride,
+      temperature = 0.7,
+      maxTokens = 4096 * 4,
+    } = params;
 
-        if (!model_cache[modelHash]) {
-            try {
-                await ollama.create({ model: modelHash, modelfile });
-                console.log('🦙 Model created:', modelHash);
-                model_cache[modelHash] = true;
-            } catch (error) {
-                console.error('💀 🦙 Failed to create model:', error);
-                throw error;
-            }
+    const modelToUse = modelOverride || this.model;
+    const modelHash = this.#generateHash(`FROM ${modelToUse}\nSYSTEM "${systemPrompt}"`);
+
+    await this.#ensureModelExists(modelHash, modelToUse, systemPrompt);
+
+    const formattedMessages = this.#formatMessages(systemPrompt, messages);
+
+    try {
+      const result = await ollama.chat({
+        model: modelHash,
+        messages: formattedMessages,
+        stream: false,
+        options: {
+          temperature,
+          num_predict: maxTokens,
         }
+      });
 
-        const ollamaMessages = [
-            { role: 'system', content: systemPrompt },
-            ...messages
-        ];
+      if (!result.message || !result.message.content) {
+        throw new Error('Empty or invalid response from Ollama');
+      }
 
-        const result = await ollama.chat({ model: modelHash, messages: ollamaMessages, stream: false });
-        if (result.message.content === '') {
-            console.error('🦙 Empty response from Ollama');
+      return result.message.content;
+    } catch (error) {
+      console.error('Failed to get response from Ollama:', error);
+      throw new Error('Failed to get response from Ollama');
+    }
+  }
+
+  #formatMessages(systemPrompt, messages) {
+    return [
+      { role: 'system', content: systemPrompt },
+      ...messages.map(msg => {
+        if (typeof msg === 'string') {
+          return { role: 'user', content: msg };
         }
-        return result.message.content;
-    }
+        return msg;
+      })
+    ];
+  }
 
-    generateHash(input) {
-        // Example hash function
-        return input.split('').reduce((acc, char) => {
-            return acc + char.charCodeAt(0);
-        }, 0).toString();
+  async #ensureModelExists(modelHash, baseModel, systemPrompt) {
+    if (!OllamaService.#modelCache.has(modelHash)) {
+      try {
+        await ollama.create({
+          model: modelHash,
+          modelfile: `FROM ${baseModel}
+SYSTEM "${systemPrompt}"`
+        });
+        console.log('Model created:', modelHash);
+        OllamaService.#modelCache.add(modelHash);
+      } catch (error) {
+        console.error('Failed to create model:', error);
+        throw new Error('Failed to create Ollama model');
+      }
     }
+  }
+
+  #generateHash(input) {
+    return crypto.createHash('sha256').update(input).digest('hex').slice(0, 16);
+  }
+
+  static clearModelCache() {
+    OllamaService.#modelCache.clear();
+    console.log('Model cache cleared');
+  }
+
+  static async listAvailableModels() {
+    try {
+      const models = await ollama.list();
+      return models.map(model => model.name);
+    } catch (error) {
+      console.error('Failed to list available models:', error);
+      throw new Error('Failed to list available Ollama models');
+    }
+  }
 }

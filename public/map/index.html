@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Map of The Whispering Woods</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #mapCanvas { border: 1px solid black; width: 800px; height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>Map of The Whispering Woods</h1>
+    <canvas id="mapCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Function to fetch data from localhost
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+            }
+        }
+
+        // Draw locations on the map
+        function drawLocations(locations) {
+            locations.forEach(loc => {
+                // Randomly position locations for demonstration purposes
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
+
+                ctx.fillStyle = 'green';
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(loc.name, x - 20, y + 5);
+            });
+        }
+
+        // Draw avatars on the map
+        function drawAvatars(avatars) {
+            avatars.forEach(avatar => {
+                // Randomly position avatars near their locations for demonstration purposes
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
+
+                const img = new Image();
+                img.src = avatar.avatar;
+                img.onload = () => {
+                    ctx.drawImage(img, x - 20, y - 50, 40, 40);
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(avatar.name, x - 40, y - 60);
+                };
+            });
+        }
+
+        // Main function to draw the map
+        async function drawMap() {
+            const avatarsData = await fetchData('https://localhost:8443/forest/map');
+            const locationsData = await fetchData('https://localhost:8443/discord/locations');
+
+            drawLocations(locationsData);
+            drawAvatars(avatarsData.avatars);
+        }
+
+        drawMap();
+    </script>
+</body>
+</html>
