@@ -1,1 +1,1 @@
-export const PROCESS_INTERVAL = 5000;
+export const PROCESS_INTERVAL = 500;

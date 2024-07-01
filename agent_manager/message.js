@@ -1,7 +1,7 @@
 import { MESSAGES_API } from "./config.js";
 import { fetchJSON } from "./fetchJSON.js";
 import { createURLWithParams } from "./utils.js";
-import { getLocations, updateAvatarLocation } from "./avatar.js";
+import { getLocations, handleAvatarLocation } from "./locationHandler.js";
 import { handleResponse } from "./responseHandler.js";
 
 const lastProcessedMessageIdByAvatar = new Map();
@@ -54,7 +54,7 @@ export async function processMessagesForAvatar(avatar) {
         validateMessages(conversation);
 
         if (shouldRespond(avatar, conversation)) {
-            await handleResponse(avatar, conversation);
+            await handleResponse(avatar, conversation, locations);
         }
 
         updateLastProcessedMessageId(avatar, mentions);
@@ -64,66 +64,32 @@ export async function processMessagesForAvatar(avatar) {
     }
 }
 
-async function handleAvatarLocation(avatar, mentions, locations) {
-    if (!avatar || !avatar.location || !avatar.location.id) {
-        console.error(`Invalid avatar or location for ${avatar?.name}`);
-        avatar.location = locations[0];
-    }
-
-    if (mentions.length > 0 && avatar.summon === "true") {
-        const lastMention = mentions[mentions.length - 1];
-        if (shouldMoveAvatar(avatar, lastMention)) {
-            const newLocation = findNewLocation(lastMention, locations);
-            if (newLocation?.id !== avatar.location.id) {
-                console.log(`${avatar.emoji} ${avatar.name} is moving from ${avatar.location.name} to ${newLocation.name}.`);
-                avatar.location = newLocation;
-                try {
-                    await updateAvatarLocation(avatar);
-                    console.log(`${avatar.emoji} ${avatar.name} moved to ${avatar.location.name}.`);
-                } catch (error) {
-                    console.error(`Failed to update avatar location for ${avatar.name}:`, error);
+async function fetchMessages(avatar, locations, lastCheckedId) {
+    const rememberedLocations = avatar.remember || [avatar.location.name];
+    const messagePromises = rememberedLocations.map(async locationName => {
+        try {
+            const locationId = locations.find(loc => loc.name === locationName)?.id;
+            if (!locationId) {
+                // refresh locations
+                const newLocations = await getLocations();
+                const newLocationId = newLocations.find(loc => loc.name === locationName)?.id;
+                if (newLocationId) {
+                    locations = newLocations;
+                    return await getMessages(newLocationId, lastCheckedId);
                 }
-            }
-        }
-    }
-}
-
-const shouldMoveAvatar = (avatar, lastMention) =>
-    avatar.location.id !== lastMention.channelId &&
-    avatar.location.id !== lastMention.threadId &&
-    (avatar.owner === 'host' || avatar.owner === lastMention.author);
-
-const findNewLocation = (lastMention, locations) =>
-    locations.find(loc => loc.id === lastMention.threadId) ||
-    locations.find(loc => loc.id === lastMention.channelId || loc.parent === lastMention.channelId) ||
-    locations[0];
-
-    async function fetchMessages(avatar, locations, lastCheckedId) {
-        const rememberedLocations = avatar.remember || [avatar.location.name];
-        const messagePromises = rememberedLocations.map(async locationName => {
-            try {
-                const locationId = locations.find(loc => loc.name === locationName)?.id;
-                if (!locationId) {
-                    // refresh locations
-                    const newLocations = await getLocations();
-                    const newLocationId = newLocations.find(loc => loc.name === locationName)?.id;
-                    if (newLocationId) {
-                        locations = newLocations;
-                        return await getMessages(newLocationId, lastCheckedId);
-                    }   
-                    console.warn(`Location not found: ${locationName}`);
-                    return [];
-                }
-                return await getMessages(locationId, lastCheckedId);
-            } catch (error) {
-                console.error(`Error fetching messages for ${locationName}:`, error);
+                console.warn(`Location not found: ${locationName}`);
                 return [];
             }
-        });
-    
-        const allMessages = await Promise.all(messagePromises);
-        return allMessages.flat().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
+            return await getMessages(locationId, lastCheckedId);
+        } catch (error) {
+            console.error(`Error fetching messages for ${locationName}:`, error);
+            return [];
+        }
+    });
+
+    const allMessages = await Promise.all(messagePromises);
+    return allMessages.flat().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+}
 
 const buildConversation = (messages, locations) =>
     messages.map(message => {

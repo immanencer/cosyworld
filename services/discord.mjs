@@ -1,6 +1,6 @@
 import process from 'process';
 
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import chunkText from '../tools/chunk-text.js';
 
 const discordClient = new Client({
@@ -82,7 +82,7 @@ async function getOrCreateWebhook(channel) {
     return webhook;
 }
 
-export async function getLocations() {
+export async function listChannels() {
     const channels = discordClient.channels.cache;
     const channelTypes = {
         ThreadChannel: "thread",

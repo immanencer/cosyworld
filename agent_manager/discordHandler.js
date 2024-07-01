@@ -1,10 +1,11 @@
 import { postJSON } from '../agent_manager/postJSON.js';
 import { ENQUEUE_API, DISCORD_THREAD_API } from '../agent_manager/config.js';
-import { createNewAvatar, avatarExists } from './avatarUtils.js';
+import { createNewAvatar, avatarExists } from './avatar.js';
 
 
-export async function getOrCreateThread(threadName, channelName = 'haunted-house') {
-    const response = await postJSON(DISCORD_THREAD_API, { threadName, channelName });
+export async function getOrCreateThread(avatar, threadName) {
+    const channelId = avatar.location.type === 'thread' ? avatar.location.parent : avatar.location.id;
+    const response = await postJSON(DISCORD_THREAD_API, { threadName, channelId });
     return response.thread;
 }
 
@@ -21,7 +22,7 @@ export async function moveAvatarToThread(avatar, thread) {
 export async function postMessageInThread(avatar, content) {
     const data = {
         avatar,
-        channelId: avatar.location.parent,
+        channelId: avatar.location.parent || avatar.location.parentId,
         threadId: avatar.location.id,
         message: content
     };
@@ -54,6 +55,9 @@ export async function handleDiscordInteraction(data, message) {
     }
 
     const avatar = data;
+    if (data.location.type == 11) {
+        data.location.type = 'thread';
+    }
     console.log(`${avatar.emoji} ${avatar.name} responds in ${data.location.type}: ${data.location.name}`);
 
     if (data.location.type === 'thread') {

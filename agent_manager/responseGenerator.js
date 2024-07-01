@@ -35,6 +35,11 @@ export async function generateResponse(avatar, conversation, objects, toolResult
         { role: 'user', content: userPrompt }
     ]);
 
+    if (!response) {
+        console.error('No response generated');
+        return null;
+    }
+
     // If the response begins with the current room's conversation tag, remove it
     const trimmedResponse = response.startsWith(conversationTag(avatar) + ':')
         ? response.slice(conversationTag(avatar).length + 1).trim()

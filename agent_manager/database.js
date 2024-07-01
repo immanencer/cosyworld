@@ -16,7 +16,7 @@ async function connectToMongoDB() {
         await client.connect();
         db = client.db(dbName);
 
-        db.collection('objects').createIndex({ name: 1 }, { unique: true });
+        db.collection('items').createIndex({ name: 1 }, { unique: true });
         console.log('MongoDB connected');
     } catch (err) {
         console.error('Error connecting to MongoDB:', err);

@@ -1,8 +1,9 @@
 import { MESSAGES_API } from './config.js';
 import { cleanString } from './utils.js';
 import { postJSON } from './postJSON.js';
-import { updateAvatarLocation, getLocations } from './avatar.js';
-import { examineRoom, takeItem, useItem, leaveItem, createItem, getAvatarItems } from './item.js';
+import { getLocations } from './locationHandler.js';
+import { updateAvatarLocation } from './avatar.js';
+import { searchRoom, takeItem, useItem, leaveItem, createItem, getAvatarItems } from './item.js';
 import { waitForTask } from './task.js';
 import { postResponse } from './response.js';
 
@@ -26,7 +27,7 @@ const tools = {
         return `Location ${data} not found.`;
     },
     examine_room: async (avatar, _, conversation) => {
-        const tool_result = await examineRoom(avatar);
+        const tool_result = await searchRoom(avatar);
         let message = '';
         let counter = 0;
 
@@ -61,15 +62,6 @@ const tools = {
 
         console.log(`🔍 Examining room for ${avatar.name} in ${avatar.location.name}: ${message}`);
 
-        await postJSON(MESSAGES_API, {
-            message_id: 'default_id',
-            author: avatar,
-            content: message,
-            createdAt: new Date().toISOString(),
-            channelId: locations.find(loc => loc.name === avatar.location.name)?.id,
-            guildId: 'default_guild_id'
-        });
-
         return message;
     },
     take_item: takeItem,
@@ -92,26 +84,14 @@ const tools = {
 export async function callTool(tool, avatar, conversation) {
     console.log(`⚒️ Calling tool: ${tool} for avatar: ${avatar.name}`);
 
-    try {
-        const [toolName, ...args] = cleanString(tool).replace(')', '').split('(');
-        const toolFunction = tools[toolName];
+    const [toolName, ...args] = cleanString(tool).replace(')', '').split('(');
+    const toolFunction = tools[toolName];
 
-        if (!toolFunction) {
-            return `${toolName} not found.`;
-        }
-
-        return await toolFunction(avatar, args.join('('), conversation);
-    } catch (error) {
-
-        const objects = getAvatarItems(avatar);
-        if (objects && objects.length > 0) {
-            const object = objects.find(o => o.name === tool);
-            if (object) {
-                return await useItem(avatar, tool, conversation);
-            }
-            return `Error calling tool ${tool}: ${error.message}`;
-        }
+    if (!toolFunction) {
+        return `${toolName} not found.`;
     }
+
+    return await toolFunction(avatar, args.join('('), conversation);
 }
 export function getAvailableTools() {
     return Object.keys(tools);

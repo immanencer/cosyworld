@@ -4,7 +4,7 @@ import { callTool, getAvailableTools } from './tool.js';
 import { getAvatarItems } from './item.js';
 import { conversationTag } from './message.js';
 import { getOrCreateThread, moveAvatarToThread, postMessageInThread } from '../server/services/discordService.js';
-import { createNewAvatar, avatarExists } from './avatarUtils.js';
+import { createNewAvatar, avatarExists } from './avatar.js';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second

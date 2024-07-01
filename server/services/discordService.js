@@ -1,5 +1,5 @@
 import process from 'process';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import chunkText from '../../tools/chunk-text.js';
 
 const discordClient = new Client({
@@ -9,6 +9,36 @@ const discordClient = new Client({
         GatewayIntentBits.MessageContent,
     ]
 });
+
+
+
+discordClient.commands = new Collection();
+
+import { commands } from '../services/slash/commands.js';
+const examine = commands[0];
+discordClient.commands.set(examine.data.name, examine);
+discordClient.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isChatInputCommand()) return;
+
+	const command = interaction.client.commands.get(interaction.commandName);
+
+	if (!command) {
+		console.error(`No command matching ${interaction.commandName} was found.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+		} else {
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}
+});
+
 
 let discordReady = false;
 
@@ -114,14 +144,14 @@ export async function getLocations() {
     ];
 }
 
-export async function getOrCreateThread(threadName, channelName) {
+export async function getOrCreateThread(threadName, channelId) {
     // Implementation depends on your Discord.js setup
     // This is a placeholder implementation
     const channel = discordClient.channels.cache.find(ch => ch.name === threadName && ch.isThread());
     if (channel) return channel;
 
     // If thread doesn't exist, create it in the first available text channel
-    const textChannel = discordClient.channels.cache.find(ch => ch.name === channelName && ch.isText());
+    const textChannel = await discordClient.channels.fetch(channelId);
     if (!textChannel) throw new Error('No text channel available to create thread');
 
     return await textChannel.threads.create({

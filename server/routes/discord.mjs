@@ -1,7 +1,7 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
 import { db } from '../../database/index.js';
-import { initializeDiscordClient, sendMessage, sendAsAvatar, getLocations, isDiscordReady } from '../../services/discord.mjs';
+import { initializeDiscordClient, sendMessage, sendAsAvatar, listChannels, isDiscordReady } from '../../services/discord.mjs';
 import { PROCESS_INTERVAL } from '../config.mjs';
 import { getOrCreateThread, postMessageInThread } from '../../agent_manager/threadUtils.js';
 
@@ -87,7 +87,7 @@ router.get('/locations', async (req, res) => {
     }
 
     try {
-        const locations = await getLocations();
+        const locations = await listChannels();
         res.status(200).send(locations);
     } catch (error) {
         console.error('🎮 ❌ Failed to fetch locations:', error);

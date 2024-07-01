@@ -1,20 +1,16 @@
-import { AVATARS_API, LOCATIONS_API } from './config.js';
+import { AVATARS_API } from './config.js';
 import { fetchJSON } from './fetchJSON.js';
-
-let cachedLocations = null;
-
-export const getLocations = async () => {
-    if (!cachedLocations || cachedLocations.length === 0) {
-        cachedLocations = await fetchJSON(LOCATIONS_API);
-    }
-    return cachedLocations;
-};
+import { getLocations } from './locationHandler.js';
 
 export const initializeAvatars = async () => {
     const [locations, allAvatars] = await Promise.all([
         getLocations(),
         fetchJSON(AVATARS_API)
     ]);
+
+    if (!locations || locations.length === 0) {
+        throw new Error('No locations found');
+    }
 
     return allAvatars
         .filter(avatar => avatar.owner === 'host')
@@ -72,7 +68,21 @@ const updateAvatarOnServer = async (avatar) => {
     }
 };
 
-export const refreshLocations = async () => {
-    cachedLocations = await fetchJSON(LOCATIONS_API);
-    return cachedLocations;
-};
+import { postJSON } from './postJSON.js';
+import { ENQUEUE_API } from './config.js';
+
+export async function createNewAvatar(avatarName) {
+    const response = await postJSON(ENQUEUE_API, {
+        action: 'createNewAvatar',
+        data: { avatarName }
+    });
+    return response.avatar;
+}
+
+export async function avatarExists(avatarName) {
+    const response = await postJSON(ENQUEUE_API, {
+        action: 'checkAvatarExists',
+        data: { avatarName }
+    });
+    return response.exists;
+}
