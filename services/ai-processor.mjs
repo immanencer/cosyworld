@@ -25,7 +25,7 @@ async function process_next_task() {
     logged = false;
     
     // process the task
-    console.log('Processing task:', task._id);
+    console.log(`Processing task: ${task._id.toHexString()}`);
     const ai = new AI(task.model || 'ollama/llama3');
 
     if (!task.avatar) {

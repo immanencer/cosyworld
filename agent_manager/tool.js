@@ -70,7 +70,7 @@ const tools = {
     craft: async (avatar, data) => {
         const [name, description] = data.split(',').map(cleanString);
         if (!name || !description) {
-            throw new Error('Both name and description are required for creating an object.');
+            throw new Error('Both name and description are required for creating an item.');
         }
         return craftItem({
             name,

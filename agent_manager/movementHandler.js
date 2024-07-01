@@ -19,10 +19,10 @@ If you decide to stay, respond with "STAY".
 Your response should be ONLY the location name or "STAY".
 `;
 
-    const moveDecision = await waitForTask(
+    const moveDecision = (await waitForTask(
         { personality: avatar.personality },
         [{ role: 'user', content: movementPrompt }]
-    );
+    )).substring(0, 80);
 
     const shouldMove = moveDecision && (moveDecision.trim().toUpperCase().indexOf('STAY') < 0);
     const locationToMoveTo = shouldMove ? moveDecision.trim() : null;

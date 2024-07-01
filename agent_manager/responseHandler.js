@@ -26,14 +26,14 @@ export async function handleResponse(avatar, conversation, locations) {
 
         console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
 
-        const [objects, availableTools] = await Promise.all([
+        const [items, availableTools] = await Promise.all([
             getAvatarItems(avatar),
             getAvailableTools()
         ]);
 
-        const toolResults = await handleTools(avatar, conversation, objects, availableTools);
+        const toolResults = await handleTools(avatar, conversation, items, availableTools);
         console.log(`🛠️ Tool results for ${avatar.name}:`, JSON.stringify(toolResults, null, 2));
-        const response = await generateResponse(avatar, conversation, objects, toolResults);
+        const response = await generateResponse(avatar, conversation, items, toolResults);
         const locationResponse = await checkMovementAfterResponse(avatar, conversation, response);
         if (locationResponse) {
             console.log(`🤖 ${avatar.name} wants to move to ${locationResponse}`);
@@ -43,7 +43,7 @@ export async function handleResponse(avatar, conversation, locations) {
                 console.log(`${avatar.emoji} ${avatar.name} is moving from ${avatar.location.name} to ${newLocation.name}.`);
             }
             avatar.location = newLocation || avatar.location;
-            await updateAvatarLocation(avatar);
+            await postResponse(avatar, response);
         }
 
         if (response && response.trim() !== "") {

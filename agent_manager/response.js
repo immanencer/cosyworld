@@ -3,7 +3,7 @@ import { waitForTask } from './task.js';
 import { callTool, getAvailableTools } from './tool.js';
 import { getAvatarItems } from './item.js';
 import { conversationTag } from './message.js';
-import { getOrCreateThread, moveAvatarToThread, postMessageInThread } from '../server/services/discordService.js';
+import { getOrCreateThread, moveAvatarToThread, postMessageInThread } from './discordHandler.js';
 import { createNewAvatar, avatarExists } from './avatar.js';
 
 const MAX_RETRIES = 3;
@@ -27,22 +27,22 @@ function extractMentionedAvatars(content) {
 }
 
 export const postResponse = retry(async (avatar, response) => {
-    console.log(`${avatar.emoji} ${avatar.name} responds.`);
+    console.log(`${avatar.emoji || ''} ${avatar.name} responds.`);
     const { threadName, content } = parseResponse(response);
     
-    let thread = await getOrCreateThread(threadName);
+    let thread = await getOrCreateThread(avatar, threadName);
     
     if (content.includes(avatar.name)) {
         await moveAvatarToThread(avatar, thread);
     } else {
-        await postMessageInThread(avatar, thread, content);
+        await postMessageInThread(avatar, content);
     }
     
     const mentionedAvatars = extractMentionedAvatars(content);
     for (let newAvatarName of mentionedAvatars) {
         if (!await avatarExists(newAvatarName)) {
             const newAvatar = await createNewAvatar(newAvatarName);
-            await postMessageInThread(newAvatar, thread, `${newAvatarName} has joined the conversation.`);
+            await postMessageInThread(newAvatar, `${newAvatarName} has joined the conversation.`);
         }
     }
 }, MAX_RETRIES, RETRY_DELAY);
@@ -61,13 +61,13 @@ export async function handleResponse(avatar, conversation) {
 
         console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
 
-        const [objects, availableTools] = await Promise.all([
+        const [items, availableTools] = await Promise.all([
             getAvatarItems(avatar),
             getAvailableTools()
         ]);
 
-        const toolResults = await handleTools(avatar, conversation, objects, availableTools);
-        const response = await generateResponse(avatar, conversation, objects, toolResults);
+        const toolResults = await handleTools(avatar, conversation, items, availableTools);
+        const response = await generateResponse(avatar, conversation, items, toolResults);
 
         if (response && response.trim() !== "") {
             await postResponse(avatar, response);
@@ -101,10 +101,10 @@ Answer with YES or NO depending on the message of the haiku.`]
     return shouldRespond;
 }
 
-async function handleTools(avatar, conversation, objects, availableTools) {
+async function handleTools(avatar, conversation, items, availableTools) {
     const recentConversation = conversation;
     const toolsPrompt = `
-You have the following objects: ${JSON.stringify(objects)}.
+You have the following items: ${JSON.stringify(items)}.
 Return a single relevant tool call from this list, be sure to modify the parameters:
 
 ${formatToolList(availableTools)}
@@ -134,11 +134,11 @@ If no tool is relevant, return NONE.
     ));
 }
 
-async function generateResponse(avatar, conversation, objects, toolResults) {
+async function generateResponse(avatar, conversation, items, toolResults) {
     const recentConversation = conversation;
 
-    // Simplify the objects and toolResults to just their keys
-    const objectKeys = Object.keys(objects).join(', ');
+    // Simplify the items and toolResults to just their keys
+    const itemKeys = Object.keys(items).join(', ');
     const toolResultKeys = Object.keys(toolResults).join(', ');
 
     // Create a concise prompt for the final user message
@@ -147,9 +147,9 @@ async function generateResponse(avatar, conversation, objects, toolResults) {
 
     userPrompt = userPrompt + conversationTag(avatar) + ':';
     
-    if (objectKeys.length > 0) {
-        console.log(`Items for ${avatar.name}: ${objectKeys}`);
-        userPrompt += `You have the following objects: ${objectKeys}.`;
+    if (itemKeys.length > 0) {
+        console.log(`Items for ${avatar.name}: ${itemKeys}`);
+        userPrompt += `You have the following items: ${itemKeys}.`;
     }
     if (toolResultKeys.length > 0) {
         console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);

@@ -8,18 +8,32 @@ function formatToolList(tools) {
     }).join('\n');
 }
 
+function formatItems(items) {
+
+    // Map each item to a formatted string
+    const formattedItems = items.map((item, index) => {
+        return `${index + 1}. ${item.name}
+     Description: ${item.description}
+     Location: ${item.location}`;
+    });
+
+    // Join the formatted items with newlines
+    return formattedItems.join('\n\n');
+}
+
+
 export async function handleTools(avatar, conversation, items, availableTools) {
     const recentConversation = conversation;
-    const toolsPrompt = 
-`${items.length > 0 ? ` You have the following items in your possession: 
+    const toolsPrompt =
+        `${items.length > 0 ? ` You have the following items in your possession: 
 
-${JSON.stringify(items)}.` : ''}
+${formatItems(items)}.` : ''}
 
 You have the following abilities:
 
 ${formatToolList(availableTools)}
 
-Respond with the SINGLE tool or object you would like to use, or NONE if no tool is relevant.
+Respond with the SINGLE tool or item you would like to use, or NONE if no tool is relevant.
 If no tool is relevant, return NONE.`;
 
     if (items.length > 0) {
@@ -40,16 +54,16 @@ If no tool is relevant, return NONE.`;
     }
 
     const toolsToCall = toolsCheck.split('\n').filter(tool => tool.trim());
-    
-    // Create a Set of object names for faster lookup
-    const objectNames = new Set(items.map(obj => obj.name.toLowerCase()));
+
+    // Create a Set of item names for faster lookup
+    const itemNames = new Set(items.map(obj => obj.name.toLowerCase()));
 
     return Promise.all(toolsToCall.map(tool => {
         // Check if the tool call is an item name
         const toolLower = tool.toLowerCase().trim();
-        if (objectNames.has(toolLower)) {
-            // Rephrase as a use_item call
-            tool = `use_item("${tool}")`;
+        if (itemNames.has(toolLower)) {
+            // Rephrase as a use call
+            tool = `use("${tool}")`;
         }
 
         return callTool(tool, avatar, recentConversation).catch(error => {

@@ -73,6 +73,10 @@ export async function sendAsAvatar(avatar, message) {
         throw new Error('Missing message content');
     }
 
+    if (typeof message !== 'string') {
+        throw new Error('Message content must be a string');
+    }
+
     // Fetch the channel where the message should be sent
     let channel = await discordClient.channels.fetch(avatar.location.type === 'thread' ? avatar.location.parent : avatar.location.id);
 

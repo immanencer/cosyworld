@@ -4,7 +4,7 @@ import { conversationTag } from './message.js';
 export async function generateResponse(avatar, conversation, items, toolResults) {
     const recentConversation = conversation;
 
-    // Simplify the objects and toolResults arrays into a concise string
+    // Simplify the items and toolResults arrays into a concise string
     const itemKeys = items.map(T => T.name).join(', ');
     const toolResultKeys = toolResults.join(', ');
 
@@ -16,7 +16,7 @@ export async function generateResponse(avatar, conversation, items, toolResults)
     
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
-        userPrompt += `You have the following objects: ${itemKeys}.`;
+        userPrompt += `You have the following items: ${itemKeys}.`;
     }
     if (toolResultKeys.length > 0) {
          console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);

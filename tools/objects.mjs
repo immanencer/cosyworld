@@ -42,25 +42,25 @@ async function examineRoom(avatar) {
         roomDetails = newRoom; // Use the new room as the room details
     }
 
-    const objectsInRoom = await db.collection('items').find({ location: avatar.location.name }).toArray();
+    const itemsInRoom = await db.collection('items').find({ location: avatar.location.name }).toArray();
 
     return {
         description: roomDetails.description || `${avatar.location.name}`,
-        objects: objectsInRoom
+        items: itemsInRoom
     };
 }
 
-// Function to take an object
-async function takeObject(avatar, conversation, object_name) {
-    console.log(`Taking object ${object_name} for ${avatar.name}`);
+// Function to take an item
+async function takeObject(avatar, conversation, item_name) {
+    console.log(`Taking item ${item_name} for ${avatar.name}`);
     const result = await db.collection('items').updateOne(
-        { name: object_name },
+        { name: item_name },
         { $set: { takenBy: avatar.name } }
     );
-    return result.modifiedCount > 0 ? `Object ${object_name} taken.` : 'Failed to take object.';
+    return result.modifiedCount > 0 ? `Object ${item_name} taken.` : 'Failed to take item.';
 }
 
-// Function to use an object
+// Function to use an item
 async function getObject(name) {
     await updateObjectLocations();
     return await db.collection('items').findOne({ name });
@@ -77,16 +77,16 @@ async function getItemsForLocation(location) {
 }
 
 async function updateObjectLocations() {
-    // get all owned objects
-    const objects = await db.collection('items').find({ takenBy: { $ne: null } }).toArray();
-    // get all avatars with owned objects locations
-    const avatars = await db.collection('avatars').find({ name: { $in: objects.map(o => o.takenBy) } }).toArray();
-    // update object locations
-    for (const object of objects) {
-        const avatar = avatars.find(a => a.name === object.takenBy);
+    // get all owned items
+    const items = await db.collection('items').find({ takenBy: { $ne: null } }).toArray();
+    // get all avatars with owned items locations
+    const avatars = await db.collection('avatars').find({ name: { $in: items.map(o => o.takenBy) } }).toArray();
+    // update item locations
+    for (const item of items) {
+        const avatar = avatars.find(a => a.name === item.takenBy);
         if (avatar) {
             await db.collection('items').updateOne(
-                { name: object.name },
+                { name: item.name },
                 { $set: { location: avatar.location } }
             );
         }
@@ -95,41 +95,41 @@ async function updateObjectLocations() {
     return 'Object locations updated.';
 }
 
-// Function to leave an object
-async function leaveObject(avatar, conversation, object_name) {
+// Function to leave an item
+async function leaveObject(avatar, conversation, item_name) {
     await updateObjectLocations();  
-    console.log(`Leaving object ${object_name} for ${avatar.name}`);
+    console.log(`Leaving item ${item_name} for ${avatar.name}`);
     const result = await db.collection('items').updateOne(
-        { name: object_name },
+        { name: item_name },
         { $set: { takenBy: null } }
     );
-    return result.modifiedCount > 0 ? `Object ${object_name} left.` : 'Failed to leave object.';
+    return result.modifiedCount > 0 ? `Object ${item_name} left.` : 'Failed to leave item.';
 }
-// Function to create a new object
-async function createObject(objectData) {
-    console.log(`Creating new object with name: ${objectData.name}`);
+// Function to create a new item
+async function craftItem(itemData) {
+    console.log(`Creating new item with name: ${itemData.name}`);
     try {
-        // Check that the Moonlit Lantern and Celestial Sphere are in the same room as the object
+        // Check that the Moonlit Lantern and Celestial Sphere are in the same room as the item
         const moonlitLantern = await db.collection('items').findOne({ name: 'Moonlit Lantern' });
         const celestialSphere = await db.collection('items').findOne({ name: 'Celestial Sphere' });
 
         if (moonlitLantern && celestialSphere) {
-            if (moonlitLantern.location !== objectData.location || celestialSphere.location !== objectData.location) {
+            if (moonlitLantern.location !== itemData.location || celestialSphere.location !== itemData.location) {
                 return 'Item NOT Created. The Moonlit Lantern and Celestial Sphere are not both present.';
             }
         }
-        // Check if an object with the same name already exists
-        const existingObject = await db.collection('items').findOne({ name: objectData.name });
+        // Check if an item with the same name already exists
+        const existingObject = await db.collection('items').findOne({ name: itemData.name });
         if (existingObject) {
             console.error('Object with the same name already exists.');
             return 'Object with the same name already exists.';
         }
 
-        const result = await db.collection('items').insertOne(objectData);
-        return result.insertedId ? `Object created with ID: ${result.insertedId}` : 'Failed to create object.';
+        const result = await db.collection('items').insertOne(itemData);
+        return result.insertedId ? `Object created with ID: ${result.insertedId}` : 'Failed to create item.';
     } catch (error) {
-        console.error('Failed to create object:', error);
-        return 'Failed to create object due to an error.';
+        console.error('Failed to create item:', error);
+        return 'Failed to create item due to an error.';
     }
 }
 // Export functions
@@ -139,7 +139,7 @@ export {
     getObject,
     getAvatarItems,
     leaveObject,
-    createObject
+    craftItem as createObject
 };
 
 
