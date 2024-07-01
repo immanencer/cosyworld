@@ -57,7 +57,7 @@ export async function sendAsAvatar(avatar, message) {
         for (const chunk of chunks) {
             await webhook.send({
                 content: chunk,
-                username: `${avatar.name} ${avatar.emoji}`,
+                username: `${avatar.name} ${avatar.emoji || '⚠️'}`,
                 avatarURL: avatar.avatar,
                 threadId: avatar.threadId
             });

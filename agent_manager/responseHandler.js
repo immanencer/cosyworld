@@ -10,8 +10,6 @@ import { checkShouldRespond } from './haikuResponder.js';
 import { checkMovementAfterResponse } from './movementHandler.js';
 import { updateAvatarLocation } from './avatar.js';
 
-
-
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -37,13 +35,12 @@ export async function handleResponse(avatar, conversation, locations) {
         const locationResponse = await checkMovementAfterResponse(avatar, conversation, response);
         if (locationResponse) {
             console.log(`🤖 ${avatar.name} wants to move to ${locationResponse}`);
-            const newLocation = locations.find(location => location.name === locationResponse) || await getOrCreateThread(avatar, locationResponse);
+            const newLocation = locations.find(location => location.name === locationResponse) || (await getOrCreateThread(avatar, locationResponse));
 
             if (newLocation && avatar?.location?.id !== newLocation?.id) {
-                console.log(`${avatar.emoji} ${avatar.name} is moving from ${avatar.location.name} to ${newLocation.name}.`);
+                console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is moving from ${avatar.location.name} to ${newLocation.name}.`);
+                await updateAvatarLocation(avatar, newLocation);
             }
-            avatar.location = newLocation || avatar.location;
-            await postResponse(avatar, response);
         }
 
         if (response && response.trim() !== "") {

@@ -98,7 +98,7 @@ class Skull extends DiscordBot {
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
-        if (data.author === `${this.avatar.name} ${this.avatar.emoji}`) return;
+        if (data.author === `${this.avatar.name} ${this.avatar.emoji || '⚠️'}`) return;
         if (data.location !== this.avatar.location) return;
         console.log(`🐺 Skull heard a whisper from ${data.author} in ${data.location}: ${data.content}`);
 

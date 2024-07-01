@@ -27,7 +27,7 @@ function populateAvatarSelect() {
     characters.forEach(character => {
         const option = document.createElement('option');
         option.value = character.name;
-        option.text = `${character.emoji} ${character.name}`;
+        option.text = `${character.emoji || '⚠️'} ${character.name}`;
         avatarSelect.add(option);
     });
 }

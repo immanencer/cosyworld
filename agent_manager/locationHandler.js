@@ -68,10 +68,10 @@ const moveAvatarIfNeeded = async ({ avatar, newLocation }) => {
     return avatar;
   }
   try {
-    console.log(`${avatar.emoji} ${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
+    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
     const updatedAvatar = { ...avatar, location: newLocation };
     await updateAvatarLocation(updatedAvatar);
-    console.log(`${updatedAvatar.emoji} ${updatedAvatar.name} moved to ${updatedAvatar.location.name}`);
+    console.log(`${updatedAvatar.emoji || '⚠️'} ${updatedAvatar.name} moved to ${updatedAvatar.location.name}`);
     return updatedAvatar;
   } catch (error) {
     console.error(`Failed to update location for ${avatar.name}:`, error);

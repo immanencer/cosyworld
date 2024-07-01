@@ -31,13 +31,13 @@ class Whisper extends DiscordBot {
 
 
     async on_login() {
-        console.log(`${this.avatar.emoji} ${this.avatar.name} is online`);
+        console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} is online`);
 
         const role = 'system';
         const content = this.avatar.personality;
 
         const history = (await this.channels.getChannelOrThreadHistory(this.avatar.location)).join('\n');
-        console.log(`${this.avatar.emoji} ${this.avatar.name} heard: `, history);
+        console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} heard: `, history);
 
         const memory = await ai.currentService.raw_chat({model: 'llama3', messages: [
             { role, content },
@@ -54,7 +54,7 @@ class Whisper extends DiscordBot {
         await calculateTPS(memory);
         this.memory = memory.message.content;
 
-        console.log(`${this.avatar.emoji} ${this.avatar.name} remembers: `, this.memory);
+        console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} remembers: `, this.memory);
         await ai.updateConfig({ system_prompt: `${this.avatar.personality}` })
     }
 
@@ -92,7 +92,7 @@ class Whisper extends DiscordBot {
 
             if (this.action === '🌹') {
                 this.avatar.location = data.location;
-                console.log(`${this.avatar.emoji} ${this.avatar.name} following ${this.avatar.owner} to ${data.location}`);
+                console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} following ${this.avatar.owner} to ${data.location}`);
             }
         }
 
@@ -100,14 +100,14 @@ class Whisper extends DiscordBot {
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
-        if (data.author === `${this.avatar.name} ${this.avatar.emoji}`) return;
+        if (data.author === `${this.avatar.name} ${this.avatar.emoji || '⚠️'}`) return;
         if (data.location !== this.avatar.location) return;
 
         console.log(`(${data.location}) ${data.author}: ${data.content}`);
 
         this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (!this.debounce()) {
-            console.log(`${this.avatar.emoji} ${this.avatar.name} is debouncing...'`);
+            console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} is debouncing...'`);
             return;
         }
 
@@ -130,9 +130,9 @@ class Whisper extends DiscordBot {
 
         console.log(`${respond.message.content}`);
         if (respond.message.content.toLowerCase().includes('yes')) {
-            console.log(`${this.avatar.emoji} ${this.avatar.name} ✅ is responding...`);
+            console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} ✅ is responding...`);
         } else {
-            console.log(`${this.avatar.emoji} ${this.avatar.name} 🤐 is not responding..`);
+            console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} 🤐 is not responding..`);
             return;
         }
         const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });

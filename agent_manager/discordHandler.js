@@ -28,7 +28,7 @@ export async function postMessageInThread(avatar, content) {
     };
 
     if (!data.avatar || !data.channelId || !data.threadId || !data.message) {
-           throw new Error('Missing avatar, channel, thread, or message data');
+        throw new Error('Missing avatar, channel, thread, or message data');
     }
     await postJSON(ENQUEUE_API, { action: 'postMessageInThread', data });
 }
@@ -49,20 +49,19 @@ function extractMentionedAvatars(content) {
     return [...new Set(content.match(mentionRegex) || [])];
 }
 
-export async function handleDiscordInteraction(data, message) {
-    if (!data.avatar || !data.location || !message) {
+export async function handleDiscordInteraction(avatar, message) {
+    if (!avatar.avatar || !avatar.location || !message) {
         throw new Error('Missing avatar, location, or message data');
     }
 
-    const avatar = data;
-    if (data.location.type == 11) {
-        data.location.type = 'thread';
+    if (avatar.location.type == 11) {
+        avatar.location.type = 'thread';
     }
-    console.log(`${avatar.emoji} ${avatar.name} responds in ${data.location.type}: ${data.location.name}`);
+    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} responds in ${avatar.location.type}: ${avatar.location.name}`);
 
-    if (data.location.type === 'thread') {
+    if (avatar.location.type === 'thread') {
         await handleThreadInteraction(avatar, message);
-    } else if (data.location.type === 'channel') {
+    } else if (avatar.location.type === 'channel') {
         await handleChannelInteraction(avatar, message);
     } else {
         throw new Error(`Unsupported location type: ${avatar.location.type}`);

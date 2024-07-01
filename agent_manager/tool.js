@@ -17,7 +17,7 @@ try {
 
 const tools = {
     move: async (avatar, data) => {
-        console.log(`${avatar.emoji} ${avatar.name} 🏃💨 ${data}`);
+        console.log(`${avatar.emoji || '⚠️'} ${avatar.name} 🏃💨 ${data}`);
         const new_location = locations.find(loc => loc.name === data);
         if (new_location) {
             avatar.location = new_location;

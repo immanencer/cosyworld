@@ -99,7 +99,7 @@ const buildConversation = (messages, locations) =>
         return `(${location}) ${author}: ${message.content}`;
     });
 
-export const conversationTag = avatar => `(${avatar.location.name}) ${avatar.name} ${avatar.emoji}`;
+export const conversationTag = avatar => `(${avatar.location.name}) ${avatar.name} ${avatar.emoji || '⚠️'}`;
 
 export const parseConversationTag = tag => {
     const match = tag.match(/^\(([^)]+)\)\s+(.+?)(?=:\s|$)/u);

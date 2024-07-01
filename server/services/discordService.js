@@ -89,7 +89,7 @@ export async function sendAsAvatar(avatar, message) {
         const chunks = chunkText(message, 2000);
 
         const headers = {
-            username: `${avatar.name} ${avatar.emoji}`,
+            username: `${avatar.name} ${avatar.emoji || '⚠️'}`,
             avatarURL: avatar.avatar
         };
         if (avatar.location.type === 'thread') {
