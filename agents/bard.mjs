@@ -1,5 +1,8 @@
 import DiscordAIBot from '../tools/discord-ai-bot.js';
 
+const TWEET_API_URL = 'https://localhost:8443/x/tweet';
+const RUMBLE_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+
 const ratichat = new DiscordAIBot({
     name: "The Lonely Bard",
     emoji: "🎶",
@@ -11,11 +14,9 @@ const ratichat = new DiscordAIBot({
 
 async function postTweet(text) {
     try {
-        const response = await fetch('https://localhost:8443/x/tweet', {
+        const response = await fetch(TWEET_API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ text })
         });
 
@@ -35,7 +36,7 @@ ratichat.rumble = async function () {
         await this.initializeMemory();
         const dream = await this.aiServiceManager.chatSync({
             role: 'user',
-            content: `Describe your inner thoughts and feelings as a bard in the Lonely Forest.`
+            content: 'Describe your inner thoughts and feelings as a bard in the Lonely Forest.'
         });
 
         const oaken_memory = await this.loadMemory(this.remember);
@@ -44,7 +45,7 @@ ratichat.rumble = async function () {
             messages: [
                 {
                     role: 'system',
-                    content: `You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsy wit wisdom and whispers.`
+                    content: 'You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsy wit wisdom and whispers.'
                 },
                 {
                     role: 'assistant',
@@ -79,7 +80,7 @@ ratichat.rumble = async function () {
     }
 
     // Schedule next rumble
-    setTimeout(() => this.rumble(), 4 * 60 * 60 * 1000); // 4 hours
+    setTimeout(() => this.rumble(), RUMBLE_INTERVAL);
 };
 
 ratichat.on_login = async function () {
