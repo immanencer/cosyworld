@@ -85,6 +85,7 @@ async function handleMentionedAvatars(message, location) {
             const newAvatar = await createNewAvatar(newAvatarName);
             if (location.type === 'thread') {
                 const thread = await getOrCreateThread(location.id);
+                moveAvatarToThread(newAvatar, thread);
                 await postMessageInThread(newAvatar, `${newAvatarName} has joined the conversation.`);
             } else {
                 await postMessageInChannel(newAvatar, `${newAvatarName} has joined the conversation.`);

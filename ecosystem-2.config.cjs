@@ -1,15 +1,15 @@
 module.exports ={
   apps : [
-    {   "name": "🤖 ai",
+    {   "name": "ai",
         "script": "./services/ai-processor.mjs"
     },
-    {   "name": "👼 heavenly host",
-        "script": "./agents/angels/host.mjs"
+    {   "name": "agents",
+        "script": "./agent_manager/main.js"
     },
-    {   "name": "🕸️ server",
+    {   "name": "server",
         "script": "./server/index.mjs"
     },
-    {   "name": "🎮 📡 discord listener",
+    {   "name": "listener",
         "script": "./services/listener.mjs"
     }],
   restart_delay: 10000, // 10 seconds delay before restarting

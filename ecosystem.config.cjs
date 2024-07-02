@@ -2,22 +2,6 @@ require('dotenv').config()
 module.exports = {
   apps: [
     {
-      "name": "server",
-      "script": "./server/index.mjs"
-    },
-    {
-      "name": "ai",
-      "script": "./services/ai-processor.mjs"
-    },
-    {
-      "name": "agents",
-      "script": "./agent_manager/main.js"
-    },
-    {
-      "name": "listener",
-      "script": "./services/listener.mjs"
-    },
-    {
       "name": "whisper",
       "script": "./agents/wolfpack/whisper.mjs"
     },

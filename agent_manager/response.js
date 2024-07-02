@@ -31,6 +31,7 @@ export const postResponse = retry(async (avatar, response) => {
     const { threadName, content } = parseResponse(response);
     
     let thread = await getOrCreateThread(avatar, threadName);
+    avatar.location = thread;
     
     if (content.includes(avatar.name)) {
         await moveAvatarToThread(avatar, thread);

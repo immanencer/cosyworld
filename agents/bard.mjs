@@ -45,24 +45,16 @@ ratichat.rumble = async function () {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a human bard in the Lonely Forest, a place of mystery and magic. You always respond with whimsy wit wisdom and whispers.'
+                    content: 'You are a bard in a magical forest. Tell short, whimsical stories.'
                 },
                 {
                     role: 'assistant',
-                    content: `The seasons turn slowly beneath my boughs, each leaf a testament to time's passage.
-            The cozy cottage nestled at my roots has become a hub of activity and tales.
-            Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.
-            WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.
-            Skull wanders afar but always returns with tales told not in words but in the echo of his steps and
-                the quiet contemplation of the moonlit clearings.
-                
-        Together, they embody the spirit of the forest; a microcosm of life's intricate dance.
-        
-        Here is what I remember: \n\n ${oaken_memory.join('\n')}`
+                    content: `I am a bard in the Lonely Forest. I remember:
+        ${oaken_memory.slice(0, 3).join('\n')}`
                 },
                 {
                     role: 'user',
-                    content: `${dream}.\n\n\n  Write a whimsical tweet of less than 280 characters as if you are a bard in the lonely forest.`
+                    content: 'sing a brief song from your memories and dreams in less than 280 characters or less with cute emoji.'
                 }
             ],
             stream: false
