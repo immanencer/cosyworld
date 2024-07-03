@@ -1,51 +1,49 @@
-import { retry } from './utils.js';
-import { getOrCreateThread, handleDiscordInteraction } from './discordHandler.js';
-
-import { handleTools } from './toolHandler.js';
-import { getAvailableTools } from './tool.js';
-import { getAvatarItems } from './item.js';
-
+import { handleDiscordInteraction } from './discordHandler.js';
+import { handleItems, getAvailableItems } from './itemHandler.js';
 import { generateResponse } from './responseGenerator.js';
 import { checkShouldRespond } from './haikuResponder.js';
 import { checkMovementAfterResponse } from './movementHandler.js';
 import { updateAvatarLocation } from './avatar.js';
+import { setLocationName, DEFAULT_LOCATION } from './locationHandler.js';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
+export async function handleResponse(avatar, conversation) {
+    if (!avatar || !avatar.location) {
+        console.warn(`Invalid avatar or location for ${avatar?.name || 'unknown avatar'}`);
+        avatar = { ...avatar, location: DEFAULT_LOCATION };
+    }
 
-export const postResponse = retry(handleDiscordInteraction, MAX_RETRIES, RETRY_DELAY);
-
-export async function handleResponse(avatar, conversation, locations) {
-    console.log(`🤖 Processing messages for ${avatar.name} in ${avatar.location.name}`);
+    console.log(`Processing messages for ${avatar.name} in ${avatar.location.name}`);
 
     try {
-        const shouldRespond = await checkShouldRespond(avatar, conversation);
-        if (!shouldRespond) return;
+        if (!await checkShouldRespond(avatar, conversation)) return;
 
-        console.log(`🤖 Responding as ${avatar.name} in ${avatar.location.name}`);
+        console.log(`Responding as ${avatar.name} in ${avatar.location.name}`);
 
-        const [items, availableTools] = await Promise.all([
-            getAvatarItems(avatar),
-            getAvailableTools()
-        ]);
+        const availableItems = await getAvailableItems(avatar);
+        const toolResults = await Promise.all(availableItems.map(item => 
+            handleItems(avatar, conversation, `use(${item.split(' (')[0]})`)
+        ));
 
-        const toolResults = await handleTools(avatar, conversation, items, availableTools);
-        console.log(`🛠️ Tool results for ${avatar.name}:`, JSON.stringify(toolResults, null, 2));
-        const response = await generateResponse(avatar, conversation, items, toolResults);
-        const locationResponse = await checkMovementAfterResponse(avatar, conversation, response);
-        if (locationResponse) {
-            console.log(`🤖 ${avatar.name} wants to move to ${locationResponse}`);
-            const newLocation = locations.find(location => location.name === locationResponse) || (await getOrCreateThread(avatar, locationResponse));
+        console.log(`Item usage results for ${avatar.name}:`, JSON.stringify(toolResults, null, 2));
 
-            if (newLocation && avatar?.location?.id !== newLocation?.id) {
-                console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is moving from ${avatar.location.name} to ${newLocation.name}.`);
-                await updateAvatarLocation(avatar, newLocation);
-            }
+        const response = await generateResponse(avatar, conversation, availableItems, toolResults);
+
+        const newLocationName = await checkMovementAfterResponse(avatar, conversation, response);
+        if (newLocationName) {
+            console.log(`${avatar.name} moving to ${newLocationName}`);
+            await handleItems(avatar, conversation, `use(Move, ${newLocationName})`);
+            const newLocation = setLocationName({ ...avatar.location }, newLocationName);
+            await updateAvatarLocation({ ...avatar, location: newLocation });
+            avatar = { ...avatar, location: newLocation };
         }
 
         if (response && response.trim() !== "") {
-            console.log(`🤖 Response for ${avatar.name} in ${avatar.location.name}: ${response}`);
-            await postResponse(avatar, response);
+            console.log(`Response for ${avatar.name} in ${avatar.location.name}: ${response}`);
+            try {
+                await handleDiscordInteraction(avatar, response);
+            } catch (error) {
+                console.error(`Error in handleDiscordInteraction for ${avatar.name}:`, error);
+            }
         }
         return response;
     } catch (error) {

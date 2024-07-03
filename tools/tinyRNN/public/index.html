@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNN Battleground: 2D World</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+        }
+        #world-grid {
+            display: grid;
+            grid-template-columns: repeat(100, 6px);
+            grid-template-rows: repeat(100, 6px);
+            gap: 1px;
+            background-color: #ccc;
+            border: 1px solid #999;
+        }
+        .cell {
+            width: 6px;
+            height: 6px;
+        }
+        .warrior {
+            position: relative;
+        }
+        .warrior::after {
+            content: '🤖';
+            position: absolute;
+            top: -7px;
+            left: -2px;
+            font-size: 12px;
+        }
+        #info-panel {
+            margin-left: 20px;
+            width: 200px;
+        }
+        #controls button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="world-grid"></div>
+        <div id="info-panel">
+            <h2>RNN Warrior</h2>
+            <div id="warrior-info"></div>
+            <div id="controls">
+                <button onclick="moveWarrior('north')">North</button>
+                <button onclick="moveWarrior('south')">South</button>
+                <button onclick="moveWarrior('west')">West</button>
+                <button onclick="moveWarrior('east')">East</button>
+            </div>
+            <h3>Current Location</h3>
+            <div id="location-info"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const WORLD_SIZE = 100;
+        let currentWarrior = null;
+
+        async function initializeWorld() {
+            const worldGrid = document.getElementById('world-grid');
+            for (let y = 0; y < WORLD_SIZE; y++) {
+                for (let x = 0; x < WORLD_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${x}-${y}`;
+                    worldGrid.appendChild(cell);
+                }
+            }
+
+            await createRandomWarrior();
+            updateWorld();
+        }
+
+        async function createRandomWarrior() {
+            const response = await fetch(`${API_URL}/warriors/random`, { method: 'POST' });
+            currentWarrior = await response.json();
+            updateWarriorPosition();
+            updateWarriorInfo();
+        }
+
+        function updateWarriorPosition() {
+            const oldWarriorCell = document.querySelector('.warrior');
+            if (oldWarriorCell) {
+                oldWarriorCell.classList.remove('warrior');
+            }
+
+            const newWarriorCell = document.getElementById(`cell-${currentWarrior.position.x}-${currentWarrior.position.y}`);
+            if (newWarriorCell) {
+                newWarriorCell.classList.add('warrior');
+            }
+        }
+
+        function updateWarriorInfo() {
+            const warriorInfo = document.getElementById('warrior-info');
+            warriorInfo.innerHTML = `
+                <p>ID: ${currentWarrior.id}</p>
+                <p>Emoji: ${currentWarrior.emoji}</p>
+                <p>Lives: ${currentWarrior.lives}</p>
+                <p>Wins: ${currentWarrior.wins}</p>
+                <p>Losses: ${currentWarrior.losses}</p>
+                <p>Position: (${currentWarrior.position.x}, ${currentWarrior.position.y})</p>
+            `;
+        }
+
+        async function moveWarrior(direction) {
+            const response = await fetch(`${API_URL}/warriors/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ warriorId: currentWarrior.id, direction })
+            });
+            const result = await response.json();
+            currentWarrior.position = result.newPosition;
+            updateWarriorPosition();
+            updateWarriorInfo();
+            displayLocationInfo(result.location);
+        }
+
+        function displayLocationInfo(location) {
+            const locationInfo = document.getElementById('location-info');
+            locationInfo.innerHTML = `
+                <p>Terrain: ${location.terrain}</p>
+                <p>Description: ${location.description}</p>
+            `;
+        }
+
+        async function updateWorld() {
+            const response = await fetch(`${API_URL}/world`);
+            const world = await response.json();
+            
+            for (let y = 0; y < WORLD_SIZE; y++) {
+                for (let x = 0; x < WORLD_SIZE; x++) {
+                    const cell = document.getElementById(`cell-${x}-${y}`);
+                    cell.style.backgroundColor = world[y][x].color;
+                }
+            }
+        }
+
+        window.onload = initializeWorld;
+    </script>
+</body>
+</html>
