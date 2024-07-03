@@ -22,14 +22,7 @@ const initializeAvatar = (avatar, locations) => ({
         .slice(-5)
 });
 
-export const updateAvatarLocation = async (avatar, newLocation) => {
-    if (!avatar || !avatar.location || !newLocation) {
-        console.error('Invalid avatar or location');
-        return;
-    }
-
-    avatar.location = newLocation;
-    
+export const updateAvatarLocation = async (avatar) => {
     console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
     avatar.remember = updateRememberedLocations(avatar);
 

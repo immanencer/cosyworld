@@ -2,7 +2,7 @@ import { fetchJSON } from './fetchJSON.js';
 import { updateAvatarLocation } from './avatar.js';
 import { LOCATIONS_API } from './config.js';
 
-const DEFAULT_LOCATION = { id: 'default', name: 'Default Location' };
+export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
 let cachedLocations = null;
 
 function sanitizeLocationName(name) {

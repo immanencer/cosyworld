@@ -33,7 +33,7 @@ export async function processMessagesForAvatar(avatar) {
             getMentions(avatar.name, lastProcessedMessageIdByAvatar.get(avatar.name))
         ]);
 
-        await handleAvatarLocation(avatar, mentions, locations);
+        await handleAvatarLocation(avatar, mentions[mentions.length - 1], locations);
 
         const lastCheckedId = lastCheckedMessageIdByAvatar.get(avatar.name);
         const messages = await fetchMessages(avatar, locations, lastCheckedId);
@@ -57,30 +57,64 @@ export async function processMessagesForAvatar(avatar) {
 }
 
 async function fetchMessages(avatar, locations, lastCheckedId) {
-    const rememberedLocations = avatar.remember || [avatar.location.name];
-    const messagePromises = rememberedLocations.map(async locationName => {
+    const CURRENT_LOCATION_MESSAGES = 15;
+    const MAX_TOTAL_MESSAGES = 50;
+    const MEMORY_INTERVAL = 3;
+
+    const currentLocation = avatar.location.name;
+    const rememberedLocations = avatar.remember || [];
+    
+    // Fetch messages for a location
+    async function getLocationMessages(locationName) {
+        const location = locations.find(loc => loc.name === locationName);
+        if (!location) {
+            console.warn(`Location not found: ${locationName}`);
+            return [];
+        }
         try {
-            const locationId = locations.find(loc => loc.name === locationName)?.id;
-            if (!locationId) {
-                // refresh locations
-                const newLocations = await getLocations();
-                const newLocationId = newLocations.find(loc => loc.name === locationName)?.id;
-                if (newLocationId) {
-                    locations = newLocations;
-                    return await getMessages(newLocationId, lastCheckedId);
-                }
-                console.warn(`Location not found: ${locationName}`);
-                return [];
-            }
-            return await getMessages(locationId, lastCheckedId);
+            return await getMessages(location.id, lastCheckedId);
         } catch (error) {
             console.error(`Error fetching messages for ${locationName}:`, error);
             return [];
         }
-    });
+    }
 
-    const allMessages = await Promise.all(messagePromises);
-    return allMessages.flat().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    // Fetch current location messages
+    const currentMessages = await getLocationMessages(currentLocation);
+    
+    // If we have enough messages from the current location, we're done
+    if (currentMessages.length >= MAX_TOTAL_MESSAGES) {
+        return currentMessages.slice(0, MAX_TOTAL_MESSAGES);
+    }
+
+    // Fetch memory messages
+    const memoryMessages = (await Promise.all(
+        rememberedLocations.map(getLocationMessages)
+    )).flat();
+
+    // Combine current and memory messages
+    const allMessages = [];
+    let currentIndex = 0;
+    let memoryIndex = 0;
+
+    while (allMessages.length < MAX_TOTAL_MESSAGES && 
+           (currentIndex < currentMessages.length || memoryIndex < memoryMessages.length)) {
+        
+        // Add current location messages
+        while (currentIndex < currentMessages.length && 
+               (allMessages.length < CURRENT_LOCATION_MESSAGES || allMessages.length % MEMORY_INTERVAL !== 0)) {
+            allMessages.push(currentMessages[currentIndex++]);
+            if (allMessages.length >= MAX_TOTAL_MESSAGES) break;
+        }
+        
+        // Add a memory message
+        if (memoryIndex < memoryMessages.length && allMessages.length < MAX_TOTAL_MESSAGES) {
+            allMessages.push(memoryMessages[memoryIndex++]);
+        }
+    }
+
+    // Sort messages by creation date
+    return allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 }
 
 const buildConversation = (messages, locations) =>
