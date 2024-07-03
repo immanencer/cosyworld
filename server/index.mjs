@@ -40,9 +40,6 @@ app.use('/ai', ai);
 import avatars from './routes/avatars.mjs';
 app.use('/avatars', avatars);
 
-import forest from './routes/forest.mjs';
-app.use('/forest', forest);
-
 // Third-party API routes
 
 import { discordRouter, startPeriodicProcessing } from './routes/discordRouter.mjs';

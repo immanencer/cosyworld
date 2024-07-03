@@ -10,6 +10,10 @@ export const getLocations = async () => {
     if (!cachedLocations || cachedLocations.length === 0) {
         cachedLocations = await fetchJSON(LOCATIONS_API);
     }
+    if (cachedLocations.length === 0) {
+        console.error('No locations found');
+        return [DEFAULT_LOCATION];
+    }
     return cachedLocations;
 };
 

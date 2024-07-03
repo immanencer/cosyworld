@@ -1,7 +1,7 @@
 import { db } from './database.js';
 import { cleanString } from './utils.js';
 import { waitForTask } from './task.js';
-import { postResponse } from './response.js';
+import { postResponse } from './responseHandler.js';
 
 export async function searchRoom(avatar) {
     await updateItemLocations();  
@@ -74,7 +74,7 @@ export async function updateItemLocations() {
 }
 
 // Function to leave an item
-export async function leaveItem(avatar, item_name) {
+export async function dropItem(avatar, item_name) {
     await updateItemLocations();  
     console.log(`Leaving item ${item_name} for ${avatar.name}`);
     const result = await db.collection('items').updateOne(
@@ -84,7 +84,7 @@ export async function leaveItem(avatar, item_name) {
     return result.modifiedCount > 0 ? `Item ${item_name} left.` : 'Failed to leave item.';
 }
 // Function to create a new item
-export async function createItem(itemData) {
+export async function craftItem(itemData) {
     console.log(`Creating new item with name: ${itemData.name}`);
     try {
         // Check that the Moonlit Lantern and Celestial Sphere are in the same room as the item
@@ -115,6 +115,10 @@ export async function useItem(avatar, data) {
     // split into item name and target
     const [item_name, target] = data.split(',').map(cleanString);
     const item = await getItem(item_name);
+
+    if (!data || data.trim == "") {
+        return 'Please provide the name of the item you would like to use.';
+    }
 
     if (!item || item.takenBy !== avatar.name) {
         return `You do not have the ${item.name}.`;

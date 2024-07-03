@@ -8,10 +8,6 @@ export const initializeAvatars = async () => {
         fetchJSON(AVATARS_API)
     ]);
 
-    if (!locations || locations.length === 0) {
-        throw new Error('No locations found');
-    }
-
     return allAvatars
         .filter(avatar => avatar.owner === 'host')
         .map(avatar => initializeAvatar(avatar, locations));

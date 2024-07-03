@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -20,10 +21,12 @@
     "groq-sdk": "^0.3.3",
     "joi": "^17.13.3",
     "mongodb": "^6.6.2",
+    "mongoose": "^8.4.4",
     "ollama": "^0.5.0",
     "openai": "^4.38.2",
     "pm2": "^5.4.1",
     "replicate": "^0.29.1",
+    "simplex-noise": "^4.0.1",
     "twitter-api-v2": "^1.17.0",
     "winston": "^3.13.0"
   },
