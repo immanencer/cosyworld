@@ -68,7 +68,7 @@ export default class OllamaService {
           modelfile: `FROM ${baseModel}
 SYSTEM "${systemPrompt}"`
         });
-        console.log('Model created:', modelHash);
+        console.log('Model created:', baseModel, modelHash);
         OllamaService.#modelCache.add(modelHash);
       } catch (error) {
         console.error('Failed to create model:', error);

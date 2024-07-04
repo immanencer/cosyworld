@@ -5,19 +5,13 @@ import { LOCATIONS_API } from './config.js';
 export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
 let cachedLocations = null;
 
-function sanitizeLocationName(name) {
+export function sanitizeLocationName(name) {
     if (!name) return 'Unknown Location';
     name = name.replace(/[()]/g, '').trim();
-    if (name.length > 30) {
-        name = name.substring(0, 27) + '...';
+    if (name.length > 88) {
+        name = name.substring(0, 85) + '...';
     }
     return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-export function setLocationName(location, name) {
-    if (!location) return DEFAULT_LOCATION;
-    location.name = sanitizeLocationName(name);
-    return location;
 }
 
 export function formatLocationName(name) {

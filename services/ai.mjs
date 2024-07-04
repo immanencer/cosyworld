@@ -1,4 +1,3 @@
-import OpenAIService from './ai/openai-service.mjs';
 import OllamaService from './ai/ollama-service.mjs';
 
 class AI {
@@ -8,69 +7,64 @@ class AI {
     }
 
     initializeService() {
-        switch (this.model) {
-            case 'openai/gpt-3.5-turbo':
-                this.service = new OpenAIService();
-                break;
-            case 'ollama':
-            case 'ollama/llama3':
-                this.service = new OllamaService('llama3');
-                break;
-            case 'ollama/qwen2':
-                this.service = new OllamaService('qwen2');
-                break;
-            default:
-                throw new Error(`Unknown model: ${this.model}`);
+        const supportedModels = ['llama3', 'internlm2', 'qwen2'];
+        this.model = this.model.replace('ollama/', '');
+        
+        if (!supportedModels.includes(this.model)) {
+            throw new Error(`Unsupported model: ${this.model}. Supported models are: ${supportedModels.join(', ')}`);
         }
+        console.log(`Initializing AI with model: ${this.model}`);
+        this.service = new OllamaService(this.model);
     }
 
     async generateResponse(systemPrompt, messages, currentLocation, botName) {
-        console.log('🤖 AI:', systemPrompt, messages.join('').length);
-
-        try {
-            if (this.service instanceof OllamaService) {
-                return await this.service.chatCompletion({
-                    systemPrompt,
-                    messages: this.formatMessagesForOllama(messages, currentLocation, botName),
-                    temperature: 0.7,
-                    maxTokens: 4096
-                });
-            } else if (this.service instanceof OpenAIService) {
-                const formattedMessages = this.formatMessagesForOpenAI(messages, botName);
-                return await this.service.chat({
-                    systemPrompt,
-                    messages: formattedMessages
-                });
-            } else {
-                throw new Error('Unsupported AI service');
+        const MAX_RETRIES = 3;
+        const INITIAL_RETRY_DELAY = 1000; // 1 second
+    
+        const retry = async (fn, retriesLeft) => {
+            try {
+                return await fn();
+            } catch (error) {
+                if (retriesLeft === 0) {
+                    console.error('Max retries reached. Throwing error.');
+                    throw error;
+                }
+                
+                console.warn(`Attempt failed. Retries left: ${retriesLeft}. Error:`, error);
+                
+                const delay = INITIAL_RETRY_DELAY * (2 ** (MAX_RETRIES - retriesLeft));
+                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                return retry(fn, retriesLeft - 1);
             }
+        };
+    
+        console.log('🤖 AI:', systemPrompt, messages.join('').length);
+    
+        const generateResponseInternal = async () => {
+            return await this.service.chatCompletion({
+                systemPrompt,
+                messages: this.formatMessages(messages, currentLocation, botName),
+                temperature: 0.7,
+                maxTokens: 4096
+            });
+        };
+    
+        try {
+            return await retry(generateResponseInternal, MAX_RETRIES);
         } catch (error) {
-            console.error('Error generating response:', error);
+            console.error('Error generating response after all retries:', error);
             throw error;
         }
     }
 
-    formatMessagesForOllama(messages, currentLocation, botName) {
+    formatMessages(messages, currentLocation, botName) {
         return messages.map(msg => {
             if (typeof msg === 'string') {
                 return msg;
             }
             const { role, content } = msg;
             return `(${currentLocation}) ${role === 'assistant' ? botName : 'User'}: ${content}`;
-        });
-    }
-
-    formatMessagesForOpenAI(messages, botName) {
-        return messages.map(msg => {
-            if (typeof msg === 'object' && msg.role && msg.content) {
-                return msg;
-            }
-            const [locationPart, contentPart] = msg.split(') ');
-            const [author, content] = contentPart.split(': ');
-            return {
-                role: author === botName ? 'assistant' : 'user',
-                content: `(${locationPart}) ${contentPart}`
-            };
         });
     }
 }

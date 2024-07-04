@@ -1,22 +1,12 @@
 import { postJSON } from '../agent_manager/postJSON.js';
 import { ENQUEUE_API, DISCORD_THREAD_API } from '../agent_manager/config.js';
-import { createNewAvatar, avatarExists } from './avatar.js';
+import { createNewAvatar, avatarExists, updateAvatarLocation } from './avatar.js';
 
 
 export async function getOrCreateThread(avatar, threadName) {
     const channelId = avatar.location.type === 'thread' ? avatar.location.parent : avatar.location.id;
     const response = await postJSON(DISCORD_THREAD_API, { threadName, channelId });
     return response.thread;
-}
-
-export async function moveAvatarToThread(avatar, thread) {
-    await postJSON(ENQUEUE_API, {
-        action: 'moveAvatarToThread',
-        data: {
-            avatarId: avatar.id,
-            threadId: thread.id
-        }
-    });
 }
 
 export async function postMessageInThread(avatar, content) {
@@ -84,8 +74,14 @@ async function handleMentionedAvatars(message, location) {
         if (!await avatarExists(newAvatarName)) {
             const newAvatar = await createNewAvatar(newAvatarName);
             if (location.type === 'thread') {
-                const thread = await getOrCreateThread(location.id);
-                moveAvatarToThread(newAvatar, thread);
+                const thread = await getOrCreateThread(newAvatar, location.name);
+                newAvatar.location = {
+                    id: thread.id,
+                    name: thread.name,
+                    type: 'thread',
+                    parentId: location.id
+                };
+                await updateAvatarLocation(newAvatar);
                 await postMessageInThread(newAvatar, `${newAvatarName} has joined the conversation.`);
             } else {
                 await postMessageInChannel(newAvatar, `${newAvatarName} has joined the conversation.`);

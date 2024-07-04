@@ -1,10 +1,9 @@
-import { handleDiscordInteraction } from './discordHandler.js';
+import { handleDiscordInteraction, getOrCreateThread } from './discordHandler.js';
 import { handleItems, getAvailableItems } from './itemHandler.js';
 import { generateResponse } from './responseGenerator.js';
 import { checkShouldRespond } from './haikuResponder.js';
 import { checkMovementAfterResponse } from './movementHandler.js';
-import { updateAvatarLocation } from './avatar.js';
-import { setLocationName, DEFAULT_LOCATION } from './locationHandler.js';
+import { DEFAULT_LOCATION, sanitizeLocationName } from './locationHandler.js';
 
 export async function handleResponse(avatar, conversation) {
     if (!avatar || !avatar.location) {
@@ -30,11 +29,18 @@ export async function handleResponse(avatar, conversation) {
 
         const newLocationName = await checkMovementAfterResponse(avatar, conversation, response);
         if (newLocationName) {
+            const thread = await getOrCreateThread(avatar, sanitizeLocationName(newLocationName));
+            if (!thread) {
+                console.error(`Thread not found for ${newLocationName}`);
+                return;
+            }
             console.log(`${avatar.name} moving to ${newLocationName}`);
-            await handleItems(avatar, conversation, `use(Move, ${newLocationName})`);
-            const newLocation = setLocationName({ ...avatar.location }, newLocationName);
-            await updateAvatarLocation({ ...avatar, location: newLocation });
-            avatar = { ...avatar, location: newLocation };
+            avatar.location = {
+                id: thread.id,
+                name: newLocationName,
+                type: 'thread',
+                parent: thread.parentId || thread.parent.id
+            };
         }
 
         if (response && response.trim() !== "") {

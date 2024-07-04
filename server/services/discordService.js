@@ -165,20 +165,6 @@ export async function getOrCreateThread(threadName, channelId) {
     });
 }
 
-import { db } from '../../database/index.js';
-export async function moveAvatarToThread(avatar, thread) {
-    // This function might not need to do anything in Discord itself
-    // It might just need to update the avatar's location in your database
-    console.log(`Moving avatar ${avatar.name} to thread ${thread.name}`);
-    
-    // Implement the logic to update avatar's location in your database
-    avatar.location = thread;
-    db.collection('avatars').updateOne(
-        { _id: avatar._id },
-        { $set: { location: thread } }
-    );
-}
-
 export async function postMessageInThread(avatar, message) {
     await sendAsAvatar({...avatar }, message);
 }

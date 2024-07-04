@@ -58,7 +58,7 @@ npm install
 # Set up environment variables in ".env"
 # NODE_EXTRA_CA_CERTS="ssl_certificates\cert.pem"
 # NODE_ENV="development"
-# MONGODB_CONNECTION_STRING="mongodb://localhost:27017/cosyworld"
+# MONGODB_URI="mongodb://localhost:27017/cosyworld"
 # GROQ_API_KEY=""
 # DISCORD_BOT_TOKEN=""
 # REPLICATE_API_TOKEN=""

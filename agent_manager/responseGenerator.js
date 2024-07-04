@@ -10,10 +10,8 @@ export async function generateResponse(avatar, conversation, items, toolResults)
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
-    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice, continue this:\n\n';
+    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice.\n\n';
 
-    userPrompt = userPrompt + conversationTag(avatar) + ':';
-    
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
         userPrompt += `You have the following items: ${itemKeys}.`;

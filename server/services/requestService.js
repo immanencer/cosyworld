@@ -43,7 +43,6 @@ const processRequest = async (action, data) => {
       const thread = await discordService.getOrCreateThread(data.threadName, data.channelName);
       return { thread };
     },
-    moveAvatarToThread: () => discordService.moveAvatarToThread(data.avatar, data.thread),
     postMessageInThread: () => discordService.postMessageInThread(data.avatar, data.message),
     postMessageInChannel: () => discordService.postMessageInChannel(data.avatar, data.message),
     getLocations: async () => {
