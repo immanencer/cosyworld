@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
 
 
 // Route to update a avatar (PATCH)
-router.patch('/update/:id', async (req, res) => {
+router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 

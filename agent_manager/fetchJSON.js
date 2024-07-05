@@ -5,7 +5,7 @@ import { retry } from './utils.js';
  * @param {string} url - The URL to fetch from.
  * @returns {Promise<Object>} The parsed JSON data or an empty array if failed.
  */
-export const fetchJSON = retry(async (url, options = { 'Content-Type': 'application/json'}) => {
+export const fetchJSON = retry(async (url, options) => {
     try {
         const response = await fetch(url, options);
         if (!response.ok) {
@@ -13,6 +13,7 @@ export const fetchJSON = retry(async (url, options = { 'Content-Type': 'applicat
         }
         return await response.json();
     } catch (error) {
+        console.error(`Failed to fetch JSON from ${url}:`, error);
         return [];
     }
 }, 5, 1000);

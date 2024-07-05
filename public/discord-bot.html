@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
             align-items: center;
             height: 100vh;
         }
+
         .container {
             background: #fff;
             padding: 20px;
@@ -23,130 +25,138 @@
             width: 300px;
             text-align: center;
         }
+
         h1 {
             font-size: 1.5em;
             margin-bottom: 10px;
         }
-        select, textarea, button {
+
+        select,
+        textarea,
+        button {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         button {
             background-color: #28a745;
             color: #fff;
             border: none;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #218838;
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>Discord Bot API Tester</h1>
-    <select id="avatarSelect" title="Select Avatar"></select>
-    <select id="locationSelect" title="Select Location"></select>
-    <textarea id="message" rows="4" placeholder="Message"></textarea>
-    <button onclick="enqueueRequest()">Enqueue Request</button>
-    <button onclick="processQueue()">Process Queue</button>
-    <p id="response"></p>
-</div>
+    <div class="container">
+        <h1>Discord Bot API Tester</h1>
+        <select id="avatarSelect" title="Select Avatar"></select>
+        <select id="locationSelect" title="Select Location"></select>
+        <textarea id="message" rows="4" placeholder="Message"></textarea>
+        <button onclick="enqueueRequest()">Enqueue Request</button>
+        <button onclick="processQueue()">Process Queue</button>
+        <p id="response"></p>
+    </div>
 
-<script>
-    let characters = [];
-    let locations = [];
+    <script>
+        let characters = [];
+        let locations = [];
 
-    async function fetchCharacters() {
-        try {
-            const response = await fetch('https://localhost:8443/avatars');
-            characters = await response.json();
-            populateAvatarSelect();
-        } catch (error) {
-            console.error('Failed to fetch characters:', error);
-        }
-    }
-
-    async function fetchLocations() {
-        try {
-            const response = await fetch('https://localhost:8443/discord/locations');
-            locations = await response.json();
-            populateLocationSelect();
-        } catch (error) {
-            console.error('Failed to fetch locations:', error);
-        }
-    }
-
-    function populateAvatarSelect() {
-        const avatarSelect = document.getElementById('avatarSelect');
-        characters.forEach(character => {
-            const option = document.createElement('option');
-            option.value = character.name;
-            option.text = `${character.emoji || '⚠️'} ${character.name}`;
-            avatarSelect.add(option);
-        });
-    }
-
-    function populateLocationSelect() {
-        const locationSelect = document.getElementById('locationSelect');
-        locations.forEach(location => {
-            const option = document.createElement('option');
-            option.value = location.id;
-            option.text = `${location.type === 'thread'? '🧵' : ''} ${location.name}`;
-            locationSelect.add(option);
-        });
-    }
-
-    async function enqueueRequest() {
-        const avatarName = document.getElementById('avatarSelect').value;
-        const avatar = characters.find(character => character.name === avatarName);
-        if (!avatar) {
-            document.getElementById('response').innerText = 'Selected avatar not found';
-            return;
-        }
-
-        const locationId = document.getElementById('locationSelect').value;
-        const message = document.getElementById('message').value;
-
-        const location = locations.find(location => location.id === locationId);
-        const requestBody = {
-            action: 'sendAsAvatar',
-            data: {
-                avatar: { 
-                    ...avatar,
-                    channelId: location.parent || location.id,
-                    threadId: location.parent ? location.id : null 
-                },
-                message: message
+        async function fetchCharacters() {
+            try {
+                const response = await fetch('https://localhost:8443/avatars');
+                characters = await response.json();
+                populateAvatarSelect();
+            } catch (error) {
+                console.error('Failed to fetch characters:', error);
             }
-        };
+        }
 
-        const response = await fetch('https://localhost:8443/discord/enqueue', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
+        async function fetchLocations() {
+            try {
+                const response = await fetch('https://localhost:8443/discord/locations');
+                locations = await response.json();
+                populateLocationSelect();
+            } catch (error) {
+                console.error('Failed to fetch locations:', error);
+            }
+        }
 
-        const result = await response.json();
-        document.getElementById('response').innerText = result.message || result.error;
-    }
+        function populateAvatarSelect() {
+            const avatarSelect = document.getElementById('avatarSelect');
+            characters.forEach(character => {
+                const option = document.createElement('option');
+                option.value = character.name;
+                option.text = `${character.emoji || '⚠️'} ${character.name}`;
+                avatarSelect.add(option);
+            });
+        }
 
-    async function processQueue() {
-        const response = await fetch('https://localhost:8443/discord/process');
-        const result = await response.json();
-        document.getElementById('response').innerText = result.message || result.error;
-    }
+        function populateLocationSelect() {
+            const locationSelect = document.getElementById('locationSelect');
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location.id;
+                option.text = `${location.type === 'thread' ? '🧵' : ''} ${location.name}`;
+                locationSelect.add(option);
+            });
+        }
 
-    // Fetch characters and locations on page load
-    fetchCharacters();
-    fetchLocations();
-</script>
+        async function enqueueRequest() {
+            const avatarName = document.getElementById('avatarSelect').value;
+            const avatar = characters.find(character => character.name === avatarName);
+            if (!avatar) {
+                document.getElementById('response').innerText = 'Selected avatar not found';
+                return;
+            }
+
+            const locationId = document.getElementById('locationSelect').value;
+            const message = document.getElementById('message').value;
+
+            const location = locations.find(location => location.id === locationId);
+            const requestBody = {
+                action: 'sendAsAvatar',
+                data: {
+                    avatar: {
+                        ...avatar,
+                        channelId: location.type === 'thread' ? location.parent : location.id,
+                        threadId: location.type === 'thread' ? location.id : null
+                    },
+                    message: message
+                }
+            };
+
+            const response = await fetch('https://localhost:8443/discord/enqueue', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const result = await response.json();
+            document.getElementById('response').innerText = result.message || result.error;
+        }
+
+        async function processQueue() {
+            const response = await fetch('https://localhost:8443/discord/process');
+            const result = await response.json();
+            document.getElementById('response').innerText = result.message || result.error;
+        }
+
+        // Fetch characters and locations on page load
+        fetchCharacters();
+        fetchLocations();
+    </script>
 
 </body>
+
 </html>

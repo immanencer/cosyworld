@@ -17,7 +17,7 @@ ${haiku}
 Does this haiku indicate a desire to respond to the conversation above?
 Answer with YES or NO depending on the message of the haiku.`]
     );
-    const shouldRespond = haikuCheck && haikuCheck.toLowerCase().includes('yes');
+    const shouldRespond = !haikuCheck || (haikuCheck && haikuCheck.toLowerCase().includes('yes'));
     avatar.feelings = [haiku, ...[avatar.feelings || []]];
     console.log(`Haiku check for ${avatar.name}: ${shouldRespond ? 'Passed' : 'Failed'}`);
     return shouldRespond;

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lo-Fi RPG</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #ffe4e1;
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .title {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 5px;
+        }
+        .game-board div {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            background-color: #fff;
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .controls button {
+            background-color: #ff69b4;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            color: #fff;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🌸 Sakura Spirits 🌸</div>
+    <div class="game-board" id="gameBoard">
+        <!-- Game tiles will be dynamically inserted here -->
+    </div>
+    <div class="controls">
+        <button onclick="move('north')">⬆ North</button>
+        <button onclick="move('south')">⬇ South</button>
+        <button onclick="move('east')">➡ East</button>
+        <button onclick="move('west')">⬅ West</button>
+        <button onclick="interact()">✨ Interact</button>
+    </div>
+    <div class="message" id="message">Welcome to Sakura Spirits! Collect spirits and uncover the mysteries of this realm.</div>
+
+    <script>
+        let playerPosition = { x: 2, y: 2 }; // Initial player position
+        let gameBoard = document.getElementById('gameBoard');
+        let messageBox = document.getElementById('message');
+
+        async function fetchData() {
+            const response = await fetch('/api/locations');
+            const data = await response.json();
+            return data;
+        }
+
+        async function initializeGame() {
+            const data = await fetchData();
+            updateBoard(data);
+        }
+
+        function updateBoard(data) {
+            gameBoard.innerHTML = ''; // Clear existing board
+
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    const tile = document.createElement('div');
+                    const entity = data.find(d => d.x === x && d.y === y);
+                    if (x === playerPosition.x && y === playerPosition.y) {
+                        tile.textContent = '🐱'; // Player emoji
+                    } else if (entity) {
+                        tile.textContent = entity.emoji;
+                    } else {
+                        tile.textContent = '⬜'; // Empty tile
+                    }
+                    gameBoard.appendChild(tile);
+                }
+            }
+        }
+
+        function move(direction) {
+            switch (direction) {
+                case 'north':
+                    if (playerPosition.y > 0) playerPosition.y--;
+                    break;
+                case 'south':
+                    if (playerPosition.y < 4) playerPosition.y++;
+                    break;
+                case 'east':
+                    if (playerPosition.x < 4) playerPosition.x++;
+                    break;
+                case 'west':
+                    if (playerPosition.x > 0) playerPosition.x--;
+                    break;
+            }
+            initializeGame(); // Re-render the board after moving
+        }
+
+        function interact() {
+            messageBox.textContent = 'You interacted with the environment!';
+            // Further interaction logic can be added here
+        }
+
+        initializeGame();
+    </script>
+</body>
+</html>
