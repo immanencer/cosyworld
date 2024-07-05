@@ -6,7 +6,9 @@
   "scripts": {
     "demo": "node ./demo/demo.js",
     "server": "node ./server/index.js",
-    "server-dev": "node ./server/index.js"
+    "server-dev": "node ./server/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "type": "module",
   "author": "",
@@ -31,6 +33,7 @@
     "winston": "^3.13.0"
   },
   "devDependencies": {
+    "typescript": "^4.0.0",
     "@eslint/js": "^9.2.0",
     "eslint": "^8.57.0",
     "eslint-plugin-async-await": "^0.0.0",

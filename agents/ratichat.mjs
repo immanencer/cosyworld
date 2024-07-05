@@ -88,7 +88,7 @@ ratichat.rumble = async function () {
                     },
                     {
                         role: 'assistant',
-                        content: `(inner thoughts of ${avatar.name})\n\nI remember ${avatar_memory.slice(-88).join('\n')}`
+                        content: `(inner thoughts of ${avatar.name})\n\nI remember ${avatar_memory.slice(-8).join('\n')}`
                     },
                     {
                         role: 'user',
