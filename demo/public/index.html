@@ -5,25 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avatar Chat</title>
     <style>
-        body{margin:0;font-family:Arial,sans-serif;height:100vh;display:flex;flex-direction:column}
-        #chat-container{flex:1;display:flex;overflow:hidden}
-        #avatar-list{width:200px;overflow-y:auto;background:#fff;border-right:1px solid #ccc;transition:width .3s}
-        .avatar-item,.location-item{cursor:pointer;padding:10px;border-bottom:1px solid #eee;display:flex;align-items:center}
-        .avatar-item:hover,.location-item:hover{background:#f0f0f0}
-        .avatar-item img,.message-pfp{width:50px;height:50px;border-radius:25px;margin-right:10px}
-        .avatar-info{display:flex;flex-direction:column;overflow:hidden}
-        #chat-window{flex:1;display:flex;flex-direction:column;background:#fff}
-        #chat-messages{flex:1;overflow-y:auto;padding:20px}
-        .message{margin-bottom:15px;padding:10px;border-radius:5px;max-width:70%;display:flex;align-items:flex-start}
-        .message-content{flex:1}
-        .user-message{background:#e1f5fe;align-self:flex-end}
-        .avatar-message{background:#f0f4c3}
-        #input-area{display:flex;padding:10px;background:#f0f0f0}
-        #user-input{flex:1;padding:10px;border:1px solid #ccc;border-radius:3px}
-        #send-button{margin-left:10px;padding:10px 20px;background:#4CAF50;color:#fff;border:none;border-radius:3px;cursor:pointer}
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        #chat-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        #avatar-list {
+            width: 200px;
+            overflow-y: auto;
+            background: #2a2a2a;
+            border-right: 1px solid #3a3a3a;
+            transition: width .3s;
+        }
+        .avatar-item, .location-item {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            align-items: center;
+        }
+        .avatar-item:hover, .location-item:hover {
+            background: #3a3a3a;
+        }
+        .avatar-item img, .message-pfp {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: #000;
+            padding: 5px;
+        }
+        .avatar-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #2a2a2a;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message-content {
+            flex: 1;
+        }
+        .user-message {
+            background: #4a4a4a;
+            align-self: flex-end;
+        }
+        .avatar-message {
+            background: #3a3a3a;
+            align-self: flex-start;
+        }
+        #input-area {
+            display: flex;
+            padding: 10px;
+            background: #2a2a2a;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #4a4a4a;
+            border-radius: 3px;
+            background: #3a3a3a;
+            color: #e0e0e0;
+        }
+        #send-button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
         @media (max-width: 768px) {
-            #avatar-list{width:80px}
-            .avatar-info span:not(:first-child){display:none}
+            #avatar-list {width: 80px}
+            .avatar-info span:not(:first-child) {display: none}
         }
     </style>
 </head>
@@ -41,22 +121,25 @@
     <script>
         let currentTarget = null;
         let avatars = [];
-        let locations = new Set();
+        let locations = [];
         const avatarList = document.getElementById('avatar-list');
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
 
-        async function loadAvatars() {
-            const response = await fetch('/avatars');
-            avatars = await response.json();
-            locations = new Set(avatars.map(avatar => avatar.location));
-            renderAvatarList();
+        async function loadAvatarsAndLocations() {
+            const [avatarResponse, locationResponse] = await Promise.all([
+                fetch('/avatars'),
+                fetch('/locations')
+            ]);
+            avatars = await avatarResponse.json();
+            locations = await locationResponse.json();
+            renderAvatarAndLocationList();
         }
 
-        function renderAvatarList() {
+        function renderAvatarAndLocationList() {
             avatarList.innerHTML = `
-                ${Array.from(locations).map(location => `
+                ${locations.map(location => `
                     <div class="location-item" data-location="${location}">
                         <div class="avatar-info">
                             <span>📍 ${location}</span>
@@ -75,24 +158,31 @@
             `;
         }
 
-        function addMessage(sender, content, avatar) {
+        function addMessage(sender, content, avatar = null) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message', `${sender}-message`);
+            messageElement.classList.add('message');
             
-            const pfpElement = document.createElement('img');
-            pfpElement.classList.add('message-pfp');
-            pfpElement.src = avatar ? avatar : 'https://i.imgur.com/hz64Iae.png';
-            pfpElement.alt = sender;
+            if (sender === 'user') {
+                messageElement.classList.add('user-message');
+            } else if (sender === 'avatar') {
+                messageElement.classList.add('avatar-message');
+                
+                const pfpElement = document.createElement('img');
+                pfpElement.classList.add('message-pfp');
+                pfpElement.src = avatar ? avatars.find(a => a.name === avatar)?.avatar : 'https://i.imgur.com/kAzsrdp.png';
+                pfpElement.alt = avatar || sender;
+                messageElement.appendChild(pfpElement);
+            }
             
             const contentElement = document.createElement('div');
             contentElement.classList.add('message-content');
             contentElement.textContent = content;
-            
-            messageElement.appendChild(pfpElement);
             messageElement.appendChild(contentElement);
             
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            return contentElement;
         }
 
         async function sendMessage() {
@@ -106,6 +196,8 @@
                 addMessage('user', message);
                 userInput.value = '';
 
+                const avatarMessageContent = addMessage('avatar', '', currentTarget);
+
                 try {
                     const response = await fetch(`/chat/${currentTarget}`, {
                         method: 'POST',
@@ -115,29 +207,23 @@
 
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
-                    let avatarResponse = '';
-                    let messageElement = null;
 
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
                         const chunk = decoder.decode(value);
-                        avatarResponse += chunk;
+                        const responses = chunk.split('\n').filter(Boolean);
 
-                        if (!messageElement) {
-                            const respondingAvatar = avatars.find(a => a.name === currentTarget) || 
-                                                     avatars.find(a => a.location === currentTarget);
-                            addMessage('avatar', avatarResponse, respondingAvatar.avatar);
-                            messageElement = chatMessages.lastElementChild;
-                        } else {
-                            messageElement.querySelector('.message-content').textContent = avatarResponse;
+                        let messageContent = '';
+                        for (const response of responses) {
+                            const { content } = JSON.parse(response);
+                            messageContent += content;
                         }
-
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        avatarMessageContent.textContent += messageContent;
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    addMessage('system', 'Sorry, I encountered an error.');
+                    avatarMessageContent.textContent = 'Sorry, I encountered an error.';
                 }
             }
         }
@@ -161,9 +247,8 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        loadAvatars();
+        loadAvatarsAndLocations();
 
-        // Dynamic adjustments
         function adjustLayout() {
             const isMobile = window.innerWidth <= 768;
             avatarList.style.width = isMobile ? '80px' : '200px';
@@ -173,7 +258,7 @@
         }
 
         window.addEventListener('resize', adjustLayout);
-        adjustLayout(); // Initial adjustment
+        adjustLayout();
     </script>
 </body>
 </html>

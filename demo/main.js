@@ -13,6 +13,7 @@ app.use(express.static('./demo/public'));
 
 let avatars = [];
 const ollamaServices = {};
+const locationMap = {};
 
 async function loadAvatars() {
     const data = await fs.readFile(path.join(__dirname, 'avatars.json'), 'utf8');
@@ -20,40 +21,76 @@ async function loadAvatars() {
     avatars.forEach(avatar => {
         ollamaServices[avatar.name] = new OllamaService({
             model: 'llama3',
-            system_prompt: avatar.personality // Ensure this is correctly passed
+            systemPrompt: avatar.personality
         });
+        
+        if (!locationMap[avatar.location]) {
+            locationMap[avatar.location] = [];
+        }
+        locationMap[avatar.location].push(avatar.name);
     });
 }
 
-await loadAvatars(); // Make sure to await this function
+await loadAvatars();
 
 app.get('/avatars', (req, res) => {
     res.json(avatars);
 });
 
-app.post('/chat/:avatarName', async (req, res) => {
-    const { avatarName } = req.params;
-    const { message } = req.body;
-    const ollama = ollamaServices[avatarName];
+app.get('/locations', (req, res) => {
+    res.json(Object.keys(locationMap));
+});
 
-    if (!ollama) {
-        return res.status(404).json({ error: 'Avatar not found' });
-    }
+app.post('/chat/:target', async (req, res) => {
+    const { target } = req.params;
+    const { message } = req.body;
 
     res.writeHead(200, {
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
         'Transfer-Encoding': 'chunked'
     });
 
     try {
-        for await (const event of await ollama.chat({ role: 'user', content: message })) {
-            if (event && event.message && event.message.content) {
-                res.write(event.message.content);
+        if (ollamaServices[target]) {
+            // Individual avatar chat
+            for await (const event of ollamaServices[target].chat({ role: 'user', content: message })) {
+                if (event && event.message && event.message.content) {
+                    const response = JSON.stringify({
+                        avatar: target,
+                        content: event.message.content
+                    }) + '\n';
+                    res.write(response);
+                }
             }
+        } else if (locationMap[target]) {
+            // Location-based group chat
+            const avatarsInLocation = locationMap[target];
+            const chatStreams = avatarsInLocation.map(avatarName => 
+                ollamaServices[avatarName].chat({ role: 'user', content: message })
+            );
+
+            while (chatStreams.some(stream => !stream.done)) {
+                const responses = await Promise.all(chatStreams.map(stream => stream.next()));
+                for (let i = 0; i < responses.length; i++) {
+                    const response = responses[i];
+                    if (response.value && response.value.message && response.value.message.content) {
+                        const jsonResponse = JSON.stringify({
+                            avatar: avatarsInLocation[i],
+                            content: response.value.message.content
+                        }) + '\n';
+                        res.write(jsonResponse);
+                    }
+                    if (response.done) {
+                        chatStreams[i].done = true;
+                    }
+                }
+            }
+        } else {
+            res.write(JSON.stringify({ error: 'Target not found' }));
         }
     } catch (error) {
         console.error('Error:', error);
-        res.write('Sorry, I encountered an error.');
+        res.write(JSON.stringify({ error: 'Sorry, I encountered an error.' }));
     }
     res.end();
 });
