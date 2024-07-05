@@ -6,7 +6,7 @@ import process from 'process';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'cosyworld';
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'ollama/internlm2';
+const DEFAULT_MODEL = 'llama3:text';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {

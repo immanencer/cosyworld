@@ -7,7 +7,7 @@ class AI {
     }
 
     initializeService() {
-        const supportedModels = ['llama3', 'internlm2', 'qwen2'];
+        const supportedModels = ['llama3:text', 'llama3', 'internlm2', 'qwen2'];
         this.model = this.model.replace('ollama/', '');
         
         if (!supportedModels.includes(this.model)) {
