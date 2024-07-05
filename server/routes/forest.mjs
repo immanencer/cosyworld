@@ -1,17 +1,10 @@
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import db from '../../database/index.js';
 
 const router = express.Router();
-const mongoUri = 'mongodb://localhost:27017';
-const dbName = 'cosyworld';
 
 router.get('/map', async (req, res) => {
-  const client = new MongoClient(mongoUri);
-
   try {
-    await client.connect();
-    const db = client.db(dbName);
-
     // Get all avatars and items
     const avatars = await db.collection('avatars').find().toArray();
     const items = await db.collection('items').find().toArray();

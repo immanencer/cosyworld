@@ -1,18 +1,8 @@
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import db from '../../database/index.js';
 
 const router = express.Router();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const DB_NAME = 'cosyworld';
-
-let db;
-MongoClient.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(client => {
-        db = client.db(DB_NAME);
-        console.log('Connected to database');
-    })
-    .catch(error => console.error(error));
 
 router.get('/locations', async (req, res) => {
     try {

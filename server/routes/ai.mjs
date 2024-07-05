@@ -1,27 +1,12 @@
 import express from 'express';
-import { ObjectId, MongoClient } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import bodyParser from 'body-parser';
 
 const router = express.Router();
-const MONGO_URI = 'mongodb://localhost:27017'; // Update with your MongoDB URI
-const DB_NAME = 'cosyworld';
 const TASKS_COLLECTION = 'tasks';
 
-// Connect to MongoDB
-const client = new MongoClient(MONGO_URI);
-let db;
 
-async function connectToDB() {
-    try {
-        await client.connect();
-        db = client.db(DB_NAME);
-        console.log('🎉 Connected to MongoDB');
-    } catch (error) {
-        console.error('❌ MongoDB connection error:', error);
-    }
-}
-
-await connectToDB();
+import db from '../../database/index.js';
 
 // Middleware to parse JSON requests
 router.use(bodyParser.json());

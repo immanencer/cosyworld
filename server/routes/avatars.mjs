@@ -1,20 +1,12 @@
 import express from 'express';
-import { ObjectId, MongoClient } from 'mongodb';
+import { ObjectId } from 'mongodb';
+import db from '../../database/index.js';
 
 const router = express.Router();
-const mongoUrl = 'mongodb://localhost:27017';
-const dbName = 'cosyworld';
+
 const collectionName = 'avatars';
 
-// MongoDB Setup
-const client = new MongoClient(mongoUrl);
-let db;
-try {
-    db = client.db(dbName);
-    console.log('🎮 Connected to MongoDB');
-} catch (error) {
-    console.error('🎮 ❌ MongoDB Connection Error:', error);
-}
+
 // Route to get all avatars
 router.get('/', async (req, res) => {
     try {

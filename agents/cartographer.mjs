@@ -1,17 +1,7 @@
-import { MongoClient } from 'mongodb';
-
-const MONGODB_URI = 'mongodb://localhost:27017';
-const DB_NAME = 'cosyworld';
 const ROOMS_COLLECTION = 'rooms';
 const MESSAGES_COLLECTION = 'messages';
 
 const AI_API_URL = 'https://your-ai-api-endpoint.com/generate-description';
-
-async function connectToMongoDB() {
-  const client = new MongoClient(MONGODB_URI);
-  await client.connect();
-  return client.db(DB_NAME);
-}
 
 async function generateDescription(roomName) {
     try {

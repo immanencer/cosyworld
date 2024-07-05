@@ -1,42 +1,20 @@
-import { MongoClient } from 'mongodb';
+
 import AI from './ai.mjs';
+import db from '../database/index.js';
 
 import process from 'process';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const DB_NAME = 'cosyworld';
 const COLLECTION_NAME = 'tasks';
 const DEFAULT_MODEL = 'llama3:text';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {
     constructor() {
-        this.client = new MongoClient(MONGODB_URI);
-        this.db = null;
-        this.collection = null;
         this.isLogged = false;
         this.isRunning = false;
+        this.collection = db.collection(COLLECTION_NAME);
     }
-
-    async connect() {
-        try {
-            await this.client.connect();
-            this.db = this.client.db(DB_NAME);
-            this.collection = this.db.collection(COLLECTION_NAME);
-            console.log('Connected to MongoDB');
-        } catch (error) {
-            console.error('Failed to connect to MongoDB:', error);
-            process.exit(1);
-        }
-    }
-
-    async disconnect() {
-        if (this.client) {
-            await this.client.close();
-            console.log('Disconnected from MongoDB');
-        }
-    }
-
+    
     async getNextTask() {
         return this.collection.findOneAndUpdate(
             { status: 'pending' },

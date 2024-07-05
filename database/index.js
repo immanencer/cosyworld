@@ -1,16 +1,29 @@
 import { MongoClient } from 'mongodb';
-const mongoUrl = 'mongodb://localhost:27017';
+
+// MongoDB URI and Database Name
+const mongoURI = 'mongodb://localhost:27017';
 const dbName = 'cosyworld';
 
-// MongoDB Setup
+// Create a new MongoClient
+const client = new MongoClient(mongoURI);
+
+// Global variable to store the database connection
 let db;
-let client = new MongoClient(mongoUrl);
-try {
-    await client.connect();
-    console.log('🎮 Connected to MongoDB');
-    db = client.db(dbName);
-} catch (error) {
-    console.error('🎮 ❌ MongoDB Connection Error:', error);
+
+// Connect to MongoDB
+async function connectToMongoDB() {
+    try {
+        await client.connect();
+        db = client.db(dbName);
+
+        db.collection('items').createIndex({ name: 1 }, { unique: true });
+        console.log('MongoDB connected');
+    } catch (err) {
+        console.error('Error connecting to MongoDB:', err);
+    }
 }
+
+// Call this function at the start of your application
+await connectToMongoDB();
 
 export { db };

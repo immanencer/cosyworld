@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Import necessary modules
-import { MongoClient } from "mongodb";
 import Replicate from "replicate";
 import { uploadToImgur } from "../tools/upload-to-imgur.js";
 
@@ -40,15 +39,11 @@ async function downloadImage(url) {
     return response.buffer(); // Use .blob() in browser environments
   }
   
+import db from '../../database/index.js';
 // Function to update avatars in MongoDB
 async function updateAvatarsWithNew(inputAvatar) {
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
   try {
-    // Connect to the MongoDB client
-    await client.connect();
-    const database = client.db(dbName);
-    const items = database.collection("objects");
+    const items = db.collection("objects");
 
     // Generate a new avatar
     const newAvatar = await generateNewAvatar(inputAvatar);
