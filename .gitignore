@@ -1,7 +1,6 @@
 .env
 /node_modules/
 .configurations
-/.vscode/
 /.state/
 messages.txt
 bookshelf/

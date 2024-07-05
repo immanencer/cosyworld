@@ -60,11 +60,11 @@ class AIService {
 
     /**
      * Engage in a chat interaction.
-     * @param {string} input - The user's input
-     * @returns {Promise<string>}
+     * @param {Message} message - The input message
+     * @returns {AsyncGenerator<ChatResponse, void, unknown>}
      * @abstract
      */
-    async chat(input) {
+    async *chat(message) {
         throw new Error('chat method must be implemented');
     }
 
