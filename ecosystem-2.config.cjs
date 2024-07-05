@@ -1,7 +1,8 @@
 module.exports ={
   apps : [
     {   "name": "ai",
-        "script": "./services/ai-processor.mjs"
+        "script": "./services/ai-processor.mjs",
+        "envFile": ".env"
     },
     {   "name": "agents",
         "script": "./agent_manager/main.js"

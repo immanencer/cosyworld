@@ -30,8 +30,6 @@ router.get('/map', async (req, res) => {
   } catch (error) {
     console.error('Database error:', error);
     res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 

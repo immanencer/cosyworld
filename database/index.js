@@ -1,3 +1,6 @@
+import { configDotenv } from 'dotenv';
+configDotenv();
+
 import { MongoClient } from 'mongodb';
 
 // MongoDB URI and Database Name
@@ -26,4 +29,5 @@ async function connectToMongoDB() {
 // Call this function at the start of your application
 await connectToMongoDB();
 
+export default db;
 export { db };

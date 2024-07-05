@@ -1,6 +1,7 @@
+import db from '../database/index.js';
+
 const ROOMS_COLLECTION = 'rooms';
 const MESSAGES_COLLECTION = 'messages';
-
 const AI_API_URL = 'https://your-ai-api-endpoint.com/generate-description';
 
 async function generateDescription(roomName) {
@@ -56,7 +57,6 @@ async function updateRoomWithDiscordInfo(db, roomId, discordInfo) {
 }
 
 async function mapWorld() {
-  const db = await connectToMongoDB();
   const roomsCollection = db.collection(ROOMS_COLLECTION);
   
   const cursor = roomsCollection.find({});

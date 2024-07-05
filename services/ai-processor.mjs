@@ -5,7 +5,7 @@ import db from '../database/index.js';
 import process from 'process';
 
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'llama3:text';
+const DEFAULT_MODEL = 'llama3';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {
@@ -14,7 +14,7 @@ class TaskProcessor {
         this.isRunning = false;
         this.collection = db.collection(COLLECTION_NAME);
     }
-    
+
     async getNextTask() {
         return this.collection.findOneAndUpdate(
             { status: 'pending' },
@@ -98,12 +98,9 @@ async function main() {
     });
 
     try {
-        await processor.connect();
         await processor.start();
     } catch (error) {
         console.error('Fatal error:', error);
-    } finally {
-        await processor.disconnect();
     }
 }
 

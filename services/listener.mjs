@@ -1,5 +1,6 @@
-import { Client, GatewayIntentBits, Events } from 'discord.js';
 import { db } from '../database/index.js';
+
+import { Client, GatewayIntentBits, Events } from 'discord.js';
 import OllamaService from './ai/ollama-service.mjs';
 
 // Constants
