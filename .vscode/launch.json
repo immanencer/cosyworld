@@ -27,7 +27,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "listener",
+            "name": "discord",
             "skipFiles": [
                 "<node_internals>/**"
             ],
