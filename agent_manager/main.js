@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import  { initializeAvatars } from './avatar.js';
 import { processMessagesForAvatar } from './message.js';
 import { POLL_INTERVAL } from './config.js';
