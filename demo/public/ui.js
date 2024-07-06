@@ -14,13 +14,31 @@ export function renderChannelList(avatars, channels) {
     channelList.innerHTML = sortedChannels.map((channel, index) => {
         const isAvatar = avatars.some(avatar => avatar.name === channel);
         const isFirstAvatar = isAvatar && index === locations.length;
+        const avatar = avatars.find(av => av.name === channel);
+
+        let channelContent = '';
+
+        if (isAvatar) {
+            channelContent = `
+                <img src="${avatar.avatar || 'https://i.imgur.com/hz64Iae.png'}" alt="${avatar.name}" class="avatar-picture">
+                <div class="channel-info">
+                    <span class="avatar-name">${avatar.emoji} ${avatar.name}</span>
+                    <span class="avatar-location">${avatar.location}</span>
+                </div>
+            `;
+        } else {
+            channelContent = `
+                <div class="location-icon">📍</div>
+                <div class="channel-info">
+                    <span>${channel}</span>
+                </div>
+            `;
+        }
 
         return `
             ${isFirstAvatar ? '<div class="channel-separator"></div>' : ''}
             <div class="channel-item" data-channel="${channel}">
-                <div class="channel-info">
-                    <span>${isAvatar ? '👤' : '📍'} ${channel}</span>
-                </div>
+                ${channelContent}
             </div>
         `;
     }).join('');

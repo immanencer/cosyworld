@@ -15,7 +15,7 @@ const oauth = OAuth({
   hash_function: (baseString, key) => crypto.createHmac('sha1', key).update(baseString).digest('base64')
 });
 
-const requestTokenURL = 'https://api.twitter.com/oauth/request_token?oauth_callback=https://localhost:8443/twitter/callback&x_auth_access_type=write';
+const requestTokenURL = 'https://api.twitter.com/oauth/request_token?oauth_callback=http://localhost:3000/twitter/callback&x_auth_access_type=write';
 const authorizeURL = new URL('https://api.twitter.com/oauth/authorize');
 const accessTokenURL = 'https://api.twitter.com/oauth/access_token';
 

@@ -19,27 +19,29 @@ body, html {
     overflow: hidden;
 }
 
+#channel-list, #chat-window, #input-area {
+    background: #2a2a2a;
+}
+
 #channel-list {
     width: 200px;
     overflow-y: auto;
-    background: #2a2a2a;
     border-right: 1px solid #3a3a3a;
     transition: width .3s;
 }
 
-.channel-item {
-    cursor: pointer;
+.channel-item, .message {
+    display: flex;
+    align-items: flex-start;
     padding: 10px;
     border-bottom: 1px solid #3a3a3a;
-    display: flex;
-    align-items: center;
 }
 
-.channel-item:hover {
+.channel-item:hover, .message {
     background: #3a3a3a;
 }
 
-.channel-item img, .message-pfp {
+.channel-item img, .message-pfp, .avatar img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -48,9 +50,10 @@ body, html {
     padding: 5px;
 }
 
-.channel-info {
+.channel-info, .message-content {
     display: flex;
     flex-direction: column;
+    flex: 1;
     overflow: hidden;
 }
 
@@ -58,10 +61,9 @@ body, html {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #2a2a2a;
 }
 
-#chat-messages {
+#chat-messages, #message-container {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
@@ -69,16 +71,8 @@ body, html {
 
 .message {
     margin-bottom: 15px;
-    padding: 10px;
     border-radius: 5px;
     max-width: 70%;
-    display: flex;
-    align-items: flex-start;
-    background: #3a3a3a;
-}
-
-.message-content {
-    flex: 1;
 }
 
 .message-content img {
@@ -86,7 +80,7 @@ body, html {
     height: auto;
 }
 
-.message-content pre {
+.message-content pre, .message-content code {
     background-color: #2a2a2a;
     padding: 10px;
     border-radius: 5px;
@@ -94,7 +88,6 @@ body, html {
 }
 
 .message-content code {
-    background-color: #2a2a2a;
     padding: 2px 4px;
     border-radius: 3px;
 }
@@ -102,10 +95,9 @@ body, html {
 #input-area {
     display: flex;
     padding: 10px;
-    background: #2a2a2a;
 }
 
-#user-input {
+#user-input, #message-input, #avatar-creation-form input {
     flex: 1;
     padding: 10px;
     border: 1px solid #4a4a4a;
@@ -127,6 +119,7 @@ body, html {
 #create-avatar-button {
     margin: 10px;
 }
+
 .channel-separator {
     height: 1px;
     background-color: #4a4a4a;
@@ -155,24 +148,49 @@ body, html {
     gap: 10px;
 }
 
-#avatar-creation-form input {
-    padding: 10px;
-    border: 1px solid #4a4a4a;
-    border-radius: 3px;
-    background: #3a3a3a;
-    color: #e0e0e0;
+.message-group {
+    display: flex;
+    gap: 12px;
+}
+
+.message-header {
+    margin-bottom: 4px;
+}
+
+.avatar-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.timestamp {
+    font-size: 0.8em;
+    color: #777;
+    font-style: italic;
+}
+
+.message-content {
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+#send-button {
+    background-color: #007bff;
+}
+
+#send-button:hover {
+    background-color: #0056b3;
 }
 
 @media (max-width: 768px) {
     #channel-list {
         width: 80px;
     }
-    .channel-info span:not(:first-child) {
+    .channel-info span:not(:first-child), .avatar-picture, .location-icon {
         display: none;
     }
 }
 
-/* Scrollbar styles */
 ::-webkit-scrollbar {
     width: 10px;
 }

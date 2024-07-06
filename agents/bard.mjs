@@ -1,6 +1,6 @@
 import DiscordAIBot from '../tools/discord-ai-bot.js';
 
-const TWEET_API_URL = 'https://localhost:8443/x/tweet';
+const TWEET_API_URL = 'http://localhost:3000/x/tweet';
 const RUMBLE_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 
 const ratichat = new DiscordAIBot({

@@ -4,7 +4,7 @@ let locations = [];
 
 async function fetchCharacters() {
     try {
-        const response = await fetch('https://localhost:8443/avatars');
+        const response = await fetch('http://localhost:3000/avatars');
         characters = await response.json();
         populateAvatarSelect();
     } catch (error) {
@@ -14,7 +14,7 @@ async function fetchCharacters() {
 
 async function fetchLocations() {
     try {
-        const response = await fetch('https://localhost:8443/discord/locations');
+        const response = await fetch('http://localhost:3000/discord/locations');
         locations = await response.json();
         populateLocationSelect();
     } catch (error) {
@@ -66,7 +66,7 @@ async function enqueueRequest() {
         }
     };
 
-    const response = await fetch('https://localhost:8443/discord/enqueue', {
+    const response = await fetch('http://localhost:3000/discord/enqueue', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ async function enqueueRequest() {
 }
 
 async function processQueue() {
-    const response = await fetch('https://localhost:8443/discord/process');
+    const response = await fetch('http://localhost:3000/discord/process');
     const result = await response.json();
     document.getElementById('response').innerText = result.message || result.error;
 }

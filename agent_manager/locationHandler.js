@@ -1,6 +1,6 @@
-import { fetchJSON } from './fetchJSON.js';
+import { fetchJSON } from '../tools/fetchJSON.js';
 import { updateAvatarLocation } from './avatar.js';
-import { LOCATIONS_API } from './config.js';
+import { LOCATIONS_API } from '../tools/config.js/index.js';
 
 export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
 let cachedLocations = null;

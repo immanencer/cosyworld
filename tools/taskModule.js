@@ -1,6 +1,8 @@
-import { TASKS_API, POLL_INTERVAL } from '../tools/config.js/index.js';
-import { postJSON } from '../tools/postJSON.js';
-import { fetchJSON } from '../tools/fetchJSON.js';
+const TASKS_API = 'http://localhost:3000/ai/tasks';
+const POLL_INTERVAL = 1000;
+
+import { postJSON } from './postJSON.js';
+import { fetchJSON } from './fetchJSON.js';
 
 export async function createTask(system_prompt, messages, avatar) {
     const task = {

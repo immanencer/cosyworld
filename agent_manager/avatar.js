@@ -1,5 +1,5 @@
-import { AVATARS_API } from './config.js';
-import { fetchJSON } from './fetchJSON.js';
+import { AVATARS_API } from '../tools/config.js/index.js';
+import { fetchJSON } from '../tools/fetchJSON.js';
 import { getLocations } from './locationHandler.js';
 
 export const initializeAvatars = async () => {
@@ -59,8 +59,8 @@ const updateAvatarOnServer = async (avatar) => {
     }
 };
 
-import { postJSON } from './postJSON.js';
-import { ENQUEUE_API } from './config.js';
+import { postJSON } from '../tools/postJSON.js';
+import { ENQUEUE_API } from '../tools/config.js/index.js';
 
 export async function createNewAvatar(avatarName) {
     const response = await postJSON(ENQUEUE_API, {

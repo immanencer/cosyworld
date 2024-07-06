@@ -33,10 +33,10 @@ class OllamaService {
      * @param {OllamaConfig} config
      * @returns {Promise<string|null>} The model hash or null if creation failed
      */
-    async updateConfig({ model = this.model}) {
+    async updateConfig({ model = this.model }) {
         this.model = model;
         this.systemPrompt = `${this.systemPrompt}`.trim();
-        
+
         const modelfile = `
 FROM ${model}
 SYSTEM """
@@ -134,6 +134,32 @@ ${this.systemPrompt}
      */
     draw() {
         return 'This is a 🦙 drawing';
+    }
+
+    /**
+     * Wrapper for raw_chat that logs a warning before execution
+     * @param {Object} options - The options for the raw chat
+     * @param {string} options.model - The model to use
+     * @param {Array<{role: string, content: string}>} options.messages - The messages for the chat
+     * @param {boolean} [options.stream=false] - Whether to stream the response
+     * @returns {Promise<ollama.ChatResponse|AsyncGenerator<ollama.ChatResponse>>}
+     */
+    async raw_chat(options) {
+        console.warn('Warning: Using raw_chat method. This bypasses message history and custom configurations.');
+        
+        try {
+            if (options.stream) {
+                // Return the async generator for streaming
+                return ollama.chat(options);
+            } else {
+                // For non-streaming, return the full response
+                const response = await ollama.chat(options);
+                return response;
+            }
+        } catch (error) {
+            console.error('Error in raw_chat:', error);
+            throw error;
+        }
     }
 }
 

@@ -44,11 +44,14 @@ class Skull extends DiscordBot {
         Summarize the above in a wolf-language
         `;
 
-        const memory = await ai.raw_chat({model: 'llama3', messages: [
+        const memory = await ai.chat({model: 'llama3', messages: [
             { role: 'system', content: this.avatar.personality },
             { role: 'user', content }
-        ], stream: false });;
-        await calculateTPS(memory);
+        ], stream: false });
+        if (!memory || !memory.message || !memory.message.content) {
+            console.error('🐺 Skull failed to remember');
+            return;
+        }
         this.memory = memory.message.content;
 
         console.log('🐺 Skull remembers:', memory.message.content);

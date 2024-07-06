@@ -1,5 +1,10 @@
 import { sendChatMessage, fetchChannelMessages } from './api.js';
 
+marked.setOptions({
+    breaks: true,
+    gfm: true
+});
+
 const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
@@ -33,7 +38,7 @@ async function handleChannelClick(e) {
         
         try {
             const messages = await fetchChannelMessages(currentChannel);
-            messages.forEach(msg => addMessage(msg.avatar, msg.content));
+            messages.filter(msg => !!msg.content).forEach(msg => addMessage(msg.avatar, msg.content));
         } catch (error) {
             console.error('Error loading messages:', error);
             addMessage('system', 'Failed to load previous messages.');

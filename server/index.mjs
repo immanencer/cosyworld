@@ -1,21 +1,9 @@
 import express from 'express';
 import session from 'express-session';
-import https from 'https';
-import fs from 'fs';
+import http from 'http';
 
 const app = express();
-const PORT = 8443; // Standard HTTPS port
-
-// Load SSL certificate and key
-const privateKey = fs.readFileSync('./ssl_certificates/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('./ssl_certificates/cert.pem', 'utf8');
-const ca = fs.readFileSync('./ssl_certificates/chain.pem', 'utf8');
-
-const credentials = {
-    key: privateKey,
-    cert: certificate,
-    ca: ca
-};
+const PORT = 3000; // Standard HTTP port for local development
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
@@ -26,9 +14,9 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { 
-        secure: true, // Set to true for HTTPS
+        secure: false, // Set to false for HTTP
         httpOnly: true,
-        sameSite: 'strict'
+        sameSite: 'lax' // Changed to 'lax' for better compatibility in local environment
     }
 }));
 
@@ -55,9 +43,9 @@ app.use('/summarizer', summarizer);
 import x from './routes/x.mjs';
 app.use('/x', x);
 
-// Create HTTPS server
-const httpsServer = https.createServer(credentials, app);
+// Create HTTP server
+const httpServer = http.createServer(app);
 
-httpsServer.listen(PORT, () => {
-    console.log(`HTTPS Server is running on port ${PORT}`);
+httpServer.listen(PORT, () => {
+    console.log(`HTTP Server is running on port ${PORT}`);
 });

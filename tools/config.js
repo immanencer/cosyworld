@@ -1,0 +1,10 @@
+export const POLL_INTERVAL = 1000;
+export const MONGODB_URI = `mongodb://localhost:27017`;
+export const MONGODB_DB_NAME = `cosyworld`;
+export const PORT = 3000;
+export const TASKS_API = `http://localhost:3000/ai/tasks`;
+export const ENQUEUE_API = `http://localhost:3000/discord/enqueue`;
+export const MESSAGES_API = `http://localhost:3000/discord/messages`;
+export const LOCATIONS_API = `http://localhost:3000/discord/locations`;
+export const AVATARS_API = `http://localhost:3000/avatars`;
+export const DISCORD_THREAD_API = `http://localhost:3000/discord/thread`;

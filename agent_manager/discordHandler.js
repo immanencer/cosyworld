@@ -1,5 +1,5 @@
-import { postJSON } from '../agent_manager/postJSON.js';
-import { ENQUEUE_API, DISCORD_THREAD_API } from '../agent_manager/config.js';
+import { postJSON } from '../tools/postJSON.js';
+import { ENQUEUE_API, DISCORD_THREAD_API } from '../tools/config.js/index.js';
 import { createNewAvatar, avatarExists, updateAvatarLocation } from './avatar.js';
 
 

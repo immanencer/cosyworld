@@ -4,7 +4,7 @@
   "description": "",
   "main": "ai-service.js",
   "scripts": {
-    "demo": "node ./demo/demo.js",
+    "demo": "node ./demo/server.js",
     "server": "node ./server/index.js",
     "server-dev": "node ./server/index.js",
     "lint": "eslint .",

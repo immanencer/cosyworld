@@ -1,5 +1,5 @@
-import { MESSAGES_API } from "./config.js";
-import { fetchJSON } from "./fetchJSON.js";
+import { MESSAGES_API } from "../tools/config.js/index.js";
+import { fetchJSON } from "../tools/fetchJSON.js";
 import { createURLWithParams } from "./utils.js";
 import { getLocations, handleAvatarLocation } from "./locationHandler.js";
 import { handleResponse } from "./responseHandler.js";
