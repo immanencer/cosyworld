@@ -62,7 +62,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/abbey/storyProcessor.js",
+            "program": "${workspaceFolder}/agents/abbey/storymaton/main.js",
             "envFile": "${workspaceFolder}/.env"
         },
     ]

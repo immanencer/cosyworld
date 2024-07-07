@@ -5,48 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asher's Whisper Chronicles</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-    <div class="header">
-        <img src="https://i.imgur.com/8FnKL9v.png" alt="Asher the Mouse Monk" class="logo">
-        <div>
-            <h1 class="title">Asher's Whisper Chronicles</h1>
-            <p class="description">Tales from the Quiet Abbey of the Lonely Forest</p>
-        </div>
-    </div>
-    <div class="content">
-        <button id="processButton">Whisper a Memory</button>
-        <p id="processStatus"></p>
-        <div id="chart" class="chart"></div>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search the chronicles...">
-        <table id="summaryTable" class="file-list">
-            <thead>
-                <tr>
-                    <th>Storyteller</th>
-                    <th>Tale</th>
-                    <th>Rarity</th>
-                    <th>Enchantment</th>
-                    <th>Glimpse</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <p id="noDataMessage" style="display: none;">The ink well is dry... Asher hasn't recorded any tales yet.</p>
-    </div>
+    <header class="header">
+        <img src="https://i.imgur.com/dUxHmFC.png" alt="Asher the Mouse Monk" class="logo">
+        <h1 class="title">Asher's Whisper Chronicles</h1>
+        <p class="description">Scrolls of Wisdom from the Quiet Abbey</p>
+    </header>
+    
+    <div class="main">
+        <aside class="sidebar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search the ancient scrolls...">
+            <div id="scrollList" class="scroll-list">
+                <!-- Scroll items will be dynamically inserted here -->
+            </div>
+        </aside>
 
-    <div id="storyModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
+        <section class="reading-pane" id="readingPane">
+            <p id="noDataMessage">The ink well runs dry... Asher has yet to inscribe new tales.</p>
             <div id="storyContent"></div>
-        </div>
+            <div class="modal-footer">
+                <button id="toggleViewButton">View Scribe's Notes</button>
+            </div>
+        </section>
     </div>
 
     <footer>
         <p>🐭 Asher the Mouse Monk | Quiet Abbey of the Lonely Forest</p>
-        <p><em>"In the whispers of the past, we find the stories of tomorrow."</em></p>
+        <p><em>"In whispers of parchment, we find echoes of eternity."</em></p>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

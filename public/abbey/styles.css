@@ -1,129 +1,146 @@
 body {
-    font-family: 'Garamond', serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4e9d7;
-    color: #3e2723;
+  font-family: 'Cormorant Garamond', serif;
+  background-color: #121212;
+  color: #e0e0e0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .header {
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    border-bottom: 2px solid #8d6e63;
-    background-color: #d7ccc8;
+  background-color: #1f1f1f;
+  padding: 20px;
+  text-align: center;
 }
 
 .logo {
-    width: 100px;
-    height: 100px;
-    margin-right: 20px;
-    border-radius: 50%;
+  width: 100px;
 }
 
 .title {
-    font-size: 28px;
-    color: #4e342e;
+  font-size: 2.5em;
+  color: #00e676;
 }
 
 .description {
-    font-size: 18px;
-    color: #5d4037;
+  font-size: 1.2em;
+  color: #81c784;
 }
 
-.content {
-    padding: 20px;
+.main {
+  display: flex;
+  flex-grow: 1;
 }
 
-.chart {
-    width: 100%;
-    height: 300px;
-    background-color: #efebe9;
-    margin: 20px 0;
-    border-radius: 10px;
-    border: 1px solid #bcaaa4;
-}
-
-.file-list {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 10px;
-}
-
-.file-list th, .file-list td {
-    padding: 12px;
-    background-color: #d7ccc8;
-}
-
-.file-list th {
-    background-color: #bcaaa4;
-    color: #3e2723;
+.sidebar {
+  background-color: #1f1f1f;
+  width: 30%;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .search-input {
-    padding: 10px;
-    width: 100%;
-    margin-bottom: 20px;
-    background-color: #efebe9;
-    color: #3e2723;
-    border: 1px solid #8d6e63;
-    border-radius: 5px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  background-color: #333;
+  border: 1px solid #00e676;
+  color: #e0e0e0;
+  border-radius: 5px;
 }
 
-#processButton {
-    background-color: #8d6e63;
-    color: #efebe9;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s;
+.scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-#processButton:hover {
-    background-color: #6d4c41;
+.scroll-item {
+  padding: 15px;
+  background-color: #2e2e2e;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+.scroll-item:hover {
+  background-color: #424242;
 }
 
-.modal-content {
-    background-color: #efebe9;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #8d6e63;
-    width: 80%;
-    border-radius: 10px;
+.scroll-title {
+  font-size: 1.5em;
+  margin: 0 0 10px;
+  color: #00e676;
 }
 
-.close {
-    color: #5d4037;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+.scroll-meta {
+  display: flex;
+  justify-content: space-between;
 }
 
-.close:hover,
-.close:focus {
-    color: #3e2723;
-    text-decoration: none;
-    cursor: pointer;
+.scroll-authors {
+  display: flex;
+  gap: 5px;
+}
+
+.avatar-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.scroll-rating {
+  font-size: 1.2em;
+  color: #81c784;
+}
+
+.scroll-glimpse {
+  margin: 10px 0 0;
+  color: #b0b0b0;
+}
+
+.reading-pane {
+  background-color: #1f1f1f;
+  width: 70%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.reading-pane h1 {
+  color: #00e676;
+}
+
+.reading-pane p {
+  color: #b0b0b0;
+}
+
+.reading-pane .modal-footer {
+  margin-top: 20px;
+}
+
+.reading-pane button {
+  background-color: #00e676;
+  border: none;
+  padding: 10px 20px;
+  color: #121212;
+  font-size: 1em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.reading-pane button:hover {
+  background-color: #81c784;
 }
 
 footer {
-    text-align: center;
-    padding: 20px;
-    background-color: #d7ccc8;
-    border-top: 1px solid #8d6e63;
-    font-style: italic;
+  background-color: #1f1f1f;
+  padding: 10px;
+  text-align: center;
+  color: #81c784;
+}
+
+footer em {
+  color: #00e676;
 }
