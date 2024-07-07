@@ -5,7 +5,7 @@ dotenv.config();
 
 // Import necessary modules
 import Replicate from "replicate";
-import { uploadToImgur } from "../tools/upload-to-imgur.js";
+import { uploadToImgur } from "../../tools/upload-to-imgur.js";
 
 // Initialize Replicate with API token
 const replicate = new Replicate({

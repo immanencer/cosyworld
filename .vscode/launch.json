@@ -55,5 +55,15 @@
             "program": "${workspaceFolder}/agent_manager/main.js",
             "envFile": "${workspaceFolder}/.env"
         },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "📔 storyteller",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/abbey/storyProcessor.js",
+            "envFile": "${workspaceFolder}/.env"
+        },
     ]
 }

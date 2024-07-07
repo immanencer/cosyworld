@@ -7,8 +7,6 @@ await ai.initializeServices();
 console.log('🧠 initializing ai');
 await ai.useService('ollama');
 
-import calculateTPS from "../../tools/calculateTPS.js";
-
 class Skull extends DiscordBot {
 
     token = process.env.DISCORD_BOT_TOKEN;

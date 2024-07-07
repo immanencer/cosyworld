@@ -1,4 +1,4 @@
-import { AVATARS_API } from '../tools/config.js/index.js';
+import { AVATARS_API } from '../tools/config.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
 import { getLocations } from './locationHandler.js';
 
@@ -60,7 +60,7 @@ const updateAvatarOnServer = async (avatar) => {
 };
 
 import { postJSON } from '../tools/postJSON.js';
-import { ENQUEUE_API } from '../tools/config.js/index.js';
+import { ENQUEUE_API } from '../tools/config.js';
 
 export async function createNewAvatar(avatarName) {
     const response = await postJSON(ENQUEUE_API, {

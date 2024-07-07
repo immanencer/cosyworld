@@ -1,4 +1,4 @@
-import { TASKS_API, POLL_INTERVAL } from '../tools/config.js/index.js';
+import { TASKS_API, POLL_INTERVAL } from '../tools/config.js';
 import { postJSON } from '../tools/postJSON.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
 

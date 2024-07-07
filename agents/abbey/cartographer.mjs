@@ -1,4 +1,4 @@
-import db from '../database/index.js';
+import db from '../../database/index.js';
 
 const ROOMS_COLLECTION = 'rooms';
 const MESSAGES_COLLECTION = 'messages';

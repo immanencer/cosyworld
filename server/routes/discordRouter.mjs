@@ -1,5 +1,4 @@
 import express from 'express';
-import { rateLimit } from 'express-rate-limit';
 import { validateRequest } from '../middleware/validation.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import * as messageService from '../services/messageService.js';
@@ -12,10 +11,6 @@ const router = express.Router();
 
 // Middleware
 router.use(express.json());
-router.use(rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 1000 // limit each IP to 100 requests per windowMs
-}));
 
 await discordService.initializeDiscordClient();
 

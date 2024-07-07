@@ -1,0 +1,129 @@
+body {
+    font-family: 'Garamond', serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4e9d7;
+    color: #3e2723;
+}
+
+.header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #8d6e63;
+    background-color: #d7ccc8;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
+    margin-right: 20px;
+    border-radius: 50%;
+}
+
+.title {
+    font-size: 28px;
+    color: #4e342e;
+}
+
+.description {
+    font-size: 18px;
+    color: #5d4037;
+}
+
+.content {
+    padding: 20px;
+}
+
+.chart {
+    width: 100%;
+    height: 300px;
+    background-color: #efebe9;
+    margin: 20px 0;
+    border-radius: 10px;
+    border: 1px solid #bcaaa4;
+}
+
+.file-list {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.file-list th, .file-list td {
+    padding: 12px;
+    background-color: #d7ccc8;
+}
+
+.file-list th {
+    background-color: #bcaaa4;
+    color: #3e2723;
+}
+
+.search-input {
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+    background-color: #efebe9;
+    color: #3e2723;
+    border: 1px solid #8d6e63;
+    border-radius: 5px;
+}
+
+#processButton {
+    background-color: #8d6e63;
+    color: #efebe9;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+#processButton:hover {
+    background-color: #6d4c41;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #efebe9;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #8d6e63;
+    width: 80%;
+    border-radius: 10px;
+}
+
+.close {
+    color: #5d4037;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #3e2723;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #d7ccc8;
+    border-top: 1px solid #8d6e63;
+    font-style: italic;
+}
