@@ -1,6 +1,6 @@
 import { cleanString } from './utils.js';
 import { getLocations } from './locationHandler.js';
-import { updateAvatarLocation } from './avatar.js';
+import { updateAvatarLocation } from './avatarHandler.js';
 import { waitForTask } from './task.js';
 import { handleDiscordInteraction } from './discordHandler.js';
 
@@ -117,7 +117,7 @@ class ItemHandler {
 }
 
 // Initialize ItemHandler
-const itemHandler = new ItemHandler();
+export const itemHandler = new ItemHandler();
 
 // Initialize basic items/abilities
 itemHandler.addItem(new Item('Move', 'Allows movement between locations', itemTypes.TOOL, 

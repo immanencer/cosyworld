@@ -1,5 +1,5 @@
 import { fetchJSON } from '../tools/fetchJSON.js';
-import { updateAvatarLocation } from './avatar.js';
+import { updateAvatarLocation } from './avatarHandler.js';
 import { LOCATIONS_API } from '../tools/config.js';
 
 export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
@@ -46,7 +46,7 @@ export const handleAvatarLocation = async (avatar, mention) => {
                         locations[0] ||
                         DEFAULT_LOCATION;
 
-    if (avatar.location.id !== newLocation.id) {
+    if (avatar.location.name !== newLocation.name) {
         console.log(`${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
         const updatedAvatar = { ...avatar, location: newLocation };
         try {

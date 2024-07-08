@@ -1,47 +1,61 @@
-import { handleDiscordInteraction, getOrCreateThread } from './discordHandler.js';
-import { handleItems, getAvailableItems } from './itemHandler.js';
+import { generateHaiku, analyzeHaiku } from './haikuHandler.js';
 import { generateResponse } from './responseGenerator.js';
-import { checkShouldRespond } from './haikuResponder.js';
-import { checkMovementAfterResponse } from './movementHandler.js';
-import { DEFAULT_LOCATION, sanitizeLocationName } from './locationHandler.js';
+import { itemHandler, getAvailableItems } from './itemHandler.js';
+import { moveAvatar } from './movementHandler.js';
+import { updateAvatarState } from './avatarHandler.js';
+import { handleDiscordInteraction } from './discordHandler.js';
+
 
 export async function handleResponse(avatar, conversation) {
-    if (!avatar || !avatar.location) {
-        console.warn(`Invalid avatar or location for ${avatar?.name || 'unknown avatar'}`);
-        avatar = { ...avatar, location: DEFAULT_LOCATION };
-    }
-
-    console.log(`Processing messages for ${avatar.name} in ${avatar.location.name}`);
-
     try {
-        if (!await checkShouldRespond(avatar, conversation)) return;
-
-        console.log(`Responding as ${avatar.name} in ${avatar.location.name}`);
-
+        // Perceive
+        const recentContext = conversation.slice(-10);
         const availableItems = await getAvailableItems(avatar);
-        const toolResults = await Promise.all(availableItems.map(item => 
-            handleItems(avatar, conversation, `use(${item.split(' (')[0]})`)
-        ));
 
-        console.log(`Item usage results for ${avatar.name}:`, JSON.stringify(toolResults, null, 2));
-
-        const response = await generateResponse(avatar, conversation, availableItems, toolResults);
-
-        const newLocationName = await checkMovementAfterResponse(avatar, conversation, response);
-        if (newLocationName) {
-            const thread = await getOrCreateThread(avatar, sanitizeLocationName(newLocationName));
-            if (!thread) {
-                console.error(`Thread not found for ${newLocationName}`);
-                return;
-            }
-            console.log(`${avatar.name} moving to ${newLocationName}`);
-            avatar.location = {
-                id: thread.id,
-                name: newLocationName,
-                type: 'thread',
-                parent: thread.parentId || thread.parent.id
-            };
+        // Contemplate
+        const haiku = await generateHaiku(avatar, recentContext);
+        const shouldRespond = await analyzeHaiku(avatar, haiku, recentContext);
+        
+        if (!shouldRespond) {
+            console.log(`${avatar.name} decides not to respond.`);
+            updateAvatarState(avatar, { feelings: [haiku, ...avatar.feelings] });
+            return null;
         }
+
+        // Plan actions
+        const actionPlan = {
+            speak: true,
+            useItems: availableItems.length > 0,
+            move: false // For simplicity, we're not implementing movement logic here
+        };
+
+        // Act
+        let response = null;
+        let usedItems = [];
+        let newLocation = null;
+
+        if (actionPlan.speak) {
+            response = await generateResponse(avatar, recentContext, availableItems, []);
+        }
+
+        if (actionPlan.useItems) {
+            for (const item of availableItems) {
+                const result = await itemHandler.useItem(avatar, item, recentContext);
+                if (result) usedItems.push({ item, result });
+            }
+        }
+
+        if (actionPlan.move) {
+            newLocation = await moveAvatar(avatar, recentContext, response);
+        }
+
+        // Update avatar state
+        updateAvatarState(avatar, {
+            feelings: [haiku, ...avatar.feelings],
+            location: newLocation || avatar.location,
+            lastResponse: response,
+            lastUsedItems: usedItems
+        });
 
         if (response && response.trim() !== "") {
             console.log(`Response for ${avatar.name} in ${avatar.location.name}: ${response}`);
@@ -51,8 +65,11 @@ export async function handleResponse(avatar, conversation) {
                 console.error(`Error in handleDiscordInteraction for ${avatar.name}:`, error);
             }
         }
+        console.log(`${avatar.name} responds: ${response}`);
         return response;
+
     } catch (error) {
         console.error(`Error in handleResponse for ${avatar.name}:`, error);
+        return null;
     }
 }

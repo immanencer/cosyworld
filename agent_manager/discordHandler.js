@@ -1,6 +1,6 @@
 import { postJSON } from '../tools/postJSON.js';
 import { ENQUEUE_API, DISCORD_THREAD_API } from '../tools/config.js';
-import { createNewAvatar, avatarExists, updateAvatarLocation } from './avatar.js';
+import { createNewAvatar, avatarExists, updateAvatarLocation } from './avatarHandler.js';
 
 
 export async function getOrCreateThread(avatar, threadName) {

@@ -1,5 +1,6 @@
-import { AVATARS_API } from '../tools/config.js';
+import { AVATARS_API, ENQUEUE_API } from '../tools/config.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
+import { postJSON } from '../tools/postJSON.js';
 import { getLocations } from './locationHandler.js';
 
 export const initializeAvatars = async () => {
@@ -18,11 +19,18 @@ const initializeAvatar = (avatar, locations) => ({
     location: locations.find(loc => loc.name === avatar.location) || locations[0],
     messageCache: [],
     lastProcessedMessageId: null,
-    remember: [...new Set([...(avatar.remember || []), avatar.location])]
-        .slice(-5)
+    remember: [...new Set([...(avatar.remember || []), avatar.location, (avatar.remembers || [])])]
+        .slice(-5),
+    feelings: [],
+    lastResponse: null,
+    lastUsedItems: []
 });
 
-export const updateAvatarLocation = async (avatar) => {
+export const updateAvatarLocation = async (avatar, newLocation) => {
+    if (newLocation) {
+        console.warn('⚠️ newLocation is deprecated and will be removed soon. Please update your code.');
+    }
+    avatar.location = newLocation || avatar.location;
     console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
     avatar.remember = updateRememberedLocations(avatar);
 
@@ -34,7 +42,7 @@ export const updateAvatarLocation = async (avatar) => {
 };
 
 const updateRememberedLocations = ({ remember, location }) => 
-    [...new Set([...remember, location.name])].slice(-5);
+    [...new Set([...remember, location.name])].slice(-18);
 
 const updateAvatarOnServer = async (avatar) => {
     if (!avatar || !avatar._id) {
@@ -44,7 +52,10 @@ const updateAvatarOnServer = async (avatar) => {
     const url = `${AVATARS_API}/${avatar._id}`;
     const body = JSON.stringify({ 
         location: avatar.location?.name, 
-        remember: avatar.remember 
+        remember: avatar.remember,
+        feelings: avatar.feelings,
+        lastResponse: avatar.lastResponse,
+        lastUsedItems: avatar.lastUsedItems
     });
 
     try {
@@ -58,9 +69,6 @@ const updateAvatarOnServer = async (avatar) => {
         throw error;
     }
 };
-
-import { postJSON } from '../tools/postJSON.js';
-import { ENQUEUE_API } from '../tools/config.js';
 
 export async function createNewAvatar(avatarName) {
     const response = await postJSON(ENQUEUE_API, {
@@ -76,4 +84,41 @@ export async function avatarExists(avatarName) {
         data: { avatarName }
     });
     return response.exists;
+}
+
+// New state management functions
+
+export function updateAvatarState(avatar, updates) {
+    Object.assign(avatar, updates);
+    
+    // Ensure feelings array doesn't grow indefinitely
+    if (avatar.feelings) {
+        avatar.feelings = avatar.feelings.slice(0, 10);
+    }
+    
+    // Log the update for debugging
+    console.log(`Updated state for ${avatar.name}:`, updates);
+    
+    // Trigger server update
+    updateAvatarOnServer(avatar).catch(error => {
+        console.error(`Failed to sync state update for ${avatar.name}:`, error);
+    });
+}
+
+export function getAvatarState(avatar) {
+    return {
+        name: avatar.name,
+        location: avatar.location,
+        feelings: avatar.feelings,
+        remember: avatar.remember,
+        lastResponse: avatar.lastResponse,
+        lastUsedItems: avatar.lastUsedItems
+    };
+}
+
+export function addFeelingToAvatar(avatar, feeling) {
+    avatar.feelings = [feeling, ...(avatar.feelings || [])].slice(0, 10);
+    updateAvatarOnServer(avatar).catch(error => {
+        console.error(`Failed to sync new feeling for ${avatar.name}:`, error);
+    });
 }
