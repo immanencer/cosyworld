@@ -11,6 +11,7 @@ class AIServiceManager {
     }
 
     initialized = false;
+
     async initializeServices() {
         if (this.initialized) {
             return;
@@ -60,8 +61,9 @@ class AIServiceManager {
         }
         this.currentService = service;
         this.raw_chat = service.raw_chat;
+        this.enhanced_chat = service.enhanced_chat; // Add enhanced_chat to the current service
     }
-    
+
     async chat(message) {
         if (!this.currentService) {
             throw new Error('No service selected');
@@ -73,11 +75,10 @@ class AIServiceManager {
         return await this.currentService.chat(message);
     }
 
-
     async chatSync(input) {
         let output = '';
         if (typeof input === 'string') {
-            input = { role: "user", content: input }
+            input = { role: "user", content: input };
         }
         if (!input || !input.content || !input.role) {
             throw new Error('No message content provided: ' + JSON.stringify(input));
@@ -89,16 +90,23 @@ class AIServiceManager {
                 console.warn('🪹 No event received');
                 continue;
             }
-            if  (!event.message.content) {
+            if (!event.message.content) {
                 continue;
             }
-            // Print the message content to the console
-            //process.stdout.write(event.message.content);
             // Add the message content to the output
             output += event.message.content;
-
         }
         return output;
+    }
+
+    async enhancedChat(options, characterName) {
+        if (!this.currentService) {
+            throw new Error('No service selected');
+        }
+        if (!this.currentService.enhanced_chat) {
+            throw new Error('Service does not support enhanced chat');
+        }
+        return await this.currentService.enhanced_chat(options, characterName);
     }
 
     async complete(prompt) {

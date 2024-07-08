@@ -17,6 +17,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐭 ratichat",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/ratichat.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "ai",
             "skipFiles": [
                 "<node_internals>/**"
@@ -63,6 +73,16 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/agents/abbey/storymaton/main.js",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "X scrape",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/services/x-scrape.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
     ]

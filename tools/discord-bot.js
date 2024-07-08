@@ -433,12 +433,13 @@ class DiscordBot {
             await this.client.login(process.env.DISCORD_BOT_TOKEN);
         } catch (error) {
             console.error('🎮 ❌ Error logging in:', error);
-            console.log('📰 If this says you have an invalid token, make sure that .configurations/discord.json has a valid token. { "token": "YOUR_DISCORD_TOKEN" } ')
+            console.log('📰 If this says you have an invalid token, make sure that DISCORD_BOT_TOKEN is set in your .env file');
         }
     }
 
     authors = {};
     async loadMemory(channels) {
+        this.avatar.remember = this.avatar.remember || [this.avatar.location];
 
         // get the memory for all subscribed channels
         const memory = [];
