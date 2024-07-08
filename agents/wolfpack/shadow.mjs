@@ -3,8 +3,9 @@ import process from "process";
 import DiscordBot from "../../tools/discord-bot-2.js";
 import AIServiceManager from "../../ai-services/ai-service-manager.mjs";
 const ai = new AIServiceManager();
+console.log('🧠 initializing ai');
 await ai.initializeServices();
-
+await ai.useService('ollama');
 class Shadow extends DiscordBot {
     
     token = process.env.DISCORD_BOT_TOKEN;
@@ -22,16 +23,13 @@ class Shadow extends DiscordBot {
         owner: "Wolf777Link",
         avatar: 'https://i.imgur.com/vZzwzVB.png',
         location: '🐺 wolf den',
-        personality: `You are Shadow, Wolf777Link's young college age wolf cub, you only respond in soft howls SHORT cub-like *actions* or cute emojis. 🐾`
+        personality: `You are Shadow, Wolf777Link's wolf cub, you only respond in soft howls SHORT cub-like *actions* or cute emojis. 🐾`
     };
 
     async on_login() {
         console.log('🐺 Shadow is online');
         
-        console.log('🧠 initializing ai');
-        await ai.useService('ollama');
-        await ai.updateConfig({ system_prompt: this.avatar.personality });
-
+        await ai.updateConfig({ systemPrompt: this.avatar.personality });
     }
 
     debounce() {
@@ -53,13 +51,13 @@ class Shadow extends DiscordBot {
 
         // Follow the owner
         if (data.author == this.avatar.owner && data.location.indexOf('🥩') === -1) this.avatar.location = data.location;
+        if (data.location !== this.avatar.location) return;
 
         if (message.author.bot || message.author === this.client.user.username) { 
             this.message_cache.push(`(${data.location}) ${data.author}: ${data.content}`);
             return;
         }
         if (data.author === `${this.avatar.name} ${this.avatar.emoji || '⚠️'}`) return;
-        if (data.location !== this.avatar.location) return;
         console.log('🐺 Shadow is processing the message...');
 
         this.message_cache.push(`in "${data.location}" you heard ${data.author} say ${data.content}`);

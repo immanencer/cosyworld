@@ -27,6 +27,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐺 shadow",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/wolfpack/shadow.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "ai",
             "skipFiles": [
                 "<node_internals>/**"
