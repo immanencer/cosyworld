@@ -27,11 +27,31 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐺 skull",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/wolfpack/skull.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🐺 shadow",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/agents/wolfpack/shadow.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🐺 nightmare",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/wolfpack/nightmare.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
         {

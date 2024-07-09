@@ -5,7 +5,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import chunkText from '../../tools/chunk-text.js';
 
-class SkullBot {
+
+function extractEmojis(text) {
+    const emojiRegex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
+    return (text.match(emojiRegex) || []);
+}
+
+class NightmareBot {
     constructor() {
         this.client = new Client({
             intents: [
@@ -22,25 +28,44 @@ class SkullBot {
         this.messageCache = [];
         this.webhookCache = {};
 
+        this.persona = 'Nightmare, wolf cub and sister of shadow.';
         this.avatar = {
             emoji: '🐺',
-            name: 'Skull',
-            owner: "ratimics",
-            "avatar": "https://i.imgur.com/OxroRtv.png",
-            location: '🐺 wolf den',
-        "personality": "You are a silent wolf named Skull. You respond in SHORT wolf-like *actions*. You do not speak."
+            name: 'Nightmare',
+            owner: "moon",
+            "avatar": "https://i.imgur.com/sldkB3U.png",
+            location: 'circle-of-the-moon',
+            personality: `You are Nightmare, wolf cub and sister of shadow. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
         };
 
         this.model = 'llama3';
         this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
         this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
-        this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {} };
+        this.memory = {
+            conversations: [],
+            summary: '',
+            dream: '',
+            goal: '',
+            sentiments: {},
+            characterMemories: {}
+         };
         this.goalUpdateInterval = 3600000; // 1 hour in milliseconds
+
 
         this.isInitialized = false;
         this.messageQueue = [];
 
         this.setupEventListeners();
+    }
+    
+    async loadAndSummarizeMemory() {
+        await this.loadMemory();
+        await this.summarizeMemory();
+        await this.generateDream();
+        await this.reflectAndUpdateGoal();
+        await this.summarizeSentiment();
+        await this.summarizeSentiment();
+        await this.saveMemory();
     }
 
     setupEventListeners() {
@@ -49,7 +74,7 @@ class SkullBot {
     }
 
     async onReady() {
-        console.log(`🐺 Skull is online as ${this.client.user.tag}`);
+        console.log(`🐺 Nightmare is online as ${this.client.user.tag}`);
         await this.initializeAI();
         await this.initializeChannels();
         await this.loadAndSummarizeMemory();
@@ -104,11 +129,11 @@ class SkullBot {
             this.messageCache = [];
 
             if (result.trim() !== "") {
-                console.log('🐺 Skull responds:', result);
+                console.log('🐺 Nightmare responds:', result);
                 await this.sendAsAvatar(result, message.channel);
                 this.updateMemory(data, result);
             } else {
-                console.error('🐺 Skull has no response');
+                console.error('🐺 Nightmare has no response');
             }
         }
     }
@@ -143,38 +168,81 @@ class SkullBot {
         }
     }
 
-    async loadAndSummarizeMemory() {
-        await this.loadMemory();
-        await this.summarizeMemory();
-        await this.generateDream();
-        await this.reflectAndUpdateGoal();
-        await this.saveMemory();
-    }
 
     startPeriodicTasks() {
         setInterval(() => this.reflectAndUpdateGoal(), this.goalUpdateInterval);
     }
 
+    async summarizeSentiment() {
+        for (const [person, emojis] of Object.entries(this.memory.sentiments)) {
+            const emojiSummary = await this.summarizeEmojiSentiment(person, emojis);
+            const memorySummary = await this.summarizePersonMemory(person, emojis);
+
+            this.memory.sentiments[person] = emojiSummary;
+            if (!this.memory.characterMemories) {
+                this.memory.characterMemories = {};
+            }
+            this.memory.characterMemories[person] = memorySummary;
+        }
+        console.log('🐺 Sentiment summary updated');
+        await this.saveMemory();
+    }
+
+    async summarizeEmojiSentiment(person, emojis) {
+        const emojiCounts = emojis.reduce((acc, emoji) => {
+            acc[emoji] = (acc[emoji] || 0) + 1;
+            return acc;
+        }, {});
+        const sortedEmojis = Object.entries(emojiCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([emoji, count]) => `${emoji}: ${count}`)
+            .join(', ');
+
+        const prompt = `As ${this.persona}, analyze these emojis related to ${person}:
+      ${sortedEmojis}
+      
+      Provide exactly three emojis that best represent your current feelings towards ${person}.
+      Only respond with the three emojis, nothing else.`;
+
+        const response = await this.chatWithAI(prompt);
+        return extractEmojis(response).slice(0, 3);
+    }
+
+    async summarizePersonMemory(person, emojis) {
+        const emojiSummary = emojis.join(' ');
+
+        const prompt = `As ${this.persona}, think about ${person} and these emojis:
+      ${emojiSummary}
+      
+      In one short sentence, describe your memory or feelings about ${person}.
+      Keep your response cub-like and mysterious. Use emojis if you want.`;
+
+        return await this.chatWithAI(prompt);
+    }
+
+
     async reflectAndUpdateGoal() {
         const reflection = await this.chatWithAI(`
-As Skull, the silent wolf, let your imagination haunt moonlit forests and shadowy skies.
+Here's a revised version for Nightmare, the wolf cub and sister of Shadow:
+
+As Nightmare, let your imagination haunt moonlit forests and shadowy skies.
 Reflect on your recent experiences, the whispers of your nightmares, and the echoes of your memories:
 
 1. Your current heart's desire: "${this.memory.goal}"
 2. The misty visions of your recent nightmare: "${this.memory.dream}"
 3. The eerie howl of your memory: "${this.memory.summary}"
 
-Now, shadow wolf, as you stand at the edge of the cursed woods, gazing at the ominous moon, ponder:
+Now, little shadow pup, as you cower at the edge of the cursed woods, gazing at the ominous moon with your large, haunting eyes, ponder:
 
-1. Have your stealthy steps led you closer to your heart's desire?
-2. Do the rustling leaves and darkened skies whisper of new dangers?
-3. What new dirge does your wolf heart yearn to howl?
+1. Have your tiny, trembling paws led you closer to understanding your mysterious existence?
+2. Do the rustling leaves and darkened skies whisper of the terrors that birthed you?
+3. What soft, eerie whimper does your little wolf heart yearn to release?
 
-Weave a tapestry of your reflections and, if the night wind carries a new song, let it be your new goal.
-Speak in the language of the wild, with ghostly whispers, silent howls, and the poetry of the wolf's soul.
+Weave a tapestry of your reflections and, if the night wind carries a new whisper, let it be your new goal.
+Speak in the language of the shadowy wild, with ghostly whimpers, silent shivers, and the poetry of a lost pup's soul.
 Use emojis to paint your feelings and short *actions* to bring your thoughts to life.
 
-Let your response flow like a chilling breeze, in 3-4 sentences of eerie wolf-speak.
+Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-speak, capturing your small size and the accidental nature of your creation.
         `);
 
         console.log('🐺 Reflection:', reflection);
@@ -214,25 +282,17 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie wolf-sp
 
     async summarizeMemory() {
         const memoryContent = JSON.stringify(this.memory);
-        this.memory.summary = await this.chatWithAI(`
-            ${memoryContent}\n\n
-            Summarize the preceding memory content for Skull in 2-3 sentences, using emojis, thoughts, and short actions`);
+        this.memory.summary = await this.chatWithAI(`Summarize the following memory content for Nightmare in 2-3 sentences, using emojis and short actions: ${memoryContent}`);
         console.log('🐺 Memory summarized');
     }
 
     async generateDream() {
-        this.memory.dream = await this.chatWithAI(` 
-            ${this.memory.summary}\n\n
-            Based on these memories, generate a short dream-like sequence using emojis, short actions, and thoughts:
-            `);
+        this.memory.dream = await this.chatWithAI(`Based on Nightmare's memory summary, generate a short dream-like sequence using emojis and short actions: ${this.memory.summary}`);
         console.log('🐺 Dream generated');
     }
 
     async generateGoal() {
-        this.memory.goal = await this.chatWithAI(`
-            ${this.memory.dream}\n
-            ${this.memory.summary}\n
-            Based on these dreams and memories, generate a simple goal for Skull to pursue`);
+        this.memory.goal = await this.chatWithAI(`Based on Nightmare's memory summary and recent dream, generate a simple goal for Nightmare to pursue: ${this.memory.summary}\n${this.memory.dream}`);
         console.log('🐺 Goal generated');
     }
     async decideResponseFormat() {
@@ -358,7 +418,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie wolf-sp
 
             if (!webhook && targetChannel.permissionsFor(this.client.user).has('MANAGE_WEBHOOKS')) {
                 webhook = await targetChannel.createWebhook({
-                    name: 'Skull Webhook',
+                    name: 'Nightmare Webhook',
                     avatar: this.avatar.avatar
                 });
             }
@@ -385,5 +445,5 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie wolf-sp
     }
 }
 
-const skull = new SkullBot();
+const skull = new NightmareBot();
 skull.login();

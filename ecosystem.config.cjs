@@ -29,7 +29,17 @@ module.exports = {
       listen_timeout: 10000,
       kill_timeout: 5000,
       env: {
-        STARTUP_DELAY: 10000, // 10 seconds delay
+        STARTUP_DELAY: 8000, // 10 seconds delay
+      },
+    },
+    {
+      name: "nightmare",
+      script: "./agents/wolfpack/nightmare.mjs",
+      wait_ready: true,
+      listen_timeout: 10000,
+      kill_timeout: 5000,
+      env: {
+        STARTUP_DELAY: 6000, // 10 seconds delay
       },
     },
     {
