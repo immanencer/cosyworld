@@ -1,6 +1,3 @@
-import { configDotenv } from 'dotenv';
-configDotenv();
-
 import DiscordAIBot from '../tools/discord-ai-bot.js';
 import AvatarManager from '../tools/avatar-manager.js';
 import { avatarseek } from './avatars.js';

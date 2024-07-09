@@ -10,27 +10,24 @@ const COLLECTIONS = {
   PROCESSED_MESSAGES: 'processed_messages'
 };
 
-export async function brainstormIdeas(context) {
-  const prompt = `Brainstorm ideas for a story based on this context:\n${context}`;
-  return generateContent(prompt);
-}
+async function generateStory(context, avatars = []) {
+  const prompt = `
+    Based on the following context, create a whimsical story in markdown format:
+    ${context}
+    
+    Include the following elements:
+    1. A creative title
+    2. A short story (around 500 words)
+    3. Dialogue between characters (if appropriate): ${avatars.map(avatar => avatar.name).join(', ')}
+    4. A magical ranking between 1 and 100
+    
+    Format your response as follows:
+    Title: [Your creative title]
+    Story:
+    [Your markdown-formatted story]
+    Magical Ranking: [Your ranking]
+  `;
 
-export async function createStoryPlan(ideas) {
-  const prompt = `Plan out the structure of the story based on these ideas:\n${ideas}`;
-  return generateContent(prompt);
-}
-
-export async function writeStoryParagraph(plan, context, avatars = []) {
-  let prompt = `Write a paragraph for the story based on this plan:\n${plan}\nContext: ${context}`;
-  if (avatars.length) {
-    const avatarNames = avatars.map(avatar => avatar.name).join(', ');
-    prompt += `\nInclude dialogue between these characters if appropriate: ${avatarNames}`;
-  }
-  return generateContent(prompt);
-}
-
-export async function reviseStoryParagraph(paragraph, fullStory) {
-  const prompt = `Revise the following paragraph to fit seamlessly into this story context:\n\nParagraph:\n${paragraph}\n\nFull Story:\n${fullStory}`;
   return generateContent(prompt);
 }
 
@@ -54,23 +51,17 @@ export async function processStories(avatars = []) {
       const similarStoriesContext = similarSummaries.map(s => s.story).join('\n\n');
 
       const storyContext = `Memory: ${contextContent}\n\nSimilar Tales: ${similarStoriesContext}`;
-      const ideas = await brainstormIdeas(storyContext);
-      const plan = await createStoryPlan(ideas);
+      
+      const generatedContent = await generateStory(storyContext, avatars);
+      
+      // Parse the generated content
+      const titleMatch = generatedContent.match(/Title: (.+)/);
+      const storyMatch = generatedContent.match(/Story:\n([\s\S]+)Magical Ranking:/);
+      const rankingMatch = generatedContent.match(/Magical Ranking: (\d+)/);
 
-      let story = '';
-      const paragraphs = plan.split('\n').filter(line => line);
-      for (const paragraphPlan of paragraphs) {
-        const paragraph = await writeStoryParagraph(paragraphPlan, storyContext, avatars);
-        const revisedParagraph = await reviseStoryParagraph(paragraph, story);
-        story += revisedParagraph + '\n\n';
-      }
-
-      const revisedStory = await generateContent(`Revise the following story in markdown as a whimsical story for publishing:\n${story}`);
-
-      const [title, magicalRanking] = await Promise.all([
-        generateContent(`Title for this story (one line only):\n${story.slice(0, 500)}`),
-        generateContent(`Rate this story between 1 and 100 (single number only)):\n${story.slice(0, 2000)}`),
-      ]);
+      const title = titleMatch ? titleMatch[1].trim() : 'Untitled Story';
+      const story = storyMatch ? storyMatch[1].trim() : '';
+      const magicalRanking = rankingMatch ? parseInt(rankingMatch[1], 10) : 0;
 
       const identifiedAvatars = identifyAvatars(story, avatars);
 
@@ -79,10 +70,9 @@ export async function processStories(avatars = []) {
         uniqueness_score: item.uniqueness_score,
         surrounding_context: contextContent,
         similar_summaries: similarSummaries.map(s => s._id),
-        story,
-        revised_story: revisedStory,
-        title: title.split('\n')[0],
-        magical_ranking: parseInt(magicalRanking.match(/\d+/)[0], 10),
+        story: story,
+        title: title,
+        magical_ranking: magicalRanking,
         avatars: identifiedAvatars,
         processed_at: new Date()
       };

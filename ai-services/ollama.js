@@ -69,8 +69,8 @@ SYSTEM "${this.systemPrompt}"
             const chatStream = await ollama.chat({
                 model: this.model,
                 messages: [
+                    ...this.messageHistory.slice(-20),
                     { role: 'system', content: this.systemPrompt },
-                    ...this.messageHistory.slice(-50)
                 ],
                 stream: true
             });

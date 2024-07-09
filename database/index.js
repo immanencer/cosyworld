@@ -1,6 +1,3 @@
-import { configDotenv } from 'dotenv';
-configDotenv();
-
 import { MongoClient } from 'mongodb';
 
 // MongoDB URI and Database Name

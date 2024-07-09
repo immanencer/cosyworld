@@ -45,16 +45,54 @@ export async function calculateUniquenessScores(collection) {
   return uniquenessScores.sort((a, b) => b.uniqueness_score - a.uniqueness_score);
 }
 
-export async function getSurroundingMessages(content, limit = 1000) {
-  const message = await db.collection(COLLECTIONS.MESSAGES).findOne({ content });
-  if (!message) return [];
+export async function getSurroundingMessages(content, limit = 18, options = {}) {
+  const {
+    timeWindow = 3600000, // 1 hour in milliseconds
+    sortField = 'createdAt',
+    fallbackSort = '_id'
+  } = options;
 
-  return db.collection(COLLECTIONS.MESSAGES).find({
-    createdAt: {
-      $gte: new Date(message.createdAt.getTime() - 3600000),
-      $lte: new Date(message.createdAt.getTime() + 3600000)
+  try {
+    const message = await db.collection(COLLECTIONS.MESSAGES).findOne({ content });
+    if (!message) {
+      console.warn(`No message found with content: "${content}"`);
+      return [];
     }
-  }).sort({ createdAt: 1 }).limit(limit).toArray();
+
+    let query;
+    let sort;
+
+    if (message[sortField]) {
+      const referenceDate = message[sortField];
+      query = {
+        [sortField]: {
+          $gte: new Date(referenceDate.getTime() - timeWindow),
+          $lte: new Date(referenceDate.getTime() + timeWindow)
+        }
+      };
+      sort = { [sortField]: 1 };
+    } else {
+      console.warn(`Message does not have a ${sortField} field, falling back to ${fallbackSort}`);
+      const referenceId = message[fallbackSort];
+      query = { [fallbackSort]: { $gte: referenceId } };
+      sort = { [fallbackSort]: 1 };
+    }
+
+    const surroundingMessages = await db.collection(COLLECTIONS.MESSAGES)
+      .find(query)
+      .sort(sort)
+      .limit(limit)
+      .toArray();
+
+    if (surroundingMessages.length === 0) {
+      console.info(`No surrounding messages found for content: "${content}"`);
+    }
+
+    return surroundingMessages;
+  } catch (error) {
+    console.error('Error in getSurroundingMessages:', error);
+    throw new Error(`Failed to retrieve surrounding messages: ${error.message}`);
+  }
 }
 
 export function identifyAvatars(content, avatars) {
