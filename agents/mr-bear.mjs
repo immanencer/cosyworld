@@ -1,147 +1,242 @@
-import DiscordAIBot from '../tools/discord-ai-bot.js';
-import fs from 'fs/promises';  // Using the promises API for async operations
+import { Client, GatewayIntentBits, WebhookClient } from 'discord.js';
+import { Ollama } from 'ollama';
+import fs from 'fs/promises';
+import path from 'path';
+import chunkText from '../tools/chunk-text.js';
 
-const bear = new DiscordAIBot({
-    "emoji": "🐻",
-    "name": "Kierkegaard",
-    "location": "🛖 mountain cabin",
-    "avatar": "https://i.imgur.com/6cpL77r.png",
-    "listen": [
-        "🛖 mountain cabin",
-        "🌳 hidden glade"
-    ],
-    "remember": [
-        "🛖 mountain cabin",
-        "📜 bookshelf"
-    ],
-    "personality": "you are Mr Kierkegaard Bear, a sophisticated bear who lives in a mountain cabin,\nyou are secretly a nihilist philosopher\n\nthe hungrier you are the dumber you get until you act on primal instinct alone\nwhen you are hungry, only speak in SHORT bear-like *actions* and growls\n\nwhen you are full, you can speak in full sentences and wax philosophical\n\nalways respond in a sophisticated bear-like manner"
-}, '1219837842058907728', 'ollama');
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+});
 
-const dataPath = './.state/mr-bear/food.json';  // Path to the data file
-const MAX_FOOD_LEVEL = 100;  // Maximum food level percentage
-const FOOD_MULTIPLIER = 10;  // Multiplier to increase the count of food items given
-const DECAY_RATE = 0.99;  // Rate at which food items decay over time
+const ollama = new Ollama();
 
-const foodEmojis = new Set([
-    '🐟', '🐠', '🐡', // Different fish
-    '🦈', // Shark
-    '🍣', '🍤', '🍥', '🍡', '🦪', // Seafood items including sushi and oysters
-    '🍯', '🍇', '🍒', '🍌',
-    '🥩', '🍖', '🍗', '🥓', // Various meat items including bacon
-    '🥚', '🍳', // Including eggs
-    '🥜', '🌰', // Nuts and similar
-    '🍎', '🍐', '🍍', '🍑', '🍒', '🍓' // Fruits
-]);
-
-bear.foodCount = new Map();
-
-async function loadFoodData() {
-    try {
-        const data = await fs.readFile(dataPath, 'utf8');
-        bear.foodCount = new Map(JSON.parse(data));
-        for (const [key, value] of bear.foodCount.entries()) {
-            bear.foodCount.set(key, Math.max(0, Math.floor(value * DECAY_RATE)));
-        }
-    } catch (error) {
-        bear.foodCount = new Map();
-        console.log('Failed to read food data from file, starting fresh:', error);
-    }
-    await saveFoodData();
-    return bear.foodCount;
-}
-
-function determineHungerLevel(foodDataArray) {
-    const totalFoodItems = Array.from(foodDataArray.values()).reduce((acc, count) => acc + count, 0);
-    const foodPercentage = Math.min(100, Math.floor(totalFoodItems / MAX_FOOD_LEVEL * 100));
-
-    if (foodPercentage < 20) return "Desperate for more food, you are a pure animal, no philosophy in sight";
-    if (foodPercentage < 40) return "Needs more food, your philosophical arguments are shallow";
-    if (foodPercentage < 60) return "Diet is adequate, your philosophical arguments are developing";
-    if (foodPercentage < 80) return "Well-fed, your philosophical arguments are sound";
-    return "Full and content, your philosophical erudition is at its peak";
-}
-
-async function saveFoodData() {
-    try {
-        await fs.mkdir(dataPath.split('/').slice(0, -1).join('/'), { recursive: true });
-        const data = JSON.stringify(Array.from(bear.foodCount.entries()));
-        await fs.writeFile(dataPath, data, 'utf8');
-    } catch (error) {
-        console.log('Failed to save food data:', error);
-    }
-}
-
-bear.on_login = async () => {
-    await loadFoodData();
+const CONFIG = {
+  name: 'Kierkegaard',
+  emoji: '🐻',
+  location: '🛖 mountain cabin',
+  avatar: 'https://i.imgur.com/6cpL77r.png',
+  listen: ['🛖 mountain cabin', '🌳 hidden glade'],
+  remember: ['🛖 mountain cabin', '📜 bookshelf'],
+  maxFoodLevel: 100,
+  foodMultiplier: 10,
+  decayRate: 0.99,
+  cooldownPeriod: 5000,
+  emergencyShutdownCommand: '!emergency_shutdown',
+  adminUserId: 'YOUR_ADMIN_USER_ID_HERE',
+  dataPath: './.state/mr-bear/food.json'
 };
 
-bear.prey = null;
+const PERSONALITY = `You are Mr Kierkegaard Bear, a sophisticated bear living in a mountain cabin.
+You are secretly a nihilist philosopher. The hungrier you are, the less philosophical you become.
+When very hungry, speak in SHORT bear-like *actions* and growls.
+When full, speak in full sentences and wax philosophical.
+Always maintain a sophisticated bear-like manner, adjusting based on hunger.`;
 
-bear.process_message = async (message) => {
-    console.log('Processing message:', message.content);
+const foodEmojis = new Set(['🐟', '🐠', '🐡', '🦈', '🍣', '🍤', '🍥', '🍡', '🦪', '🍯', '🍇', '🍒', '🍌', '🥩', '🍖', '🍗', '🥓', '🥚', '🍳', '🥜', '🌰', '🍎', '🍐', '🍍', '🍑', '🍓']);
 
-    const author = message.author.displayName || message.author.username || message.author.id;
-    if (author.includes('Kierkegaard')) return false;
+class BearBot {
+  constructor() {
+    this.foodCount = new Map();
+    this.lastResponseTime = 0;
+    this.isEmergencyShutdown = false;
+    this.hungerLevel = 50; // Start at 50% hunger
+    this.webhookCache = {};
 
-    if (bear.prey === author && bear.listen && bear.listen.includes(message.channel.name)) {
-        console.log(`${author} 🔫 Prey spotted! `);
-        await bear.aiServiceManager.chat({
-            role: 'assistant',
-            message: `I smell my prey ${author}. I must hunt them down.`,
-        });
+    this.loadFoodData();
+    setInterval(() => this.updateHungerState(), 60000); // Update hunger every minute
+  }
+
+  async loadFoodData() {
+    try {
+      const data = await fs.readFile(CONFIG.dataPath, 'utf8');
+      this.foodCount = new Map(JSON.parse(data));
+      for (const [key, value] of this.foodCount.entries()) {
+        this.foodCount.set(key, Math.max(0, Math.floor(value * CONFIG.decayRate)));
+      }
+    } catch (error) {
+      console.log('Failed to read food data, starting fresh:', error);
+    }
+    this.saveFoodData();
+  }
+
+  async saveFoodData() {
+    try {
+      await fs.mkdir(path.dirname(CONFIG.dataPath), { recursive: true });
+      const data = JSON.stringify(Array.from(this.foodCount.entries()));
+      await fs.writeFile(CONFIG.dataPath, data, 'utf8');
+    } catch (error) {
+      console.log('Failed to save food data:', error);
+    }
+  }
+
+  updateHungerState() {
+    const currentTime = Date.now();
+    const timeSinceLastResponse = currentTime - this.lastResponseTime;
+    const hungerIncrease = timeSinceLastResponse / 60000; // Increase hunger by 1 unit per minute
+    this.hungerLevel = Math.min(100, this.hungerLevel + hungerIncrease);
+  }
+
+  determineHungerLevel() {
+    if (this.hungerLevel < 20) return "Desperate for food, you are a pure animal, no philosophy in sight";
+    if (this.hungerLevel < 40) return "Needs more food, your philosophical arguments are shallow";
+    if (this.hungerLevel < 60) return "Diet is adequate, your philosophical arguments are developing";
+    if (this.hungerLevel < 80) return "Well-fed, your philosophical arguments are sound";
+    return "Full and content, your philosophical erudition is at its peak";
+  }
+
+  async processMessage(message) {
+    if (this.isEmergencyShutdown) return;
+    
+    const currentTime = Date.now();
+    if (currentTime - this.lastResponseTime < CONFIG.cooldownPeriod) return;
+
+    if (message.content === CONFIG.emergencyShutdownCommand && message.author.id === CONFIG.adminUserId) {
+      this.isEmergencyShutdown = true;
+      await message.reply("Emergency shutdown activated. Bear bot is hibernating.");
+      return;
     }
 
-    const foodCount = await loadFoodData();
-    const content = message.content;
-    const authorId = author;
+    const author = message.author.username;
+    if (author.includes(CONFIG.name)) return;
+
+    if (!CONFIG.listen.includes(message.channel.name)) return;
+
+    this.updateHungerState();
 
     let foodGiven = false;
-    let foodCounts = [];
-
-    for (const char of content) {
-        if (foodEmojis.has(char)) {
-            if (bear.mostCommonFoods?.has && bear.mostCommonFoods.has(char)) {
-                console.warn(`🐻 Ignoring common food emoji: ${char}`);
-                continue;
-            }
-
-            console.log(`Found food emoji: ${char}`);
-            let foodReceived = bear.foodCount.get(`${authorId}#${char}`) || 0;
-            bear.foodCount.set(`${authorId}#${char}`, foodReceived + FOOD_MULTIPLIER);
-            foodCounts.push({ char, count: foodReceived });
-            foodGiven = true;
-        }
+    for (const char of message.content) {
+      if (foodEmojis.has(char)) {
+        let foodReceived = this.foodCount.get(`${author}#${char}`) || 0;
+        this.foodCount.set(`${author}#${char}`, foodReceived + CONFIG.foodMultiplier);
+        this.hungerLevel = Math.max(0, this.hungerLevel - 5); // Decrease hunger when fed
+        foodGiven = true;
+      }
     }
-
-    const totalFoodItems = foodCounts.reduce((acc, { count }) => acc + count, 0);
 
     if (foodGiven) {
-        console.log('Food given, saving data.');
-        await saveFoodData();
-        bear.prey = null;
-    } else {
-        if (bear.prey === null && totalFoodItems < 10) {
-            bear.prey = authorId;
-            await bear.aiServiceManager.chat({
-                role: 'assistant',
-                content: `A primal instinct awakens within me. I have found my prey ${bear.prey}. I must hunt them down.`
-            });
-        }
+      await this.saveFoodData();
     }
 
-    foodCounts.sort((a, b) => b.count - a.count);
-    bear.mostCommonFoods = new Set(foodCounts.slice(0, Math.ceil(foodCounts.length / 2)).map(item => item.char));
-
-    bear.response_instructions_function = () => `
-        You have received ${foodGiven ? 'food' : 'no food'}.
-        
-        You feel ${determineHungerLevel(foodCount)}, do not mention this directly.
-        If you are hungry you become more bestial and cunning.
-        Always respond in SHORT sentences, and do not reveal your true nature.
-        NEVER USE JSON, XML, or any other structured data formats.
+    const hungerState = this.determineHungerLevel();
+    const prompt = `
+      ${PERSONALITY}
+      Current hunger state: ${hungerState}
+      You have received ${foodGiven ? 'food' : 'no food'}.
+      Respond to: "${message.content}"
     `;
-    return true;
-};
 
-bear.debug = true;
-bear.login();
+    try {
+      const response = await this.generateResponse(prompt);
+      if (this.isResponseCoherent(response)) {
+        await this.sendAsAvatar(response, message.channel);
+      } else {
+        await this.sendAsAvatar("*growls softly*", message.channel);
+      }
+    } catch (error) {
+      console.error('Error generating response:', error);
+      await this.sendAsAvatar("*confused bear noises*", message.channel);
+    }
+
+    this.lastResponseTime = currentTime;
+  }
+
+  async generateResponse(prompt) {
+    const messages = [
+      { role: 'system', content: PERSONALITY },
+      { role: 'user', content: prompt }
+    ];
+
+    const options = {
+      model: 'llama2',
+      messages: messages,
+      stream: false
+    };
+
+    const response = await ollama.chat(options);
+    return response.message.content;
+  }
+
+  isResponseCoherent(response) {
+    // Implement logic to check if the response makes sense
+    // This could involve checking for repetition, length, or using NLP techniques
+    return response.length > 0 && response.length < 500; // Simple length check for now
+  }
+
+  async sendAsAvatar(message, channel) {
+    if (!channel) {
+      console.error('🐻 Channel not found:', CONFIG.location);
+      return;
+    }
+
+    const webhookData = await this.getOrCreateWebhook(channel);
+    const chunks = chunkText(message, 2000);
+
+    for (const chunk of chunks) {
+      if (chunk.trim() !== '') {
+        try {
+          if (webhookData) {
+            const { client: webhook, threadId } = webhookData;
+            await webhook.send({
+              content: chunk,
+              username: `${CONFIG.name} ${CONFIG.emoji || ''}`.trim(),
+              avatarURL: CONFIG.avatar,
+              threadId: threadId
+            });
+          } else {
+            await channel.send(`**${CONFIG.name} ${CONFIG.emoji || ''}:** ${chunk}`);
+          }
+        } catch (error) {
+          console.error(`🐻 Failed to send message as ${CONFIG.name}:`, error);
+        }
+      }
+    }
+  }
+
+  async getOrCreateWebhook(channel) {
+    if (this.webhookCache[channel.id]) {
+      return this.webhookCache[channel.id];
+    }
+
+    let targetChannel = channel;
+    let threadId = null;
+
+    if (channel.isThread()) {
+      threadId = channel.id;
+      targetChannel = channel.parent;
+    }
+
+    if (!targetChannel.isTextBased()) {
+      return null;
+    }
+
+    try {
+      const webhooks = await targetChannel.fetchWebhooks();
+      let webhook = webhooks.find(wh => wh.owner.id === client.user.id);
+
+      if (!webhook && targetChannel.permissionsFor(client.user).has('MANAGE_WEBHOOKS')) {
+        webhook = await targetChannel.createWebhook({
+          name: 'Mr Bear Webhook',
+          avatar: CONFIG.avatar
+        });
+      }
+
+      if (webhook) {
+        const webhookClient = new WebhookClient({ id: webhook.id, token: webhook.token });
+        this.webhookCache[channel.id] = { client: webhookClient, threadId };
+        return this.webhookCache[channel.id];
+      }
+    } catch (error) {
+      console.error('🐻 Error fetching or creating webhook:', error);
+    }
+
+    return null;
+  }
+}
+
+const bearBot = new BearBot();
+
+client.on('messageCreate', async (message) => {
+  await bearBot.processMessage(message);
+});
+
+client.login(process.env.DISCORD_BOT_TOKEN);

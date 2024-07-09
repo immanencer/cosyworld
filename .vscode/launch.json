@@ -37,6 +37,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🐻 mr bear",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/mr-bear.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "ai",
             "skipFiles": [
                 "<node_internals>/**"

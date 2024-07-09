@@ -21,7 +21,7 @@ class OllamaService {
      */
     constructor(config = {}) {
         this.model = 'llama3';
-        this.systemPrompt = config.systemPrompt || 'You are who you are.';
+        this.systemPrompt = config.systemPrompt || "Hraa'khor";
         this.modelCache = new Map();
         /** @type {ollama.Message[]} */
         this.messageHistory = [];
