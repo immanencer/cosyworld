@@ -30,6 +30,16 @@ export const getLocations = async () => {
     return cachedLocations.length ? cachedLocations : [DEFAULT_LOCATION];
 };
 
+export const getLocationById = async (id) => {
+    const locations = await getLocations();
+    return locations.find(loc => loc.id === id) || DEFAULT_LOCATION;
+};
+
+export const getLocationByName = async (name) => {
+    const locations = await getLocations();
+    return locations.find(loc => loc.name === name) || DEFAULT_LOCATION;
+}
+
 export const handleAvatarLocation = async (avatar, mention) => {
     if (!avatar || !avatar.location) {
         console.warn(`Invalid avatar or location for ${avatar?.name || 'unknown avatar'}`);
@@ -42,9 +52,8 @@ export const handleAvatarLocation = async (avatar, mention) => {
 
     const locations = await getLocations();
     const newLocation = locations.find(loc => loc.id === mention.threadId) || 
-                        locations.find(loc => loc.id === mention.channelId) ||
-                        locations[0] ||
-                        DEFAULT_LOCATION;
+                        locations.find(loc => loc.id === mention.channelId) || 
+                        avatar.location;
 
     if (avatar.location.name !== newLocation.name) {
         console.log(`${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
@@ -54,7 +63,7 @@ export const handleAvatarLocation = async (avatar, mention) => {
         } catch (error) {
             console.error(`Failed to update location for ${avatar.name}:`, error);
         }
-        return updatedAvatar;
+        avatar.location = newLocation;
     }
 
     return avatar;

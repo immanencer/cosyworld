@@ -16,22 +16,17 @@ export const initializeAvatars = async () => {
 
 const initializeAvatar = (avatar, locations) => ({
     ...avatar,
-    location: locations.find(loc => loc.name === avatar.location) || locations[0],
+    location: locations.find(loc => loc.name === avatar.location),
     messageCache: [],
     lastProcessedMessageId: null,
-    remember: [...new Set([...(avatar.remember || []), avatar.location, (avatar.remembers || [])])]
-        .slice(-5),
+    remember: [...new Set([...(avatar.remember || []), avatar.location, ...(avatar.remembers || [])].flat())]
+    .slice(-5),
     feelings: [],
     lastResponse: null,
     lastUsedItems: []
 });
 
-export const updateAvatarLocation = async (avatar, newLocation) => {
-    if (newLocation) {
-        console.warn('⚠️ newLocation is deprecated and will be removed soon. Please update your code.');
-    }
-    avatar.location = newLocation || avatar.location;
-    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
+export const updateAvatarLocation = async (avatar) => {
     avatar.remember = updateRememberedLocations(avatar);
 
     try {
@@ -39,6 +34,7 @@ export const updateAvatarLocation = async (avatar, newLocation) => {
     } catch (error) {
         console.error(`Failed to update location for ${avatar.name}:`, error);
     }
+    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
 };
 
 const updateRememberedLocations = ({ remember, location }) => 

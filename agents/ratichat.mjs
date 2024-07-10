@@ -44,7 +44,7 @@ ratichat.rumble = async function () {
         const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         
         const dream = await this.generateDream(ratichat.avatar, oaken_memory);
-        await ratichat.sendAsAvatar(this.avatar, dream);
+        await ratichat.sendAsAvatar(ratichat.avatar, dream);
 
         const oaken_response = await this.enhancedChat({
             model: 'llama3',

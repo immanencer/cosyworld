@@ -25,8 +25,6 @@ export async function generateResponse(avatar, conversation, items, toolResults)
         userPrompt = `Here are your feelings:\n${avatar.feelings[0]}\n${userPrompt}`;
     }
 
-    console.log(`User prompt for ${avatar.name}:`, userPrompt);
-
     // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [
         ...recentConversation.slice(-24),

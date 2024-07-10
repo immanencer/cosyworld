@@ -33,7 +33,7 @@ export async function processMessagesForAvatar(avatar) {
             getMentions(avatar.name, lastProcessedMessageIdByAvatar.get(avatar.name))
         ]);
 
-        await handleAvatarLocation(avatar, mentions[mentions.length - 1], locations);
+        avatar = await handleAvatarLocation(avatar, mentions[mentions.length - 1]);
 
         const lastCheckedId = lastCheckedMessageIdByAvatar.get(avatar.name);
         const messages = await fetchMessages(avatar, locations, lastCheckedId);
@@ -46,7 +46,7 @@ export async function processMessagesForAvatar(avatar) {
         validateMessages(conversation);
 
         if (shouldRespond(avatar, conversation)) {
-            await handleResponse(avatar, conversation, locations);
+            await handleResponse(avatar, conversation);
         }
 
         updateLastProcessedMessageId(avatar, mentions);
@@ -56,13 +56,14 @@ export async function processMessagesForAvatar(avatar) {
     }
 }
 
-async function fetchMessages(avatar, locations, lastCheckedId) {
+async function fetchMessages(avatar, _, lastCheckedId) {
     const CURRENT_LOCATION_MESSAGES = 15;
     const MAX_TOTAL_MESSAGES = 50;
     const MEMORY_INTERVAL = 3;
 
     const currentLocation = avatar.location.name;
     const rememberedLocations = avatar.remember || [];
+    const locations = await getLocations();
     
     // Fetch messages for a location
     async function getLocationMessages(locationName) {

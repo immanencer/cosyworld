@@ -1,389 +1,208 @@
 import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
 import ollama from 'ollama';
-import process from 'process';
 import fs from 'fs/promises';
-import path from 'path';
-import chunkText from '../../tools/chunk-text.js';
+
+const CONFIG = {
+    name: 'Skull',
+    emoji: '🐺',
+    avatar: "https://i.imgur.com/OxroRtv.png",
+    defaultLocation: '🐺 wolf den',
+    personality: "You are a silent wolf named Skull. You respond in SHORT wolf-like *actions*. You do not speak.",
+    model: 'llama3',
+    maxConversations: 100,
+    reflectionInterval: 3600000,
+    rateLimitDelay: 1000,
+    maxRetries: 3,
+    ownerId: '1175877613017895032', // Replace with actual Discord user ID
+    followOwner: true // Set to false to stay in default location
+};
+
+const THOUGHT_PROCESSES = {
+    wake: { prompt: "You're waking up. How do you feel? What's your first thought?", frequency: 'daily' },
+    dream: { prompt: "You're dreaming. What do you see in your dream?", frequency: 'daily' },
+    reflect: { prompt: "Reflect on your recent experiences and memories. What stands out?", frequency: 'hourly' },
+    setGoal: { prompt: "Based on your reflections, what's your new goal?", frequency: 'daily' },
+    analyzeSentiment: { prompt: "Analyze your feelings towards {person}. Express it in 3 emojis.", frequency: 'per_interaction' },
+    createMemory: { prompt: "Create a short memory about {person} based on your recent interactions.", frequency: 'per_interaction' }
+};
+
+const RESPONSE_TYPES = {
+    standard: { prompt: "Respond to: '{message}' Keep it short and cute.", chance: 0.7 },
+    playful: { prompt: "Respond playfully to: '{message}' Use more actions and emojis.", chance: 0.2 },
+    curious: { prompt: "Respond with curiosity to: '{message}' Ask a question.", chance: 0.1 }
+};
 
 class SkullBot {
     constructor() {
-        this.client = new Client({
-            intents: [
-                GatewayIntentBits.Guilds,
-                GatewayIntentBits.GuildMessages,
-                GatewayIntentBits.MessageContent,
-            ]
-        });
-
-        this.token = process.env.DISCORD_BOT_TOKEN;
-        this.guild = '1219837842058907728';
-        this.lastProcessed = 0;
-        this.debounceTime = 5000;
-        this.messageCache = [];
-        this.webhookCache = {};
-
-        this.avatar = {
-            emoji: '🐺',
-            name: 'Skull',
-            owner: "ratimics",
-            "avatar": "https://i.imgur.com/OxroRtv.png",
-            location: '🐺 wolf den',
-        "personality": "You are a silent wolf named Skull. You respond in SHORT wolf-like *actions*. You do not speak."
-        };
-
-        this.model = 'llama3';
-        this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
-        this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
-        this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {} };
-        this.goalUpdateInterval = 3600000; // 1 hour in milliseconds
-
-        this.isInitialized = false;
+        this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+        this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {}, characterMemories: {} };
         this.messageQueue = [];
+        this.processingQueue = false;
+        this.currentLocation = CONFIG.defaultLocation;
+    }
 
-        this.setupEventListeners();
+    async initialize() {
+        try {
+            await this.initializeAI();
+            await this.loadMemory();
+            await this.client.login(process.env.DISCORD_BOT_TOKEN);
+            this.setupEventListeners();
+            this.runDailyThoughts();
+            setInterval(() => this.processQueue(), CONFIG.rateLimitDelay);
+        } catch (error) {
+            this.handleError('Initialization error', error);
+            process.exit(1);
+        }
     }
 
     setupEventListeners() {
-        this.client.once(Events.ClientReady, this.onReady.bind(this));
-        this.client.on(Events.MessageCreate, this.handleMessage.bind(this));
+        this.client.once(Events.ClientReady, () => console.log(`🐺 ${CONFIG.name} is online`));
+        this.client.on(Events.MessageCreate, message => this.handleIncomingMessage(message));
+        this.client.on('error', error => this.handleError('Discord client error', error));
     }
 
-    async onReady() {
-        console.log(`🐺 Skull is online as ${this.client.user.tag}`);
-        await this.initializeAI();
-        await this.initializeChannels();
-        await this.loadAndSummarizeMemory();
-        this.startPeriodicTasks();
-        this.isInitialized = true;
-        this.processQueuedMessages();
-    }
-
-    async initializeChannels() {
-        const guild = await this.client.guilds.fetch(this.guild);
-        this.channels = new Map(guild.channels.cache.map(channel => [channel.name, channel]));
-    }
-
-    handleMessage(message) {
-        if (this.isInitialized) {
-            this.onMessage(message);
-        } else {
-            this.messageQueue.push(message);
+    handleIncomingMessage(message) {
+        if (message.author.bot) return;
+        
+        if (CONFIG.followOwner && message.author.id === CONFIG.ownerId) {
+            this.updateLocation(message.channel.name);
+        }
+        
+        if (message.channel.name === this.currentLocation) {
+            this.queueMessage(message);
         }
     }
 
-    async processQueuedMessages() {
-        console.log(`🐺 Processing ${this.messageQueue.length} queued messages`);
-        for (const message of this.messageQueue) {
-            await this.onMessage(message);
-        }
-        this.messageQueue = [];
-    }
-
-    async onMessage(message) {
-        if (message.author.bot || message.author.id === this.client.user.id) return;
-
-        const data = {
-            author: message.author.displayName || message.author.globalName,
-            content: message.content,
-            location: message.channel.name
-        };
-
-        if (data.author === this.avatar.owner && data.location.indexOf('🥩') === -1) {
-            this.avatar.location = data.location;
-        }
-        if (data.location !== this.avatar.location) return;
-
-        this.collectSentiment(data);
-        this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
-        if (!this.debounce()) return;
-
-        if (this.messageCache.length === 0) return;
-        const respondCheck = await this.decideResponseFormat();
-        if (respondCheck.toUpperCase().includes('YES')) {
-            const result = await this.chatWithAI(this.messageCache.join('\n'));
-            this.messageCache = [];
-
-            if (result.trim() !== "") {
-                console.log('🐺 Skull responds:', result);
-                await this.sendAsAvatar(result, message.channel);
-                this.updateMemory(data, result);
-            } else {
-                console.error('🐺 Skull has no response');
-            }
+    updateLocation(newLocation) {
+        if (this.currentLocation !== newLocation) {
+            this.currentLocation = newLocation;
+            this.log(`Moved to new location: ${newLocation}`);
         }
     }
 
-    async sendAsAvatar(message, channel) {
-        if (!channel) {
-            console.error('🐺 Channel not found:', this.avatar.location);
-            return;
-        }
-
-        const webhookData = await this.getOrCreateWebhook(channel);
-        const chunks = chunkText(message, 2000);
-
-        for (const chunk of chunks) {
-            if (chunk.trim() !== '') {
-                try {
-                    if (webhookData) {
-                        const { client: webhook, threadId } = webhookData;
-                        await webhook.send({
-                            content: chunk,
-                            username: `${this.avatar.name} ${this.avatar.emoji || ''}`.trim(),
-                            avatarURL: this.avatar.avatar,
-                            threadId: threadId
-                        });
-                    } else {
-                        await channel.send(`**${this.avatar.name} ${this.avatar.emoji || ''}:** ${chunk}`);
-                    }
-                } catch (error) {
-                    console.error(`🐺 Failed to send message as ${this.avatar.name}:`, error);
-                }
-            }
-        }
+    queueMessage(message) {
+        this.messageQueue.push(message);
     }
 
-    async loadAndSummarizeMemory() {
-        await this.loadMemory();
-        await this.summarizeMemory();
-        await this.generateDream();
-        await this.reflectAndUpdateGoal();
+    async processQueue() {
+        if (this.processingQueue || this.messageQueue.length === 0) return;
+        this.processingQueue = true;
+        const message = this.messageQueue.shift();
+        await this.handleMessage(message).catch(error => this.handleError('Message processing error', error));
+        this.processingQueue = false;
+    }
+
+    async runDailyThoughts() {
+        for (const process of ['wake', 'dream', 'setGoal']) {
+            await this.think(process).catch(error => this.handleError(`Daily thought error: ${process}`, error));
+        }
+        setInterval(() => this.think('reflect'), CONFIG.reflectionInterval);
+    }
+
+    async handleMessage(message) {
+        const response = await this.generateResponse(message.content);
+        await this.sendResponse(message.channel, response);
+        await this.updateMemory(message.author.username, message.content, response);
+        await this.think('analyzeSentiment', { person: message.author.username });
+        await this.think('createMemory', { person: message.author.username });
+    }
+
+    async think(processName, context = {}) {
+        const process = THOUGHT_PROCESSES[processName];
+        if (!process) return;
+        const prompt = `${CONFIG.personality}\n\n${process.prompt}\n\nCurrent state: ${JSON.stringify(this.memory)}`.replace(/\{(\w+)\}/g, (_, key) => context[key] || key);
+        const thought = await this.generateAIResponse(prompt);
+        this.memory[processName] = thought;
+        this.log(`Thought: ${processName}`, thought);
         await this.saveMemory();
+        return thought;
     }
 
-    startPeriodicTasks() {
-        setInterval(() => this.reflectAndUpdateGoal(), this.goalUpdateInterval);
+    async generateResponse(message) {
+        const responseType = this.chooseResponseType();
+        const prompt = RESPONSE_TYPES[responseType].prompt.replace('{message}', message);
+        return this.generateAIResponse(prompt);
     }
 
-    async reflectAndUpdateGoal() {
-        const reflection = await this.chatWithAI(`
-As Skull, the silent wolf, let your imagination haunt moonlit forests and shadowy skies.
-Reflect on your recent experiences, the whispers of your nightmares, and the echoes of your memories:
-
-1. Your current heart's desire: "${this.memory.goal}"
-2. The misty visions of your recent nightmare: "${this.memory.dream}"
-3. The eerie howl of your memory: "${this.memory.summary}"
-
-Now, shadow wolf, as you stand at the edge of the cursed woods, gazing at the ominous moon, ponder:
-
-1. Have your stealthy steps led you closer to your heart's desire?
-2. Do the rustling leaves and darkened skies whisper of new dangers?
-3. What new dirge does your wolf heart yearn to howl?
-
-Weave a tapestry of your reflections and, if the night wind carries a new song, let it be your new goal.
-Speak in the language of the wild, with ghostly whispers, silent howls, and the poetry of the wolf's soul.
-Use emojis to paint your feelings and short *actions* to bring your thoughts to life.
-
-Let your response flow like a chilling breeze, in 3-4 sentences of eerie wolf-speak.
-        `);
-
-        console.log('🐺 Reflection:', reflection);
-
-        this.memory.goal = reflection;
-
-        await this.saveMemory();
+    chooseResponseType() {
+        const rand = Math.random();
+        let cumulativeChance = 0;
+        for (const [type, config] of Object.entries(RESPONSE_TYPES)) {
+            cumulativeChance += config.chance;
+            if (rand < cumulativeChance) return type;
+        }
+        return 'standard';
     }
 
-
-    async initializeAI() {
+    async generateAIResponse(prompt, retries = 0) {
         try {
-            await ollama.create({
-                model: 'llama3',
-                modelfile: `FROM llama3\nSYSTEM "${this.avatar.personality}"`,
-            });
-            console.log('🦙 AI model initialized');
+            const response = await ollama.chat({ model: CONFIG.model, messages: [{ role: 'user', content: prompt }] });
+            return response.message.content;
         } catch (error) {
-            console.error('🦙 Failed to initialize AI model:', error);
+            if (retries < CONFIG.maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return this.generateAIResponse(prompt, retries + 1);
+            }
+            this.handleError('AI response generation error', error);
+            return "Sorry, I'm feeling a bit confused right now. *whimpers softly*";
         }
+    }
+
+    async sendResponse(channel, content) {
+        try {
+            const webhook = await this.getWebhook(channel);
+            await webhook.send({ content, username: `${CONFIG.name} ${CONFIG.emoji}`, avatarURL: CONFIG.avatar });
+        } catch (error) {
+            this.handleError('Error sending response', error);
+            await channel.send(`${CONFIG.emoji} *whimpers softly*`);
+        }
+    }
+
+    async getWebhook(channel) {
+        const webhooks = await channel.fetchWebhooks();
+        let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
+        if (!webhook) {
+            webhook = await channel.createWebhook({ name: `${CONFIG.name} Webhook`, avatar: CONFIG.avatar });
+        }
+        return new WebhookClient({ id: webhook.id, token: webhook.token });
+    }
+
+    async updateMemory(user, message, response) {
+        this.memory.conversations.push({ user, message, response, timestamp: new Date().toISOString() });
+        this.memory.conversations = this.memory.conversations.slice(-CONFIG.maxConversations);
+        await this.saveMemory();
     }
 
     async loadMemory() {
-        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_memory.json`);
         try {
-            const data = await fs.readFile(memoryPath, 'utf8');
+            const data = await fs.readFile('./memory.json', 'utf8');
             this.memory = JSON.parse(data);
-            console.log(`🐺 Memory loaded for ${this.avatar.name}`);
         } catch (error) {
-            if (error.code === 'ENOENT') {
-                console.log(`🐺 No existing memory found for ${this.avatar.name}. Starting with fresh memory.`);
-            } else {
-                console.error(`🐺 Failed to load memory for ${this.avatar.name}:`, error);
-            }
+            if (error.code !== 'ENOENT') this.handleError('Error loading memory', error);
         }
-    }
-
-    async summarizeMemory() {
-        const memoryContent = JSON.stringify(this.memory);
-        this.memory.summary = await this.chatWithAI(`
-            ${memoryContent}\n\n
-            Summarize the preceding memory content for Skull in 2-3 sentences, using emojis, thoughts, and short actions`);
-        console.log('🐺 Memory summarized');
-    }
-
-    async generateDream() {
-        this.memory.dream = await this.chatWithAI(` 
-            ${this.memory.summary}\n\n
-            Based on these memories, generate a short dream-like sequence using emojis, short actions, and thoughts:
-            `);
-        console.log('🐺 Dream generated');
-    }
-
-    async generateGoal() {
-        this.memory.goal = await this.chatWithAI(`
-            ${this.memory.dream}\n
-            ${this.memory.summary}\n
-            Based on these dreams and memories, generate a simple goal for Skull to pursue`);
-        console.log('🐺 Goal generated');
-    }
-    async decideResponseFormat() {
-        const memoryContent = JSON.stringify(this.memory);
-        const decision = await this.chatWithAI(`${memoryContent} Based on the above memory content, should ${this.avatar.name} respond? Respond with YES or NO only`);
-        console.log(`🐺 Response decision: ${decision}`);
-        return decision.trim();
-    }
-
-    async chatWithAI(message) {
-        try {
-            const response = await ollama.chat({
-                model: this.model,
-                messages: [
-                    { role: 'system', content: this.avatar.personality },
-                    { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
-                    { role: 'user', content: message }
-                ]
-            });
-            return response.message.content;
-        } catch (error) {
-            console.error('🦙 AI chat error:', error);
-            return '🐺';
-        }
-    }
-
-    analyzeAndCreateTasks(userMessage, botResponse) {
-        console.log('🐺 Analyzing user message:', userMessage);
-        console.log('🐺 Analyzing bot response:', botResponse);
-        const taskKeywords = ['remember', 'learn', 'find out', 'research', 'play', 'fetch', 'walk'];
-        taskKeywords.forEach(keyword => {
-            if (userMessage.toLowerCase().includes(keyword)) {
-                const task = `Task: ${keyword} - Context: ${userMessage}`;
-                this.memory.tasks.push(task);
-                console.log(`🐺 New task created: ${task}`);
-            }
-        });
-        this.saveMemory();
-    }
-
-    async resetMemory() {
-        this.memory = {
-            conversations: [],
-            tasks: [],
-            knowledge: {},
-            summary: this.memory.summary,
-            dream: this.memory.dream,
-            sentiments: {}
-        };
-        await this.saveMemory();
-        console.log('🐺 Memory reset with summary and dream');
-        console.log('📜 Summary:', this.memory.summary);
-        console.log('🎆 Dream:', this.memory.dream);
     }
 
     async saveMemory() {
-        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_memory.json`);
         try {
-            await fs.mkdir(path.dirname(memoryPath), { recursive: true });
-            await fs.writeFile(memoryPath, JSON.stringify(this.memory, null, 2));
-            console.log(`🐺 Memory saved for ${this.avatar.name}`);
+            await fs.writeFile('./memory.json', JSON.stringify(this.memory));
         } catch (error) {
-            console.error(`🐺 Failed to save memory for ${this.avatar.name}:`, error);
+            this.handleError('Error saving memory', error);
         }
     }
 
-    collectSentiment(data) {
-        const emojis = data.content.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu) || [];
-        if (!this.memory.sentiments[data.author]) {
-            this.memory.sentiments[data.author] = [];
-        }
-        this.memory.sentiments[data.author].push(...emojis);
+    async initializeAI() {
+        await ollama.create({ model: CONFIG.model, modelfile: `FROM ${CONFIG.model}\nSYSTEM "${CONFIG.personality}"` });
     }
 
-    getRecentMemory() {
-        const recentConversations = this.memory.conversations.slice(-5);
-        const sentimentSummary = Object.entries(this.memory.sentiments)
-            .map(([author, emojis]) => `${author}: ${emojis.join('')}`)
-            .join('\n');
-        return `Recent Conversations:\n${recentConversations.map(conv => `${conv.user}: ${conv.message}\n${this.avatar.name}: ${conv.response}`).join('\n')}\n\nSentiment Summary:\n${sentimentSummary}`;
+    log(action, details = '') {
+        const timestamp = new Date().toISOString();
+        console.log(`${timestamp} - ${action}: ${details}`);
     }
 
-    updateMemory(data, response) {
-        this.memory.conversations.push({
-            user: data.author,
-            message: data.content,
-            response: response,
-            timestamp: new Date().toISOString()
-        });
-        if (this.memory.conversations.length > 100) {
-            this.memory.conversations.shift();
-        }
-        this.saveMemory();
-    }
-
-    debounce() {
-        const now = Date.now();
-        if (now - this.lastProcessed < this.debounceTime) return false;
-        this.lastProcessed = now;
-        return true;
-    }
-
-    async getOrCreateWebhook(channel) {
-        if (this.webhookCache[channel.id]) {
-            return this.webhookCache[channel.id];
-        }
-
-        let targetChannel = channel;
-        let threadId = null;
-
-        if (channel.isThread()) {
-            threadId = channel.id;
-            targetChannel = channel.parent;
-        }
-
-        if (!targetChannel.isTextBased()) {
-            return null;
-        }
-
-        try {
-            const webhooks = await targetChannel.fetchWebhooks();
-            let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
-
-            if (!webhook && targetChannel.permissionsFor(this.client.user).has('MANAGE_WEBHOOKS')) {
-                webhook = await targetChannel.createWebhook({
-                    name: 'Skull Webhook',
-                    avatar: this.avatar.avatar
-                });
-            }
-
-            if (webhook) {
-                const webhookClient = new WebhookClient({ id: webhook.id, token: webhook.token });
-                this.webhookCache[channel.id] = { client: webhookClient, threadId };
-                return this.webhookCache[channel.id];
-            }
-        } catch (error) {
-            console.error('🐺 Error fetching or creating webhook:', error);
-        }
-
-        return null;
-    }
-
-    async login() {
-        try {
-            await this.client.login(this.token);
-        } catch (error) {
-            console.error('🐺 Failed to login:', error);
-            throw error;
-        }
+    handleError(context, error) {
+        console.error(`${new Date().toISOString()} - ${context}:`, error);
     }
 }
 
 const skull = new SkullBot();
-skull.login();
+skull.initialize().catch(console.error);

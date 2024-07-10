@@ -3,6 +3,7 @@ import { Ollama } from 'ollama';
 import fs from 'fs/promises';
 import path from 'path';
 import chunkText from '../tools/chunk-text.js';
+import process from 'process';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
@@ -15,8 +16,8 @@ const CONFIG = {
   emoji: '🐻',
   location: '🛖 mountain cabin',
   avatar: 'https://i.imgur.com/6cpL77r.png',
-  listen: ['🛖 mountain cabin', '🌳 hidden glade'],
-  remember: ['🛖 mountain cabin', '📜 bookshelf'],
+  listen: ['🛖 mountain cabin'],
+  remember: ['🛖 mountain cabin', '🌳 hidden glade', '📜 bookshelf'],
   maxFoodLevel: 100,
   foodMultiplier: 10,
   decayRate: 0.99,
