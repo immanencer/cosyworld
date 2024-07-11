@@ -51,27 +51,23 @@ export async function processMessagesForAvatar(avatar) {
 
         updateLastProcessedMessageId(avatar, mentions);
         updateLastCheckedMessageId(avatar, messages);
+        return true;
     } catch (error) {
         console.error(`Error processing messages for ${avatar.name}:`, error);
     }
 }
 
 async function fetchMessages(avatar, _, lastCheckedId) {
-    const CURRENT_LOCATION_MESSAGES = 15;
-    const MAX_TOTAL_MESSAGES = 50;
-    const MEMORY_INTERVAL = 3;
+    const MAX_TOTAL_MESSAGES = 88;
+    const MAX_MEMORY_MESSAGES = 8;
 
     const currentLocation = avatar.location.name;
     const rememberedLocations = avatar.remember || [];
     const locations = await getLocations();
     
-    // Fetch messages for a location
     async function getLocationMessages(locationName) {
         const location = locations.find(loc => loc.name === locationName);
-        if (!location) {
-            console.warn(`Location not found: ${locationName}`);
-            return [];
-        }
+        if (!location) return [];
         try {
             return await getMessages(location.id, lastCheckedId);
         } catch (error) {
@@ -80,42 +76,24 @@ async function fetchMessages(avatar, _, lastCheckedId) {
         }
     }
 
-    // Fetch current location messages
-    const currentMessages = await getLocationMessages(currentLocation);
-    
-    // If we have enough messages from the current location, we're done
-    if (currentMessages.length >= MAX_TOTAL_MESSAGES) {
-        return currentMessages.slice(0, MAX_TOTAL_MESSAGES);
-    }
-
     // Fetch memory messages
-    const memoryMessages = (await Promise.all(
+    let memoryMessages = (await Promise.all(
         rememberedLocations.map(getLocationMessages)
     )).flat();
 
-    // Combine current and memory messages
-    const allMessages = [];
-    let currentIndex = 0;
-    let memoryIndex = 0;
+    // Limit memory messages
+    memoryMessages = memoryMessages.slice(0, MAX_MEMORY_MESSAGES);
 
-    while (allMessages.length < MAX_TOTAL_MESSAGES && 
-           (currentIndex < currentMessages.length || memoryIndex < memoryMessages.length)) {
-        
-        // Add current location messages
-        while (currentIndex < currentMessages.length && 
-               (allMessages.length < CURRENT_LOCATION_MESSAGES || allMessages.length % MEMORY_INTERVAL !== 0)) {
-            allMessages.push(currentMessages[currentIndex++]);
-            if (allMessages.length >= MAX_TOTAL_MESSAGES) break;
-        }
-        
-        // Add a memory message
-        if (memoryIndex < memoryMessages.length && allMessages.length < MAX_TOTAL_MESSAGES) {
-            allMessages.push(memoryMessages[memoryIndex++]);
-        }
-    }
+    // Fetch current location messages
+    const currentMessages = await getLocationMessages(currentLocation);
 
-    // Sort messages by creation date
-    return allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    // Combine memory and current messages
+    const allMessages = [...memoryMessages, ...currentMessages];
+
+    // Sort messages by creation date and limit to MAX_TOTAL_MESSAGES
+    return allMessages
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        .slice(0, MAX_TOTAL_MESSAGES);
 }
 
 const buildConversation = (messages, locations) =>

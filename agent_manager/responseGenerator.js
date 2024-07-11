@@ -10,7 +10,7 @@ export async function generateResponse(avatar, conversation, items, toolResults)
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
-    || 'Respond to the conversation above with a concise, interesting message maintaining your own unique voice.\n\n';
+    || '\n\nRespond in character, with a short two or three sentences or *actions*.';
 
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
@@ -27,7 +27,7 @@ export async function generateResponse(avatar, conversation, items, toolResults)
 
     // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [
-        ...recentConversation.slice(-24),
+        ...recentConversation.slice(-88),
         { role: 'user', content: userPrompt }
     ]);
 

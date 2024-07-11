@@ -1,7 +1,9 @@
 import { AVATARS_API, ENQUEUE_API } from '../tools/config.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
 import { postJSON } from '../tools/postJSON.js';
+import { waitForTask } from '../tools/taskModule.js';
 import { getLocations } from './locationHandler.js';
+import { isEqual } from '../tools/isEqual.js';
 
 export const initializeAvatars = async () => {
     const [locations, allAvatars] = await Promise.all([
@@ -20,7 +22,7 @@ const initializeAvatar = (avatar, locations) => ({
     messageCache: [],
     lastProcessedMessageId: null,
     remember: [...new Set([...(avatar.remember || []), avatar.location, ...(avatar.remembers || [])].flat())]
-    .slice(-5),
+        .slice(-5),
     feelings: [],
     lastResponse: null,
     lastUsedItems: []
@@ -37,7 +39,7 @@ export const updateAvatarLocation = async (avatar) => {
     console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
 };
 
-const updateRememberedLocations = ({ remember, location }) => 
+const updateRememberedLocations = ({ remember, location }) =>
     [...new Set([...remember, location.name])].slice(-18);
 
 const updateAvatarOnServer = async (avatar) => {
@@ -46,8 +48,8 @@ const updateAvatarOnServer = async (avatar) => {
     }
 
     const url = `${AVATARS_API}/${avatar._id}`;
-    const body = JSON.stringify({ 
-        location: avatar.location?.name, 
+    const body = JSON.stringify({
+        location: avatar.location?.name,
         remember: avatar.remember,
         feelings: avatar.feelings,
         lastResponse: avatar.lastResponse,
@@ -82,23 +84,51 @@ export async function avatarExists(avatarName) {
     return response.exists;
 }
 
-// New state management functions
+export async function updateAvatarState(avatar, updates) {
+    const currentState = getAvatarState(avatar);
+    const updatedState = { ...currentState, ...updates };
 
-export function updateAvatarState(avatar, updates) {
-    Object.assign(avatar, updates);
-    
-    // Ensure feelings array doesn't grow indefinitely
-    if (avatar.feelings) {
-        avatar.feelings = avatar.feelings.slice(0, 10);
+    // Use lodash for deep comparison
+    if (isEqual(currentState, updatedState)) {
+        console.log(`No state change for ${avatar.name}`);
+        return;
     }
-    
-    // Log the update for debugging
-    console.log(`Updated state for ${avatar.name}:`, updates);
-    
-    // Trigger server update
-    updateAvatarOnServer(avatar).catch(error => {
-        console.error(`Failed to sync state update for ${avatar.name}:`, error);
+
+    console.log(`State change for ${avatar.name}:`);
+    Object.keys(updates).forEach(key => {
+        const value = updates[key];
+        console.log(`  ${key}: ${value && value.name ? value.name : value}`);
     });
+
+    Object.assign(avatar, updatedState);
+
+    // Handle feelings array
+    if (avatar.feelings && avatar.feelings.length > 10) {
+        try {
+            const poem = await summarizeFeelings(avatar.feelings);
+            avatar.feelings = [poem];
+            console.log(`Summarized feelings for ${avatar.name}:`, poem);
+        } catch (error) {
+            console.error(`Failed to summarize feelings for ${avatar.name}:`, error);
+            // Keep the most recent 10 feelings if summarization fails
+            avatar.feelings = avatar.feelings.slice(-10);
+        }
+    }
+
+    console.log(`Updated state for ${avatar.name}`);
+
+    try {
+        await updateAvatarOnServer(avatar);
+    } catch (error) {
+        console.error(`Failed to sync state update for ${avatar.name}:`, error);
+    }
+}
+
+async function summarizeFeelings(feelings) {
+    return waitForTask({}, [{
+        role: 'user',
+        content: `Write a poem to express your feelings: \n\n${feelings.join('\n\n')}`
+    }]);
 }
 
 export function getAvatarState(avatar) {

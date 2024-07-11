@@ -47,13 +47,13 @@ export async function handleDiscordInteraction(avatar, message) {
     if (avatar.location.type == 11) {
         avatar.location.type = 'thread';
     }
-    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} responds in ${avatar.location.type}: ${avatar.location.name}`);
 
     if (avatar.location.type === 'thread') {
         await handleThreadInteraction(avatar, message);
     } else if (avatar.location.type === 'channel') {
         await handleChannelInteraction(avatar, message);
     } else {
+        console.error(`Unsupported location type: ${avatar.location.type}`, avatar);
         throw new Error(`Unsupported location type: ${avatar.location.type}`);
     }
 

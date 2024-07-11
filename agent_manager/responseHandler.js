@@ -58,14 +58,13 @@ export async function handleResponse(avatar, conversation) {
         });
 
         if (response && response.trim() !== "") {
-            console.log(`Response for ${avatar.name} in ${avatar.location.name}: ${response}`);
             try {
                 await handleDiscordInteraction(avatar, response);
             } catch (error) {
                 console.error(`Error in handleDiscordInteraction for ${avatar.name}:`, error);
             }
         }
-        console.log(`${avatar.name} responds: ${response}`);
+        console.log(`(${avatar.location.name}) ${avatar.name}: ${response}`);
         return response;
 
     } catch (error) {
