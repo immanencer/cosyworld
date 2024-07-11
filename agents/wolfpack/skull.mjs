@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
 import ollama from 'ollama';
 import fs from 'fs/promises';
 import path from 'path';
+import process from 'process';
 import chunkText from '../../tools/chunk-text.js';
 
 const CONFIG = {
