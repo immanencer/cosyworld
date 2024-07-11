@@ -1,6 +1,8 @@
 import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
 import ollama from 'ollama';
 import fs from 'fs/promises';
+import path from 'path';
+import chunkText from '../../tools/chunk-text.js';
 
 const CONFIG = {
     name: 'Skull',
@@ -34,11 +36,25 @@ const RESPONSE_TYPES = {
 
 class SkullBot {
     constructor() {
-        this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-        this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {}, characterMemories: {} };
+        this.client = new Client({
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.MessageContent,
+            ]
+        });
+        this.memory = {
+            conversations: [],
+            summary: '',
+            dream: '',
+            goal: '',
+            sentiments: {},
+            characterMemories: {}
+        };
         this.messageQueue = [];
         this.processingQueue = false;
         this.currentLocation = CONFIG.defaultLocation;
+        this.webhookCache = {};
     }
 
     async initialize() {
@@ -136,7 +152,14 @@ class SkullBot {
 
     async generateAIResponse(prompt, retries = 0) {
         try {
-            const response = await ollama.chat({ model: CONFIG.model, messages: [{ role: 'user', content: prompt }] });
+            const response = await ollama.chat({
+                model: CONFIG.model,
+                messages: [
+                    { role: 'system', content: CONFIG.personality },
+                    { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
+                    { role: 'user', content: prompt }
+                ]
+            });
             return response.message.content;
         } catch (error) {
             if (retries < CONFIG.maxRetries) {
@@ -144,27 +167,73 @@ class SkullBot {
                 return this.generateAIResponse(prompt, retries + 1);
             }
             this.handleError('AI response generation error', error);
-            return "Sorry, I'm feeling a bit confused right now. *whimpers softly*";
+            return "*whimpers softly*";
         }
     }
 
     async sendResponse(channel, content) {
         try {
-            const webhook = await this.getWebhook(channel);
-            await webhook.send({ content, username: `${CONFIG.name} ${CONFIG.emoji}`, avatarURL: CONFIG.avatar });
+            const webhookData = await this.getOrCreateWebhook(channel);
+            if (webhookData) {
+                const { client: webhook, threadId } = webhookData;
+                const chunks = chunkText(content, 2000);
+                for (const chunk of chunks) {
+                    if (chunk.trim() !== '') {
+                        await webhook.send({
+                            content: chunk,
+                            username: `${CONFIG.name} ${CONFIG.emoji}`,
+                            avatarURL: CONFIG.avatar,
+                            threadId: threadId
+                        });
+                    }
+                }
+            } else {
+                await channel.send(`${CONFIG.emoji} *whimpers softly*`);
+            }
         } catch (error) {
             this.handleError('Error sending response', error);
             await channel.send(`${CONFIG.emoji} *whimpers softly*`);
         }
     }
 
-    async getWebhook(channel) {
-        const webhooks = await channel.fetchWebhooks();
-        let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
-        if (!webhook) {
-            webhook = await channel.createWebhook({ name: `${CONFIG.name} Webhook`, avatar: CONFIG.avatar });
+    async getOrCreateWebhook(channel) {
+        if (this.webhookCache[channel.id]) {
+            return this.webhookCache[channel.id];
         }
-        return new WebhookClient({ id: webhook.id, token: webhook.token });
+
+        let targetChannel = channel;
+        let threadId = null;
+
+        if (channel.isThread()) {
+            threadId = channel.id;
+            targetChannel = channel.parent;
+        }
+
+        if (!targetChannel.isTextBased()) {
+            return null;
+        }
+
+        try {
+            const webhooks = await targetChannel.fetchWebhooks();
+            let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
+
+            if (!webhook && targetChannel.permissionsFor(this.client.user).has('MANAGE_WEBHOOKS')) {
+                webhook = await targetChannel.createWebhook({
+                    name: `${CONFIG.name} Webhook`,
+                    avatar: CONFIG.avatar
+                });
+            }
+
+            if (webhook) {
+                const webhookClient = new WebhookClient({ id: webhook.id, token: webhook.token });
+                this.webhookCache[channel.id] = { client: webhookClient, threadId };
+                return this.webhookCache[channel.id];
+            }
+        } catch (error) {
+            this.handleError('Error fetching or creating webhook', error);
+        }
+
+        return null;
     }
 
     async updateMemory(user, message, response) {
@@ -174,33 +243,50 @@ class SkullBot {
     }
 
     async loadMemory() {
+        const memoryPath = path.join(process.cwd(), 'memory', `${CONFIG.name.toLowerCase()}_memory.json`);
         try {
-            const data = await fs.readFile('./memory.json', 'utf8');
+            const data = await fs.readFile(memoryPath, 'utf8');
             this.memory = JSON.parse(data);
+            this.log(`Memory loaded for ${CONFIG.name}`);
         } catch (error) {
-            if (error.code !== 'ENOENT') this.handleError('Error loading memory', error);
+            if (error.code === 'ENOENT') {
+                this.log(`No existing memory found for ${CONFIG.name}. Starting with fresh memory.`);
+            } else {
+                this.handleError(`Failed to load memory for ${CONFIG.name}`, error);
+            }
         }
     }
 
     async saveMemory() {
+        const memoryPath = path.join(process.cwd(), 'memory', `${CONFIG.name.toLowerCase()}_memory.json`);
         try {
-            await fs.writeFile('./memory.json', JSON.stringify(this.memory));
+            await fs.mkdir(path.dirname(memoryPath), { recursive: true });
+            await fs.writeFile(memoryPath, JSON.stringify(this.memory, null, 2));
+            this.log(`Memory saved for ${CONFIG.name}`);
         } catch (error) {
-            this.handleError('Error saving memory', error);
+            this.handleError(`Failed to save memory for ${CONFIG.name}`, error);
         }
     }
 
     async initializeAI() {
-        await ollama.create({ model: CONFIG.model, modelfile: `FROM ${CONFIG.model}\nSYSTEM "${CONFIG.personality}"` });
+        try {
+            await ollama.create({
+                model: CONFIG.model,
+                modelfile: `FROM ${CONFIG.model}\nSYSTEM "${CONFIG.personality}"`,
+            });
+            this.log('AI model initialized');
+        } catch (error) {
+            this.handleError('Failed to initialize AI model', error);
+        }
     }
 
     log(action, details = '') {
         const timestamp = new Date().toISOString();
-        console.log(`${timestamp} - ${action}: ${details}`);
+        console.log(`${timestamp} - 🐺 ${action}: ${details}`);
     }
 
     handleError(context, error) {
-        console.error(`${new Date().toISOString()} - ${context}:`, error);
+        console.error(`${new Date().toISOString()} - 🐺 ${context}:`, error);
     }
 }
 
