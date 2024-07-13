@@ -1,4 +1,5 @@
 import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
+import { MongoClient } from 'mongodb';
 import ollama from 'ollama';
 import process from 'process';
 import fs from 'fs/promises';
@@ -36,6 +37,9 @@ class GoblinCave {
         this.webhookCache = {};
         this.conversations = {};
 
+        this.sharedDreamState = [];
+        this.memorySummaryInterval = 100;
+
         this.setupEventListeners();
     }
 
@@ -49,11 +53,12 @@ class GoblinCave {
         this.avatar = {
             name: 'Goblin Cave',
             emoji: '🪓',
-            personality: 'You are in a dark cave filled with goblins. They are mischievous and love to play pranks.',
+            personality: 'You are in a dark cave filled with goblins. They are mischievous and love to play pranks. You only respond in short cavelike sentences, and *actions.*',
             avatar: 'https://i.imgur.com/fuphSlX.png'
         };
         await this.initializeAI();
         await this.initializeChannels();
+        await this.initializeDatabase();
         this.isInitialized = true;
         this.processQueuedMessages();
     }
@@ -61,6 +66,15 @@ class GoblinCave {
     async initializeChannels() {
         const guild = await this.client.guilds.fetch(this.guild);
         this.channels = new Map(guild.channels.cache.map(channel => [channel.name, channel]));
+    }
+
+    async initializeDatabase() {
+        this.mongoClient = new MongoClient('mongodb://localhost:27017');
+        await this.mongoClient.connect();
+        this.db = this.mongoClient.db('goblinCave');
+        this.itemsCollection = this.db.collection('items');
+        this.messagesCollection = this.db.collection('messages');
+        this.locationsCollection = this.db.collection('locations');
     }
 
     handleMessage(message) {
@@ -81,16 +95,16 @@ class GoblinCave {
 
     async onMessage(message) {
         this.messageCount++;
-        if (this.messageCount >= this.spawnInterval) {
+        if (this.messageCount >= this.memorySummaryInterval) {
             this.messageCount = 0;
-            if (this.goblins.length < 8) {
-                await this.spawnGoblin();
-            }
+            await this.summarizeMemories();
         }
         await this.handleGoblins(message);
     }
 
     async handleGoblins(message) {
+        this.goblins = this.goblins.map(g => g.stats ? g : { ...g, stats: { hp: 10, dex: 10, wins: 0, losses: 0 } });
+
         for (const goblin of this.goblins.filter(g => g.active)) {
             if (message.content.toLowerCase().includes(goblin.name.toLowerCase())) {
                 if (message.author.username === goblin.target) {
@@ -112,15 +126,21 @@ class GoblinCave {
                 }
             }
 
-            // Check for goblin battles
-            const otherGoblin = this.goblins.find(g => g.name !== goblin.name && !g.target);
+            // Movement criteria: Random chance to move to a different channel
+            if (Math.random() < 0.1) {
+                await this.moveGoblin(goblin);
+ 
+            }
+
+
+            const otherGoblin = this.goblins.find(g => g.name !== goblin.name && !g.target && g.stats.hp > 0);
             if (otherGoblin) {
-                await this.goblinBattle(goblin, otherGoblin, message.channel);
+                await this.goblinBattle(goblin, otherGoblin);
             }
         }
     }
 
-    async goblinBattle(goblin1, goblin2, channel) {
+    async goblinBattle(goblin1, goblin2) {
         const roll = (sides) => Math.floor(Math.random() * sides) + 1;
         const defaultStats = { hp: 10, dex: 10, wins: 0, losses: 0 };
 
@@ -156,31 +176,52 @@ class GoblinCave {
         winner.memories.push(`Defeated ${loser.name} in battle`);
         loser.memories.push(`Was defeated by ${winner.name} in battle`);
 
-        const battleDescription = await this.chatWithAI(`Describe a battle where ${winner.name} emerged victorious over ${loser.name}. Use the following battle log for context:\n${battleLog}`);
+        loser.active = false;  // Mark the defeated goblin as inactive
+        const battleDescription = await this.chatWithAI(`Provide a SHORT description of a battle where ${winner.name} emerged victorious over ${loser.name}. Use the following battle log for context:\n${battleLog}\n\nSummarize it in two or three short sentences or *actions*`);
 
-        await this.sendAsAvatar(battleDescription, channel, this.avatar);
+        const goblinCaveChannel = this.channels.get('goblin-cave');
+        if (goblinCaveChannel) {
+            await this.sendAsAvatar(battleDescription, goblinCaveChannel, this.avatar);
+        }
 
         console.log(battleLog);
         console.log(`${winner.name} wins the battle!`);
 
+        await this.saveGoblins();
         return { winner, loser, battleLog };
     }
 
+    async moveGoblin(goblin) {
+        const locations = await this.locationsCollection.find().toArray();
+        const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+
+        if (randomLocation) {
+            const channel = await this.client.channels.fetch(randomLocation.channelId);
+            if (channel) {
+                goblin.location = randomLocation.channelName;
+                goblin.memories.push(`Moved to ${randomLocation.channelName}`);
+                goblin.xp = (goblin.xp || 0) + 10;
+                await this.sendAsAvatar(`*moves to ${randomLocation.channelName}*`, channel, goblin);
+                await this.saveGoblins();
+            }
+        }
+    }
+
     async spawnGoblin() {
-        const resurrect = Math.random() < (this.goblins.length / 10); // Increase chance with more goblins
+        const resurrect = Math.random() < (this.goblins.length / 10);
         let goblinData;
 
         if (resurrect && this.goblins.length > 0) {
             const goblinToResurrect = this.goblins[Math.floor(Math.random() * this.goblins.length)];
-            goblinData = { ...goblinToResurrect, target: null, messageCount: 0, memories: [...goblinToResurrect.memories, "Resurrected."] };
+            goblinData = { ...goblinToResurrect, target: null, messageCount: 0, memories: [...goblinToResurrect.memories, "Resurrected."], location: 'goblin-cave', stats: { ...goblinToResurrect.stats, hp: 10 } };
             console.log(`🪓 Resurrecting goblin: ${goblinData.name}`);
         } else {
-            goblinData = { ...this.getRandomAvatar(), ...(await this.createGoblinData()) };
+            goblinData = { ...this.getRandomAvatar(), ...(await this.createGoblinData()), location: 'goblin-cave', stats: { hp: 10, dex: 10, wins: 0, losses: 0 } };
             goblinData.memories = ["Spawned into the cave."];
             console.log(`🪓 A new goblin has spawned: ${goblinData.name}`);
         }
 
-        const newGoblin = { ...goblinData, target: null, messageCount: 0, active: true };
+        const newGoblin = { ...goblinData, target: null, messageCount: 0, active: true, xp: 0 };
         this.goblins.push(newGoblin);
         await this.saveGoblins();
     }
@@ -230,7 +271,7 @@ goblins sing
             };
 
             if (goblinCaveChannel) {
-                const firstMessage = await this.chatWithAI(`You, little goblin named ${name}, born of night and shadows, with the goal: ${goal}. Speak about your mission and introduce yourself.`);
+                const firstMessage = await this.chatWithAI(`You, little goblin named ${name}, born of night and shadows, with the goal: ${goal}. \n\nOnly respond with SHORT goblin actions or mischievous deeds.`, goblinCaveChannel);
                 await this.sendAsAvatar(firstMessage, goblinCaveChannel, goblin);
             }
             return goblin;
@@ -253,7 +294,7 @@ goblins sing
     }
 
     async getGoblinAction(goblin) {
-        const response = await this.chatWithAvatar(goblin, `Generate a mischievous action for yourself in one short sentence.`);
+        const response = await this.chatWithAvatar(goblin, `Respond with a single short mischevious action or joke`);
         return response.trim();
     }
 
@@ -384,6 +425,16 @@ goblins sing
         } catch (error) {
             console.error('🦙 AI chat error:', error);
             return '🐺';
+        }
+    }
+
+    async summarizeMemories() {
+        for (const goblin of this.goblins) {
+            if (goblin.memories.length > 0) {
+                const summary = await this.chatWithAI(`Summarize the following memories of ${goblin.name} in one or two sentences: ${goblin.memories.join('. ')}`);
+                goblin.memories = [summary];
+                await this.saveGoblins();
+            }
         }
     }
 

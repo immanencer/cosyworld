@@ -47,8 +47,10 @@ export async function processMessagesForAvatar(avatar) {
         validateMessages(conversation);
 
         if (shouldRespond(avatar, conversation)) {
-            avatar.initiative = (avatar.initiative || 10) + 1;
+            avatar.initiative = (avatar.initiative || 10) + mentions.length;
             await handleResponse(avatar, conversation);
+        } else {
+            avatar.initiative = (avatar.initiative || 10) - 1;
         }
 
         updateLastProcessedMessageId(avatar, mentions);

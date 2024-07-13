@@ -85,7 +85,7 @@ class DiscordAiBot extends DiscordBot {
         await this.sendAsAvatars(output);
     }
 
-    async initializeMemory(memories, options = { slice: 200, instructions: '' }) {
+    async initializeMemory(memories, options = { slice: 88, instructions: '' }) {
         const memory = memories || (await this.loadMemory()) || [];
         await this.aiServiceManager.chat({
             role: 'assistant',

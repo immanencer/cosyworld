@@ -5,7 +5,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import chunkText from '../../tools/chunk-text.js';
 
-
 function extractEmojis(text) {
     const emojiRegex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
     return (text.match(emojiRegex) || []);
@@ -50,7 +49,7 @@ class NightmareBot {
             characterMemories: {}
          };
         this.goalUpdateInterval = 3600000; // 1 hour in milliseconds
-
+        this.sentimentUpdateInterval = 7200000; // 2 hours in milliseconds
 
         this.isInitialized = false;
         this.messageQueue = [];
@@ -63,7 +62,6 @@ class NightmareBot {
         await this.summarizeMemory();
         await this.generateDream();
         await this.reflectAndUpdateGoal();
-        await this.summarizeSentiment();
         await this.summarizeSentiment();
         await this.saveMemory();
     }
@@ -168,9 +166,9 @@ class NightmareBot {
         }
     }
 
-
     startPeriodicTasks() {
         setInterval(() => this.reflectAndUpdateGoal(), this.goalUpdateInterval);
+        setInterval(() => this.updateSentiments(), this.sentimentUpdateInterval);
     }
 
     async summarizeSentiment() {
@@ -220,7 +218,6 @@ class NightmareBot {
         return await this.chatWithAI(prompt);
     }
 
-
     async reflectAndUpdateGoal() {
         const reflection = await this.chatWithAI(`
 Here's a revised version for Nightmare, the wolf cub and sister of Shadow:
@@ -251,7 +248,6 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
 
         await this.saveMemory();
     }
-
 
     async initializeAI() {
         try {
@@ -291,10 +287,6 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
         console.log('🐺 Dream generated');
     }
 
-    async generateGoal() {
-        this.memory.goal = await this.chatWithAI(`Based on Nightmare's memory summary and recent dream, generate a simple goal for Nightmare to pursue: ${this.memory.summary}\n${this.memory.dream}`);
-        console.log('🐺 Goal generated');
-    }
     async decideResponseFormat() {
         const memoryContent = JSON.stringify(this.memory);
         const decision = await this.chatWithAI(`${memoryContent} Based on the above memory content, should ${this.avatar.name} respond? Respond with YES or NO only`);
@@ -316,6 +308,22 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
         } catch (error) {
             console.error('🦙 AI chat error:', error);
             return '🐺';
+        }
+    }
+
+    async updateSentiments() {
+        try {
+            for (const person in this.memory.sentiments) {
+                const emojis = this.memory.sentiments[person];
+                const sentiment = await this.summarizeEmojiSentiment(person, emojis);
+                if (sentiment.length > 0) {
+                    this.memory.sentiments[person] = sentiment;
+                }
+            }
+            console.log('🐺 Sentiments updated');
+            await this.saveMemory();
+        } catch (error) {
+            console.error('🐺 Failed to update sentiments:', error);
         }
     }
 

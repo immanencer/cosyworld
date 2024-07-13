@@ -28,7 +28,7 @@ export async function generateResponse(avatar, conversation, items, toolResults)
 
     // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [
-        ...recentConversation.slice(-88),
+        ...recentConversation.slice(-20),
         { role: 'user', content: userPrompt }
     ]);
 
