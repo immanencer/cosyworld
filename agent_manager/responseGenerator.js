@@ -14,12 +14,13 @@ export async function generateResponse(avatar, conversation, items, toolResults)
 
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
-        userPrompt += `You have the following items: ${itemKeys}.`;
+        userPrompt = `You have the following items: ${itemKeys}.` + userPrompt;
     }
     if (toolResultKeys.length > 0) {
          console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
-        userPrompt += `Tool results: ${toolResultKeys}.`;
+        userPrompt = `Tool results: ${toolResultKeys}.` + userPrompt;
     }
+    
 
     if (avatar?.feelings.length > 0) {
         userPrompt = `Here are your feelings:\n${avatar.feelings[0]}\n${userPrompt}`;

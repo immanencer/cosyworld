@@ -12,6 +12,11 @@ Respond with a haiku that reflects their current state of mind and whether they 
         `Respond with ONLY a haiku that captures the essence of whether to respond to the conversation above.`
     ]);
 
+    if (!haiku) {
+        console.error('No haiku generated');
+        return null;
+    }
+
     return haiku.trim();
 }
 

@@ -4,6 +4,7 @@ import { postJSON } from '../tools/postJSON.js';
 import { waitForTask } from '../tools/taskModule.js';
 import { getLocations } from './locationHandler.js';
 import { isEqual } from '../tools/isEqual.js';
+import { sendAsAvatar } from '../server/services/discordService.js';
 
 export const initializeAvatars = async () => {
     const [locations, allAvatars] = await Promise.all([
@@ -36,7 +37,6 @@ export const updateAvatarLocation = async (avatar) => {
     } catch (error) {
         console.error(`Failed to update location for ${avatar.name}:`, error);
     }
-    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} is now in ${avatar.location.name}.`);
 };
 
 const updateRememberedLocations = ({ remember, location }) =>
@@ -62,6 +62,7 @@ const updateAvatarOnServer = async (avatar) => {
             headers: { 'Content-Type': 'application/json' },
             body
         });
+
     } catch (error) {
         console.error(`Failed to update avatar ${avatar.name} on server:`, error);
         throw error;

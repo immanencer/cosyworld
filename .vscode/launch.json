@@ -67,6 +67,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "😡 goblins",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/goblins.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "ai",
             "skipFiles": [
                 "<node_internals>/**"

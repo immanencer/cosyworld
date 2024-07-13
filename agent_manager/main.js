@@ -9,11 +9,11 @@ async function main() {
     let running = true;
 
     while (running) {
-        const avatars = (await initializeAvatars()).sort(() => Math.random() - 0.5);
-        let counter = 24;
+        const avatars = await initializeAvatars();
+        avatars.map(avatar => avatar.initiative = avatar.initiative || 10);
+        avatars.sort((a, b) => a.initiative - b.initiative);
         for (const avatar of avatars) {
-            if  (await processMessagesForAvatar(avatar)) counter--;
-            if (counter === 0) continue;
+            await processMessagesForAvatar(avatar);
         }
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
     }

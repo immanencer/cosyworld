@@ -39,6 +39,7 @@ export async function processMessagesForAvatar(avatar) {
         const messages = await fetchMessages(avatar, locations, lastCheckedId);
 
         if (messages.length === 0) {
+            avatar.initiative = (avatar.initiative || 10) - 1;
             return;
         }
 
@@ -46,6 +47,7 @@ export async function processMessagesForAvatar(avatar) {
         validateMessages(conversation);
 
         if (shouldRespond(avatar, conversation)) {
+            avatar.initiative = (avatar.initiative || 10) + 1;
             await handleResponse(avatar, conversation);
         }
 

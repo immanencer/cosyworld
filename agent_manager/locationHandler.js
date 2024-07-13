@@ -1,6 +1,7 @@
 import { fetchJSON } from '../tools/fetchJSON.js';
 import { updateAvatarLocation } from './avatarHandler.js';
 import { LOCATIONS_API } from '../tools/config.js';
+import { handleDiscordInteraction } from './discordHandler.js';
 
 export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
 let cachedLocations = null;
@@ -56,14 +57,20 @@ export const handleAvatarLocation = async (avatar, mention) => {
                         avatar.location;
 
     if (avatar.location.name !== newLocation.name) {
+        if (newLocation.name.includes('🚧')) {
+            console.log(`${avatar.name} is not allowed to move to ${newLocation.name}`);
+            return avatar;
+        }
         console.log(`${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
         const updatedAvatar = { ...avatar, location: newLocation };
         try {
             await updateAvatarLocation(updatedAvatar);
+            await handleDiscordInteraction(avatar, `*leaves*`);
+            await handleDiscordInteraction(updatedAvatar, `*arrives*`);
         } catch (error) {
             console.error(`Failed to update location for ${avatar.name}:`, error);
         }
-        avatar.location = newLocation;
+        avatar = updatedAvatar;
     }
 
     return avatar;

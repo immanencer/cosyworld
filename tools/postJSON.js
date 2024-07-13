@@ -42,4 +42,4 @@ export const postJSON = retry(async (url, data, retries = 3, backoff = 1000) => 
         body: JSON.stringify(data)
     };
     return fetchWithRetry(url, options, retries, backoff);
-}, 3, 1000);
+}, 3, 2000);

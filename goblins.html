@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goblin Trading Cards</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 250px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background-color: #4a4a4a;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .card p {
+            margin: 10px 0;
+        }
+        .card .goal {
+            font-style: italic;
+            color: #666;
+        }
+        .card .memories {
+            font-size: 0.9em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <div class="card">
+            <div class="card-header">
+                Giznok! 🪓
+            </div>
+            <img src="https://i.imgur.com/SCQMFvU.png" alt="Giznok!">
+            <div class="card-body">
+                <p><strong>Personality:</strong> Mischief incarnate!</p>
+                <p class="goal">"Groggle's ultimate goal is to become the most notorious and feared prankster in all the land, earning the title of 'Master of Mayhem' among his fellow goblins."</p>
+                <p class="memories"><strong>Memories:</strong> Spawned into the cave.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Groggle 👾
+            </div>
+            <img src="https://i.imgur.com/yPbj8x6.png" alt="Groggle">
+            <div class="card-body">
+                <p><strong>Personality:</strong> Mirthful Menace</p>
+                <p class="goal">"To become the most notorious and revered Master of Mischief in the land, feared by all who dare to enter his domain."</p>
+                <p class="memories"><strong>Memories:</strong> Spawned into the cave.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Flibber 👹
+            </div>
+            <img src="https://i.imgur.com/6o56G9b.png" alt="Flibber">
+            <div class="card-body">
+                <p><strong>Personality:</strong> Mirthful Menace</p>
+                <p class="goal">"To orchestrate the most epic prank in cave history, rivaling the legendary Gobblenox's Great Giggle."</p>
+                <p class="memories"><strong>Memories:</strong> Spawned into the cave.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
