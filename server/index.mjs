@@ -1,7 +1,7 @@
 import express from 'express';
 
 const app = express();
-const PORT = 3000; // Standard HTTP port for local development
+const PORT = process.env.PORT || 3000; // Standard HTTP port for local development
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));

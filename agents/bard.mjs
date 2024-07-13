@@ -1,4 +1,3 @@
-import { format } from 'winston';
 import DiscordAIBot from '../tools/discord-ai-bot.js';
 
 const TWEET_API_URL = 'http://localhost:3000/x/tweet';
@@ -28,7 +27,7 @@ async function postTweet(text) {
             console.error('🌳 Error posting tweet:', response.statusText);
         }
     } catch (error) {
-        console.error('🌳 Error posting tweet:', error);
+         llconsole.error('🌳 Error posting tweet:', error);
     }
 }
 

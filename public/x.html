@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tweet Widget</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Send a Tweet</h2>
+        <div class="input-group">
+            <label for="text">Tweet Text</label>
+            <textarea id="text" rows="4"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="accountId">Account ID (optional)</label>
+            <input type="text" id="accountId">
+        </div>
+        <button id="tweetButton">Tweet</button>
+        <h2>Add an Account</h2>
+        <div class="input-group">
+            <label for="addAccountId">Account ID</label>
+            <input type="text" id="addAccountId">
+        </div>
+        <div class="input-group">
+            <label for="accessToken">Access Token</label>
+            <input type="text" id="accessToken">
+        </div>
+        <div class="input-group">
+            <label for="accessSecret">Access Secret</label>
+            <input type="text" id="accessSecret">
+        </div>
+        <button id="addAccountButton">Add Account</button>
+    </div>
+
+    <script>
+        document.getElementById('tweetButton').addEventListener('click', async () => {
+            const text = document.getElementById('text').value;
+            const accountId = document.getElementById('accountId').value;
+
+            try {
+                const response = await fetch('/tweet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, accountId })
+                });
+                const result = await response.json();
+                alert('Tweet sent: ' + JSON.stringify(result));
+            } catch (e) {
+                console.error(e);
+                alert('Error sending tweet: ' + e.message);
+            }
+        });
+
+        document.getElementById('addAccountButton').addEventListener('click', async () => {
+            const accountId = document.getElementById('addAccountId').value;
+            const accessToken = document.getElementById('accessToken').value;
+            const accessSecret = document.getElementById('accessSecret').value;
+
+            try {
+                const response = await fetch('/add-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId, accessToken, accessSecret })
+                });
+                const result = await response.json();
+                alert('Account added: ' + JSON.stringify(result));
+            } catch (e) {
+                console.error(e);
+                alert('Error adding account: ' + e.message);
+            }
+        });
+    </script>
+</body>
+</html>
