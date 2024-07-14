@@ -12,6 +12,8 @@ export async function generateResponse(avatar, conversation, items, toolResults)
     let userPrompt = avatar.response_style
     || '\n\nRespond in character, with a short two or three sentences or *actions*.';
 
+    userPrompt = `You are in ${avatar.location.name}.` + userPrompt;
+
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
         userPrompt = `You have the following items: ${itemKeys}.` + userPrompt;

@@ -1,16 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tweet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tweet Widget</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f4f4f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .account-list, .tweet-form {
+            margin-right: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        button {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+        .account-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .account-item img {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Post a Tweet</h1>
-  <form action="/x/tweet" method="post">
-    <textarea name="text" rows="4" cols="50" placeholder="What's happening?"></textarea>
-    <br>
-    <button type="submit">Tweet</button>
-  </form>
+    <div class="container">
+        <div class="account-list">
+            <h2>Accounts</h2>
+            <div id="accounts"></div>
+            <button id="addAccountPlaceholder" style="background: #007bff;">+ Add Account</button>
+        </div>
+        <div class="tweet-form">
+            <h2>Send a Tweet</h2>
+            <div class="input-group">
+                <label for="text">Tweet Text</label>
+                <textarea id="text" rows="4"></textarea>
+            </div>
+            <button id="tweetButton">Tweet</button>
+        </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div id="accountModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 300px;">
+            <h2>Add Account</h2>
+            <div class="input-group">
+                <label for="accountId">Account ID</label>
+                <input type="text" id="accountId">
+            </div>
+            <div class="input-group">
+                <label for="accessToken">Access Token</label>
+                <input type="text" id="accessToken">
+            </div>
+            <div class="input-group">
+                <label for="accessSecret">Access Secret</label>
+                <input type="text" id="accessSecret">
+            </div>
+            <div class="input-group">
+                <label for="avatarUrl">Avatar URL</label>
+                <input type="text" id="avatarUrl">
+            </div>
+            <button id="addAccountButton">Add Account</button>
+            <button id="cancelAddAccountButton" style="background: #dc3545;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const accountsDiv = document.getElementById('accounts');
+        const accountModal = document.getElementById('accountModal');
+        const addAccountButton = document.getElementById('addAccountButton');
+        const cancelAddAccountButton = document.getElementById('cancelAddAccountButton');
+
+        // Default account (environment variables)
+        const defaultAccount = {
+            accountId: 'default',
+            avatarUrl: 'https://via.placeholder.com/50'
+        };
+
+        function addAccountToList(account) {
+            const accountItem = document.createElement('div');
+            accountItem.className = 'account-item';
+            accountItem.innerHTML = `<img src="${account.avatarUrl}" alt="Avatar" class="avatar"> ${account.accountId}`;
+            accountsDiv.appendChild(accountItem);
+        }
+
+        // Initialize with default account
+        addAccountToList(defaultAccount);
+
+        document.getElementById('addAccountPlaceholder').addEventListener('click', () => {
+            accountModal.style.display = 'flex';
+        });
+
+        cancelAddAccountButton.addEventListener('click', () => {
+            accountModal.style.display = 'none';
+        });
+
+        addAccountButton.addEventListener('click', async () => {
+            const accountId = document.getElementById('accountId').value.trim();
+            const accessToken = document.getElementById('accessToken').value.trim();
+            const accessSecret = document.getElementById('accessSecret').value.trim();
+            const avatarUrl = document.getElementById('avatarUrl').value.trim();
+
+            if (!accountId || !accessToken || !accessSecret || !avatarUrl) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/x/add-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId, accessToken, accessSecret, avatarUrl })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    addAccountToList({ accountId, avatarUrl });
+                    alert('Account added successfully');
+                    accountModal.style.display = 'none';
+                } else {
+                    alert('Error adding account: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error adding account:', error);
+                alert('Error adding account');
+            }
+        });
+
+        document.getElementById('tweetButton').addEventListener('click', async () => {
+            const text = document.getElementById('text').value.trim();
+
+            if (!text) {
+                alert('Please enter some text');
+                return;
+            }
+
+            try {
+                const response = await fetch('/x/tweet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Tweet posted successfully');
+                } else {
+                    alert('Error posting tweet: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error posting tweet:', error);
+                alert('Error posting tweet');
+            }
+        });
+    </script>
 </body>
 </html>

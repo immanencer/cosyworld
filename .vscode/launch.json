@@ -71,7 +71,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/bard.mjs",
+            "program": "${workspaceFolder}/agents/bard/main.js",
             "envFile": "${workspaceFolder}/.env"
         },
         {

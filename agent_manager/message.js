@@ -22,7 +22,7 @@ const isValidMessageFormat = (message) => {
 const validateMessages = (messages) => {
     const invalidMessages = messages.filter(message => !isValidMessageFormat(message));
     if (invalidMessages.length > 0) {
-        console.warn(`${invalidMessages.length} message(s) have potentially invalid format. First invalid message: ${invalidMessages[0].substring(0, 50)}...`);
+        console.warn(`${invalidMessages.length} message(s) have potentially invalid format. First invalid message: ${invalidMessages[0]?.substring(0, 50)}...`);
     }
 };
 
@@ -43,7 +43,8 @@ export async function processMessagesForAvatar(avatar) {
             return;
         }
 
-        const conversation = buildConversation(messages, locations);
+        const historical = buildConversation(messages, locations.filter(loc => loc.name !== avatar.location.name));
+        const conversation = [...historical, ...buildConversation(messages, [avatar.location])]
         validateMessages(conversation);
 
         if (shouldRespond(avatar, conversation)) {

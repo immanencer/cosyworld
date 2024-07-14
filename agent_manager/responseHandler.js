@@ -34,9 +34,6 @@ export async function handleResponse(avatar, conversation) {
         let usedItems = [];
         let newLocation = null;
 
-        if (actionPlan.speak) {
-            response = await generateResponse(avatar, recentContext, availableItems, []);
-        }
 
         if (actionPlan.useItems) {
             for (const item of availableItems) {
@@ -48,6 +45,11 @@ export async function handleResponse(avatar, conversation) {
         if (actionPlan.move) {
             newLocation = await moveAvatar(avatar, recentContext, response);
         }
+
+        if (actionPlan.speak) {
+            response = await generateResponse(avatar, recentContext, availableItems, usedItems.map(item => item.result));
+        }
+
 
         // Update avatar state
         updateAvatarState(avatar, {

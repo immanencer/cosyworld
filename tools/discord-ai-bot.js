@@ -54,7 +54,7 @@ class DiscordAiBot extends DiscordBot {
                 if (this.response_instructions_function) {
                     this.response_instructions = await this.response_instructions_function();
                 }
-                await this.sendMessage(this.message_cache.join('\n') + (this.response_instructions || ''));
+                await this.sendMessage(this.message_cache.map(T => JSON.parse(T)).map(T => `(${T.in}) ${T.from}: ${T.message}`) + (this.response_instructions || ''));
                 this.message_cache = [];
             } catch (error) {
                 console.error('Failed to send cached messages:', error);
