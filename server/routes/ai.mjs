@@ -36,10 +36,17 @@ router.post('/tasks', async (req, res) => {
     }
 });
 
-// Endpoint to get all tasks
+// Endpoint to get all tasks with optional paging
 router.get('/tasks', async (req, res) => {
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not specified
+    const pageSize = parseInt(req.query.pageSize) || 100; // Default to 100 items per page if not specified
+
     try {
-        const tasks = await db.collection(TASKS_COLLECTION).find({}).toArray();
+        const tasks = await db.collection(TASKS_COLLECTION)
+                              .find({})
+                              .skip((page - 1) * pageSize) // Calculate skip
+                              .limit(pageSize) // Apply limit based on pageSize
+                              .toArray();
         res.status(200).send(tasks);
     } catch (error) {
         console.error('❌ Failed to get tasks:', error);
