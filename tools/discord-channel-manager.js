@@ -41,7 +41,7 @@ class ChannelManager {
 
         const guild = {
             channel: this.channel_id[location] || this.channel_thread[location],
-            thread: (channel !== location) ? location : null
+            thread: (this.channel_id[location] !== location) ? location : null
         };
 
         const channel = await this.discord_client.channels.fetch(this.channel_id[guild.channel]);
@@ -69,68 +69,21 @@ class ChannelManager {
             return true;
         });
     }
-    
+
     async fuzzyMatchChannel(channel_name) {
         const channels = await this.getChannels();
         // Function to normalize channel names by removing spaces and dashes
         const normalize = name => `${name}`.toLowerCase().replace(/[-\s]/g, '');
-    
+
         const normalizedInput = normalize(channel_name);
-    
+
         const match = channels.find(c => {
             const normalizedChannel = normalize(c);
             return normalizedChannel.includes(normalizedInput) || normalizedInput.includes(normalizedChannel);
         });
-    
+
         return match || null;
     }
-        /**
-     * Fuzzy matches a channel or thread name based on the input.
-     * @param {string} inputName - The name to match.
-     * @returns {string|null} - The best matching name or null if no match found.
-     */
-        async fuzzyMatchName(inputName) {
-            const normalize = (name) => name.toLowerCase().replace(/[\W_]+/g, ''); // Normalize by removing non-word characters and converting to lowercase.
-            const inputNormalized = normalize(inputName);
-    
-            // Combine channels and threads into one array for simplicity.
-            const combinedNames = Object.keys(this.channel_id).concat(Object.keys(this.thread_id));
-            let bestMatch = null;
-            let bestScore = Infinity;  // Lower score is better, start with worst case.
-    
-            for (const name of combinedNames) {
-                const normalized = normalize(name);
-                const score = this.calculateLevenshteinDistance(inputNormalized, normalized); // Calculate the distance.
-    
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestMatch = name;
-                }
-            }
-    
-            return bestMatch;
-        }
-    
-        /**
-         * Calculates the Levenshtein distance between two strings.
-         * @param {string} a - First string.
-         * @param {string} b - Second string.
-         * @returns {number} - The distance.
-         */
-        calculateLevenshteinDistance(a, b) {
-            const dp = Array.from({ length: b.length + 1 }, () => Array(a.length + 1).fill(0));
-            for (let i = 0; i <= a.length; i++) dp[0][i] = i;
-            for (let i = 0; i <= b.length; i++) dp[i][0] = i;
-    
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    const cost = b[i - 1] === a[j - 1] ? 0 : 1;
-                    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-                }
-            }
-    
-            return dp[b.length][a.length];
-        }
 
     getChannelId(channel) {
         return this.channel_id[channel] || null;
@@ -148,7 +101,7 @@ class ChannelManager {
         return this.channel_thread[thread] || null;
     }
 
-    
+
     // Location management
     async getLocation(location) {
         const channel = this.getChannelId((await this.fuzzyMatchChannel(this.getChannelForThread(location) || location)));
@@ -157,7 +110,7 @@ class ChannelManager {
             console.error('🎮 ❌ Invalid location ' + location);
             return null;
         }
-        return { channel_name:channel.name, channel, thread_name: thread?.name, thread };
+        return { channel_name: channel.name, channel, thread_name: thread?.name, thread };
     };
 
     // create a new channel or thread or return the existing one
@@ -218,11 +171,11 @@ class ChannelManager {
         const channel = await this.discord_client.channels.fetch(channel_id);
         if (!channel.isTextBased() || !channel.threads) return [];
         const thread_list = (await channel.threads.fetch()).threads;
-        
+
         for (const [id, thread] of thread_list) {
             threads.push(thread);
         }
-        
+
         console.log(`'🎮 Found ${threads.length} threads.'`);
 
         return threads;
@@ -281,7 +234,7 @@ class ChannelManager {
         for (const channel of channels) {
             prompt += `"${channel}"\n`; // Each channel is referred to as a corridor
             const threads = await this.getThreadsForChannel(channel); // Assuming getThreads fetches threads by channel ID
-            
+
             if (threads.length === 0) {
                 continue; // Skip to the next channel if there are no threads
             } else {

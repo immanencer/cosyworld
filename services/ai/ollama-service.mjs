@@ -1,9 +1,7 @@
 import ollama from 'ollama';
 import crypto from 'crypto';
 
-const model_cache = {};
-
-export default class OllamaService {
+class OllamaService {
   static #modelCache = new Set();
 
   constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3') {
@@ -16,13 +14,14 @@ export default class OllamaService {
       messages,
       modelOverride,
       temperature = 0.7,
-      maxTokens = 4096 * 4,
+      maxTokens = 4096,
+      signal
     } = params;
 
     const modelToUse = modelOverride || this.model;
     const modelHash = this.#generateHash(`FROM ${modelToUse}\nSYSTEM "${systemPrompt}"`);
 
-    await this.#ensureModelExists(modelHash, modelToUse, systemPrompt);
+    await this.#ensureModelExists(modelHash, modelToUse, systemPrompt, signal);
 
     const formattedMessages = this.#formatMessages(systemPrompt, messages);
 
@@ -60,13 +59,13 @@ export default class OllamaService {
     ];
   }
 
-  async #ensureModelExists(modelHash, baseModel, systemPrompt) {
+  async #ensureModelExists(modelHash, baseModel, systemPrompt, signal) {
     if (!OllamaService.#modelCache.has(modelHash)) {
       try {
         await ollama.create({
           model: modelHash,
-          modelfile: `FROM ${baseModel}
-SYSTEM "${systemPrompt}"`
+          modelfile: `FROM ${baseModel}\nSYSTEM "${systemPrompt}"`,
+          signal
         });
         console.log('Model created:', baseModel, modelHash);
         OllamaService.#modelCache.add(modelHash);
@@ -96,3 +95,5 @@ SYSTEM "${systemPrompt}"`
     }
   }
 }
+
+export default OllamaService;

@@ -77,9 +77,14 @@ class Whisper extends DiscordBot {
             location: message.channel.name
         };
 
-        // stay out of construction zones
-        if (message.channel.name.indexOf('🚧') === 0) return false;
-        if (message.channel.name.indexOf('🥩') === 0) return false;
+        const blocks = ['🚧','🌰','🥩'];
+
+        for (let i =0; i < blocks.length; i++) {
+            if (data.location.includes(blocks[i])) {
+                console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} is blocked from ${data.location}`);
+                return;
+            }
+        }
 
         // Follow the owner
         if (data.author == this.avatar.owner) {

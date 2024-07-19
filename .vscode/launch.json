@@ -81,7 +81,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/goblins.mjs",
+            "program": "${workspaceFolder}/agents/goblins/goblinCave.js",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -133,6 +133,16 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/agents/abbey/storymaton/main.js",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🗞️ newsbot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/abbey/newsbot/main.js",
             "envFile": "${workspaceFolder}/.env"
         },
         {

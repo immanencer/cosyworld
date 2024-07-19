@@ -103,9 +103,11 @@ export function updateAvatarFeelings(avatar, haiku, analysisResult) {
         timestamp: new Date().toISOString()
     }, ...(avatar.feelings || [])];
 
-    console.log(`Haiku analysis for ${avatar.name}:`,
-        `Should Respond: ${analysisResult.shouldRespond ? 'Yes' : 'No'},`,
-        `Emotion: ${analysisResult.dominantEmotion},`,
-        `Themes: ${analysisResult.keyThemes.join(', ')}`
+    console.log(`\n\n${haiku}\n\n`);
+
+    console.log(`Haiku analysis for ${avatar.name}:\n\t`,
+        `Should Respond: ${analysisResult.shouldRespond ? 'Yes' : 'No'},\n\t`,
+        `Emotion: ${analysisResult.dominantEmotion},\n\t`,
+        `Themes: ${analysisResult.keyThemes.join(', ')}\n\n`
     );
 }

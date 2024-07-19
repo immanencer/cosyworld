@@ -17,7 +17,7 @@ Your response should be no more than 88 characters, and be ONLY the EXACT locati
         [{ role: 'user', content: movementPrompt }]
     );
 
-    const shouldMove = moveDecision.length < 88 && moveDecision.trim().toUpperCase() !== 'STAY';
+    const shouldMove = moveDecision.length < 88 && !moveDecision.trim().toUpperCase().includes('STAY');
     const locationToMoveTo = shouldMove ? moveDecision.trim() : null;
 
     console.log(`Move check for ${avatar.name}: ${shouldMove ? `Moving to ${locationToMoveTo}` : 'Staying'}`);

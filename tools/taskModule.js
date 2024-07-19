@@ -1,6 +1,4 @@
-const TASKS_API = 'http://localhost:3000/ai/tasks';
-const POLL_INTERVAL = 1000;
-
+import { TASKS_API, POLL_INTERVAL } from './config.js';
 import { postJSON } from './postJSON.js';
 import { fetchJSON } from './fetchJSON.js';
 
@@ -43,7 +41,6 @@ export function pollTaskCompletion(taskId) {
 }
 
 export async function waitForTask(avatar, conversation) {
-
     let taskId;
 
     try {
@@ -57,7 +54,7 @@ export async function waitForTask(avatar, conversation) {
     try {
         result = await pollTaskCompletion(taskId);
     } catch (error) {
-        console.error(`Failed to create task for ${avatar.name}:`, error);
+        console.error(`Failed to poll task completion for ${avatar.name}:`, error);
         return;
     }
 

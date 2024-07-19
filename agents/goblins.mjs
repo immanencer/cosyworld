@@ -25,10 +25,10 @@ class GoblinCave {
         this.loadGoblins();
 
         this.avatars = [
-            { name: 'Goblin', emoji: '🪓', avatar: 'https://i.imgur.com/SCQMFvU.png', personality: 'You are a mischievous goblin, always looking to cause trouble and play pranks.' },
-            { name: 'Gremlin', emoji: '👹', avatar: 'https://i.imgur.com/6o56G9b.png', personality: 'You are a cunning gremlin, always up to no good and enjoying causing chaos.' },
-            { name: 'Imp', emoji: '👺', avatar: 'https://i.imgur.com/eDu9ftM.png', personality: 'You are a devious imp, delighting in causing mischief and mayhem.' },
-            { name: 'Hobgoblin', emoji: '👾', avatar: 'https://i.imgur.com/yPbj8x6.png', personality: 'You are a sneaky hobgoblin, always scheming and plotting your next trick.' }
+            { name: 'Void Goblin', emoji: '👻', avatar: 'https://i.imgur.com/SCQMFvU.png', personality: 'You are a spectral void goblin, whispering dark secrets and causing fear in the shadows.' },
+            { name: 'Shadow Gremlin', emoji: '🕷️', avatar: 'https://i.imgur.com/6o56G9b.png', personality: 'You are a cunning shadow gremlin, enjoying causing nightmares and chaos.' },
+            { name: 'Spectral Imp', emoji: '🦇', avatar: 'https://i.imgur.com/eDu9ftM.png', personality: 'You are a devious spectral imp, delighting in haunting and eerie pranks.' },
+            { name: 'Phantom Hobgoblin', emoji: '🧛', avatar: 'https://i.imgur.com/yPbj8x6.png', personality: 'You are a sneaky phantom hobgoblin, always plotting dark tricks and schemes.' }
         ];
 
         this.model = 'llama3';
@@ -49,11 +49,11 @@ class GoblinCave {
     }
 
     async onReady() {
-        console.log(`🪓 Goblin Cave is online as ${this.client.user.tag}`);
+        console.log(`👻 Goblin Cave is online as ${this.client.user.tag}`);
         this.avatar = {
-            name: 'Goblin Cave',
-            emoji: '🪓',
-            personality: 'You are in a dark cave filled with goblins. They are mischievous and love to play pranks. You only respond in short cavelike sentences, and *actions.*',
+            name: 'Void Goblin Cave',
+            emoji: '👻',
+            personality: 'You are a dark and eerie cave filled with void goblins. They whisper dark secrets and cause fear. You only respond in short, spooky sentences, and *ghostly actions.*',
             avatar: 'https://i.imgur.com/fuphSlX.png'
         };
         await this.initializeAI();
@@ -86,7 +86,7 @@ class GoblinCave {
     }
 
     async processQueuedMessages() {
-        console.log(`🪓 Processing ${this.messageQueue.length} queued messages`);
+        console.log(`👻 Processing ${this.messageQueue.length} queued messages`);
         for (const message of this.messageQueue) {
             await this.onMessage(message);
         }
@@ -111,7 +111,7 @@ class GoblinCave {
                     goblin.memories.push(`Interacted with ${message.author.username} and vanished.`);
                     this.goblins = this.goblins.filter(g => g.name !== goblin.name);
                     await this.saveGoblins();
-                    await this.sendAsAvatar(`*vanishes*`, message.channel, goblin);
+                    await this.sendAsAvatar(`*vanishes into the shadows*`, message.channel, goblin);
                 } else {
                     goblin.target = message.author.username;
                     goblin.memories.push(`Changed target to ${message.author.username}.`);
@@ -126,12 +126,9 @@ class GoblinCave {
                 }
             }
 
-            // Movement criteria: Random chance to move to a different channel
             if (Math.random() < 0.1) {
                 await this.moveGoblin(goblin);
- 
             }
-
 
             const otherGoblin = this.goblins.find(g => g.name !== goblin.name && !g.target && g.stats.hp > 0);
             if (otherGoblin) {
@@ -201,7 +198,7 @@ class GoblinCave {
                 goblin.location = randomLocation.channelName;
                 goblin.memories.push(`Moved to ${randomLocation.channelName}`);
                 goblin.xp = (goblin.xp || 0) + 10;
-                await this.sendAsAvatar(`*moves to ${randomLocation.channelName}*`, channel, goblin);
+                await this.sendAsAvatar(`*moves to ${randomLocation.channelName} with a ghostly presence*`, channel, goblin);
                 await this.saveGoblins();
             }
         }
@@ -213,12 +210,12 @@ class GoblinCave {
 
         if (resurrect && this.goblins.length > 0) {
             const goblinToResurrect = this.goblins[Math.floor(Math.random() * this.goblins.length)];
-            goblinData = { ...goblinToResurrect, target: null, messageCount: 0, memories: [...goblinToResurrect.memories, "Resurrected."], location: 'goblin-cave', stats: { ...goblinToResurrect.stats, hp: 10 } };
-            console.log(`🪓 Resurrecting goblin: ${goblinData.name}`);
+            goblinData = { ...goblinToResurrect, target: null, messageCount: 0, memories: [...goblinToResurrect.memories, "Resurrected from the void."], location: 'goblin-cave', stats: { ...goblinToResurrect.stats, hp: 10 } };
+            console.log(`👻 Resurrecting goblin: ${goblinData.name}`);
         } else {
             goblinData = { ...this.getRandomAvatar(), ...(await this.createGoblinData()), location: 'goblin-cave', stats: { hp: 10, dex: 10, wins: 0, losses: 0 } };
-            goblinData.memories = ["Spawned into the cave."];
-            console.log(`🪓 A new goblin has spawned: ${goblinData.name}`);
+            goblinData.memories = ["Spawned into the cave from the shadows."];
+            console.log(`👻 A new void goblin has spawned: ${goblinData.name}`);
         }
 
         const newGoblin = { ...goblinData, target: null, messageCount: 0, active: true, xp: 0 };
@@ -254,13 +251,13 @@ dreams seep
 light clings
 goblins sing
 `;
-        const response = await this.chatWithAI(`Hraa'khor! ${poem} Write a short story about a goblin.`);
+        const response = await this.chatWithAI(`Hraa'khor! ${poem} Write a short story about a void goblin.`);
 
         const goblinCaveChannel = this.channels.get('goblin-cave');
         try {
-            const name = await this.chatWithAI(` ${poem} ${response} What is the name of the goblin (make one up if necessary)? ONLY respond with a SHORT goblin name.`);
-            const personality = await this.chatWithAI(` ${poem} ${response} What is the personality of the goblin? ONLY respond with a SHORT personality description.`);
-            const goal = await this.chatWithAI(` ${poem} ${response} ${personality} What is a one-sentence goal for the goblin?`);
+            const name = await this.chatWithAI(` ${poem} ${response} What is the name of the void goblin (make one up if necessary)? ONLY respond with a SHORT goblin name.`);
+            const personality = await this.chatWithAI(` ${poem} ${response} What is the personality of the void goblin? ONLY respond with a SHORT personality description.`);
+            const goal = await this.chatWithAI(` ${poem} ${response} ${personality} What is a one-sentence goal for the void goblin?`);
 
             const goblin = {
                 ...this.getRandomAvatar(),
@@ -271,14 +268,14 @@ goblins sing
             };
 
             if (goblinCaveChannel) {
-                const firstMessage = await this.chatWithAI(`You, little goblin named ${name}, born of night and shadows, with the goal: ${goal}. \n\nOnly respond with SHORT goblin actions or mischievous deeds.`, goblinCaveChannel);
+                const firstMessage = await this.chatWithAI(`You, little void goblin named ${name}, born of night and shadows, with the goal: ${goal}. \n\nOnly respond with SHORT goblin actions or mischievous deeds.`, goblinCaveChannel);
                 await this.sendAsAvatar(firstMessage, goblinCaveChannel, goblin);
             }
             return goblin;
         } catch (error) {
-            console.error('🪓 Failed to parse new goblin JSON:', error);
+            console.error('👻 Failed to parse new goblin JSON:', error);
             if (goblinCaveChannel) {
-                const dramaticFailureMessage = await this.chatWithAI(`Hraa'khor! The goblin creation ritual has failed!`);
+                const dramaticFailureMessage = await this.chatWithAI(`Hraa'khor! The void goblin creation ritual has failed!`);
                 await this.sendAsAvatar(dramaticFailureMessage, goblinCaveChannel, this.avatar);
             }
             return this.getRandomAvatar();
@@ -294,13 +291,13 @@ goblins sing
     }
 
     async getGoblinAction(goblin) {
-        const response = await this.chatWithAvatar(goblin, `Respond with a single short mischevious action or joke`);
+        const response = await this.chatWithAvatar(goblin, `Respond with a single short spooky action or eerie joke`);
         return response.trim();
     }
 
     async sendAsAvatar(message, channel, goblin) {
         if (!channel) {
-            console.error('🪓 Channel not found:', goblin.location);
+            console.error('👻 Channel not found:', goblin.location);
             return;
         }
 
@@ -320,7 +317,7 @@ goblins sing
                         });
                     }
                 } catch (error) {
-                    console.error(`🪓 Failed to send message as ${goblin.name}:`, error);
+                    console.error(`👻 Failed to send message as ${goblin.name}:`, error);
                 }
             }
         }
@@ -360,7 +357,7 @@ goblins sing
                 return this.webhookCache[channel.id];
             }
         } catch (error) {
-            console.error('🪓 Error fetching or creating webhook:', error);
+            console.error('👻 Error fetching or creating webhook:', error);
         }
 
         return null;
@@ -382,9 +379,9 @@ goblins sing
         const goblinsPath = path.join(process.cwd(), 'goblins.json');
         try {
             await fs.writeFile(goblinsPath, JSON.stringify(this.goblins, null, 2));
-            console.log(`🪓 Goblins saved`);
+            console.log(`👻 Goblins saved`);
         } catch (error) {
-            console.error(`🪓 Failed to save goblins:`, error);
+            console.error(`👻 Failed to save goblins:`, error);
         }
     }
 
@@ -393,12 +390,12 @@ goblins sing
         try {
             const data = await fs.readFile(goblinsPath, 'utf8');
             this.goblins = JSON.parse(data);
-            console.log(`🪓 Goblins loaded`);
+            console.log(`👻 Goblins loaded`);
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.log(`🪓 No existing goblins found. Starting fresh.`);
+                console.log(`👻 No existing goblins found. Starting fresh.`);
             } else {
-                console.error(`🪓 Failed to load goblins:`, error);
+                console.error(`👻 Failed to load goblins:`, error);
             }
         }
     }
@@ -442,7 +439,7 @@ goblins sing
         try {
             await this.client.login(this.token);
         } catch (error) {
-            console.error('🪓 Failed to login:', error);
+            console.error('👻 Failed to login:', error);
             throw error;
         }
     }

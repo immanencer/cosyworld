@@ -1,5 +1,4 @@
 import { initializeDiscord, initializeChannels, sendAsAvatar } from './modules/discord.js';
-import { postX } from './modules/x.js';
 import { initializeAI, chatWithAI } from './modules/ai.js';
 import { loadMemory, saveMemory, summarizeMemory, reflectAndUpdateGoal, updateSentiments, collectSentiment, updateMemory } from './modules/memory.js';
 import { broadcast } from './modules/broadcast.js';

@@ -1,63 +1,33 @@
-import { TASKS_API, POLL_INTERVAL } from '../tools/config.js';
-import { postJSON } from '../tools/postJSON.js';
-import { fetchJSON } from '../tools/fetchJSON.js';
+import * as originalModule from '../tools/taskModule.js';
 
-export async function createTask(system_prompt, messages, avatar) {
-    const task = {
-        action: 'ai',
-        model: 'ollama/llama3',
-        system_prompt: system_prompt,
-        messages,
-        avatar
-    };
-
-    const response = await postJSON(TASKS_API, task);
-    return response.taskId;
-}
-
-export async function getTaskStatus(taskId) {
-    const url = `${TASKS_API}/${taskId}`;
-    return await fetchJSON(url);
-}
-
-export function pollTaskCompletion(taskId) {
-    return new Promise((resolve, reject) => {
-        const checkStatus = async () => {
-            try {
-                const taskStatus = await getTaskStatus(taskId);
-                if (taskStatus.status === 'completed') {
-                    resolve(taskStatus.response || '');
-                } else if (taskStatus.status === 'failed') {
-                    reject(new Error(`Task ${taskId} failed: ${taskStatus.error}`));
-                } else {
-                    setTimeout(checkStatus, POLL_INTERVAL);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        };
-        checkStatus();
-    });
-}
-
-export async function waitForTask(avatar, conversation) {
-
-    let taskId;
-
-    try {
-        taskId = await createTask(avatar.personality, conversation, avatar);
-    } catch (error) {
-        console.error(`Failed to create task for ${avatar.name}:`, error);
-        return;
+function warnOnce() {
+    if (!warnOnce.hasWarned) {
+        console.warn('WARNING: You are using a deprecated version of the task module. Please update your imports to use the new module directly.');
+        warnOnce.hasWarned = true;
     }
-
-    let result;
-    try {
-        result = await pollTaskCompletion(taskId);
-    } catch (error) {
-        console.error(`Failed to create task for ${avatar.name}:`, error);
-        return;
-    }
-
-    return result;
 }
+
+warnOnce.hasWarned = false;
+
+export function createTask(...args) {
+    warnOnce();
+    return originalModule.createTask(...args);
+}
+
+export function getTaskStatus(...args) {
+    warnOnce();
+    return originalModule.getTaskStatus(...args);
+}
+
+export function pollTaskCompletion(...args) {
+    warnOnce();
+    return originalModule.pollTaskCompletion(...args);
+}
+
+export function waitForTask(...args) {
+    warnOnce();
+    return originalModule.waitForTask(...args);
+}
+
+// Re-export any constants or other exports from the original module
+export * from '../tools/taskModule.js';

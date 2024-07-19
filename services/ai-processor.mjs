@@ -5,7 +5,7 @@ import db from '../database/index.js';
 import process from 'process';
 
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'llama3';
+const DEFAULT_MODEL = 'llama3-groq-tool-use';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {
@@ -32,6 +32,7 @@ class TaskProcessor {
         }
 
         try {
+
             const response = await ai.generateResponse(
                 task.system_prompt,
                 task.messages,

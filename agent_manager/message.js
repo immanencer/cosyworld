@@ -1,7 +1,7 @@
 import { MESSAGES_API } from "../tools/config.js";
 import { fetchJSON } from "../tools/fetchJSON.js";
 import { createURLWithParams } from "./utils.js";
-import { getLocations, handleAvatarLocation } from "./locationHandler.js";
+import { getLocations } from "./locationHandler.js";
 import { handleResponse } from "./responseHandler.js";
 
 const lastProcessedMessageIdByAvatar = new Map();
@@ -26,15 +26,9 @@ const validateMessages = (messages) => {
     }
 };
 
-export async function processMessagesForAvatar(avatar) {
+export async function processMessagesForAvatar(avatar, locations) {
     try {
-        const [locations, mentions] = await Promise.all([
-            getLocations(),
-            getMentions(avatar.name, lastProcessedMessageIdByAvatar.get(avatar.name))
-        ]);
-
-        avatar = await handleAvatarLocation(avatar, mentions[mentions.length - 1]);
-
+        const mentions = await getMentions(avatar.name, lastProcessedMessageIdByAvatar.get(avatar.name));
         const lastCheckedId = lastCheckedMessageIdByAvatar.get(avatar.name);
         const messages = await fetchMessages(avatar, locations, lastCheckedId);
 
@@ -43,7 +37,7 @@ export async function processMessagesForAvatar(avatar) {
             return;
         }
 
-        const historical = buildConversation(messages, locations.filter(loc => loc.name !== avatar.location.name));
+        const historical = []; //buildConversation(messages, locations.filter(loc => avatar.remember?.includes(loc.name)));
         const conversation = [...historical, ...buildConversation(messages, [avatar.location])]
         validateMessages(conversation);
 
@@ -97,7 +91,7 @@ async function fetchMessages(avatar, _, lastCheckedId) {
 
     // Sort messages by creation date and limit to MAX_TOTAL_MESSAGES
     return allMessages
-        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        .sort((a, b) => (new Date(a.createdAt)).valueOf() - (new Date(b.createdAt)).valueOf())
         .slice(0, MAX_TOTAL_MESSAGES);
 }
 

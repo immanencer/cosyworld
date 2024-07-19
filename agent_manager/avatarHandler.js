@@ -4,7 +4,6 @@ import { postJSON } from '../tools/postJSON.js';
 import { waitForTask } from '../tools/taskModule.js';
 import { getLocations } from './locationHandler.js';
 import { isEqual } from '../tools/isEqual.js';
-import { sendAsAvatar } from '../server/services/discordService.js';
 
 export const initializeAvatars = async () => {
     const [locations, allAvatars] = await Promise.all([
@@ -95,11 +94,7 @@ export async function updateAvatarState(avatar, updates) {
         return;
     }
 
-    console.log(`State change for ${avatar.name}:`);
-    Object.keys(updates).forEach(key => {
-        const value = updates[key];
-        console.log(`  ${key}: ${value && value.name ? value.name : value}`);
-    });
+    console.log(`State change for ${avatar.name}`);
 
     Object.assign(avatar, updatedState);
 
@@ -123,6 +118,8 @@ export async function updateAvatarState(avatar, updates) {
     } catch (error) {
         console.error(`Failed to sync state update for ${avatar.name}:`, error);
     }
+
+    return avatar;
 }
 
 async function summarizeFeelings(feelings) {

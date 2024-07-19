@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChibiLok Wallet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ChibiLok Wallet</h1>
+        <button id="generate-wallet">Generate Wallet</button>
+        <div id="wallet-info" style="display: none;">
+            <h2>Wallet Information</h2>
+            <p><strong>Public Key:</strong> <span id="public-key"></span></p>
+            <p><strong>Private Key:</strong> <span id="private-key"></span></p>
+            <button id="store-key">Store Private Key on Server</button>
+        </div>
+        <div id="balance-info" style="display: none;">
+            <h2>Balance Information</h2>
+            <p><strong>Balance:</strong> <span id="balance"></span></p>
+            <h2>Send Balance</h2>
+            <input type="text" id="recipient" placeholder="Recipient Public Key">
+            <input type="number" id="amount" placeholder="Amount">
+            <button id="send-balance">Send</button>
+        </div>
+        <div id="transactions" style="display: none;">
+            <h2>Transactions</h2>
+            <ul id="transaction-list"></ul>
+        </div>
+        <div id="message"></div>
+    </div>
+    <script>
+        document.getElementById('generate-wallet').addEventListener('click', async () => {
+            const response = await fetch('/blockchain/generate-wallet');
+            const wallet = await response.json();
+
+            document.getElementById('public-key').textContent = wallet.publicKey;
+            document.getElementById('private-key').textContent = wallet.privateKey;
+            document.getElementById('wallet-info').style.display = 'block';
+
+            await fetchBalance(wallet.publicKey);
+            await fetchTransactions(wallet.publicKey);
+        });
+
+        document.getElementById('store-key').addEventListener('click', async () => {
+            const privateKey = document.getElementById('private-key').textContent;
+            const response = await fetch('/blockchain/store-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ privateKey })
+            });
+
+            const result = await response.json();
+            const messageElement = document.getElementById('message');
+
+            if (result.success) {
+                messageElement.textContent = 'Private key stored successfully!';
+                messageElement.style.color = 'green';
+            } else {
+                messageElement.textContent = 'Failed to store private key.';
+                messageElement.style.color = 'red';
+            }
+        });
+
+        async function fetchBalance(publicKey) {
+            const response = await fetch(`/blockchain/balance/${publicKey}`);
+            const { balance } = await response.json();
+            document.getElementById('balance').textContent = balance;
+            document.getElementById('balance-info').style.display = 'block';
+        }
+
+        async function fetchTransactions(publicKey) {
+            const response = await fetch(`/blockchain/transactions/${publicKey}`);
+            const transactions = await response.json();
+            const transactionList = document.getElementById('transaction-list');
+            transactionList.innerHTML = '';
+            transactions.forEach(tx => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${tx.amount} to ${tx.recipient}`;
+                transactionList.appendChild(listItem);
+            });
+            document.getElementById('transactions').style.display = 'block';
+        }
+
+        document.getElementById('send-balance').addEventListener('click', async () => {
+            const recipient = document.getElementById('recipient').value;
+            const amount = document.getElementById('amount').value;
+            const publicKey = document.getElementById('public-key').textContent;
+            const privateKey = document.getElementById('private-key').textContent;
+
+            if (!recipient || !amount) {
+                alert('Recipient and amount are required');
+                return;
+            }
+
+            const response = await fetch('/blockchain/send-balance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ recipient, amount, publicKey, privateKey })
+            });
+
+            const result = await response.json();
+            const messageElement = document.getElementById('message');
+
+            if (result.success) {
+                messageElement.textContent = 'Transaction successful!';
+                messageElement.style.color = 'green';
+                await fetchBalance(publicKey);
+                await fetchTransactions(publicKey);
+            } else {
+                messageElement.textContent = 'Transaction failed.';
+                messageElement.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

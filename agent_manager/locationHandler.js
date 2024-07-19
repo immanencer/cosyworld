@@ -1,9 +1,7 @@
+import { fuzzyMatch } from '../tools/fuzzymatch.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
-import { updateAvatarLocation } from './avatarHandler.js';
 import { LOCATIONS_API } from '../tools/config.js';
-import { handleDiscordInteraction } from './discordHandler.js';
 
-export const DEFAULT_LOCATION = { id: '1219837842058907731', name: '🚧garbage-area' };
 let cachedLocations = null;
 
 export function sanitizeLocationName(name) {
@@ -28,50 +26,26 @@ export const getLocations = async () => {
             cachedLocations = [];
         }
     }
-    return cachedLocations.length ? cachedLocations : [DEFAULT_LOCATION];
+    return cachedLocations.length ? cachedLocations : [];
 };
 
 export const getLocationById = async (id) => {
     const locations = await getLocations();
-    return locations.find(loc => loc.id === id) || DEFAULT_LOCATION;
+    return locations.find(loc => loc.id === id);
 };
 
 export const getLocationByName = async (name) => {
     const locations = await getLocations();
-    return locations.find(loc => loc.name === name) || DEFAULT_LOCATION;
+    return locations.find(loc => loc.name === name);
 }
 
-export const handleAvatarLocation = async (avatar, mention) => {
-    if (!avatar || !avatar.location) {
-        console.warn(`Invalid avatar or location for ${avatar?.name || 'unknown avatar'}`);
-        return { ...avatar, location: DEFAULT_LOCATION };
-    }
-
-    if (!mention || avatar.summon !== "true") {
-        return avatar;
-    }
-
+export const getLocationByFuzzyName = async (name, threshold = 0.4) => {
     const locations = await getLocations();
-    const newLocation = locations.find(loc => loc.id === mention.threadId) || 
-                        locations.find(loc => loc.id === mention.channelId) || 
-                        avatar.location;
-
-    if (avatar.location.name !== newLocation.name) {
-        if (newLocation.name.includes('🚧')) {
-            console.log(`${avatar.name} is not allowed to move to ${newLocation.name}`);
-            return avatar;
-        }
-        console.log(`${avatar.name} moving: ${avatar.location.name} -> ${newLocation.name}`);
-        const updatedAvatar = { ...avatar, location: newLocation };
-        try {
-            await updateAvatarLocation(updatedAvatar);
-            await handleDiscordInteraction(avatar, `*leaves*`);
-            await handleDiscordInteraction(updatedAvatar, `*arrives*`);
-        } catch (error) {
-            console.error(`Failed to update location for ${avatar.name}:`, error);
-        }
-        avatar = updatedAvatar;
-    }
-
-    return avatar;
+    const bestMatch = fuzzyMatch(
+        locations.filter(T => ['channel', 'thread'].includes(T.type)),
+        'name', // key
+        `${name}`, // value
+        threshold
+    );
+    return bestMatch || null;
 };

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChibiLok Block Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Block Details</h1>
+        <pre id="block-details"></pre>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const data = params.get('data');
+            const blockDetails = JSON.parse(decodeURIComponent(data));
+            document.getElementById('block-details').textContent = JSON.stringify(blockDetails, null, 2);
+        });
+    </script>
+</body>
+</html>

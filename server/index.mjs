@@ -18,6 +18,9 @@ app.use('/api', locations);
 import avatars from './routes/avatars.mjs';
 app.use('/avatars', avatars);
 
+import news from '../agents/abbey/newsbot/router.mjs';
+app.use('/news', news);
+
 // Third-party API routes
 
 import { discordRouter, startPeriodicProcessing } from './routes/discordRouter.mjs';
@@ -29,6 +32,10 @@ app.use('/ranker', ranker);
 
 import x from './routes/x.mjs';
 app.use('/x', x);
+
+import chibilok from '../services/chibilok/router.mjs';
+app.use('/chibilok', chibilok);
+app.use('/blockchain', chibilok);
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

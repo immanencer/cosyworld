@@ -14,6 +14,6 @@
       "isolatedModules": true,
       "jsx": "preserve"
     },
-    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "agents/abbey/newsbot/router.mjs"],
     "exclude": ["node_modules", "dist"]
   }

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChibiLok Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ChibiLok Dashboard</h1>
+        <div id="wallet-section">
+            <button id="generate-wallet">Generate Wallet</button>
+            <div id="wallet-info" style="display: none;">
+                <h2>Wallet Information</h2>
+                <p><strong>Public Key:</strong> <span id="public-key"></span></p>
+                <p><strong>Private Key:</strong> <span id="private-key"></span></p>
+                <button id="store-key">Store Private Key on Server</button>
+            </div>
+        </div>
+        <div id="balance-section" style="display: none;">
+            <h2>Wallet Balances</h2>
+            <ul id="balance-list"></ul>
+        </div>
+        <div id="transaction-section" style="display: none;">
+            <h2>Transactions</h2>
+            <ul id="transaction-list"></ul>
+        </div>
+        <div id="send-section" style="display: none;">
+            <h2>Send Balance</h2>
+            <input type="text" id="recipient" placeholder="Recipient Public Key">
+            <input type="number" id="amount" placeholder="Amount">
+            <button id="send-balance">Send</button>
+        </div>
+        <div id="chain-section">
+            <h2>Blockchain Monitor</h2>
+            <ul id="chain-list"></ul>
+        </div>
+        <div id="mine-section">
+            <button id="mine-block">Mine Block</button>
+        </div>
+        <div id="message"></div>
+    </div>
+    <script src="qrcode.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

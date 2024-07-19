@@ -2,10 +2,14 @@
  * Fetches JSON data from a URL with advanced retry and error handling.
  * @param {string} url - The URL to fetch from.
  * @param {Object} options - Fetch options and additional configuration.
+ * @param {Object} [options.headers] - Headers to include in the request.
+ * @param {string} [options.body] - The request body to send.
+ * @param {string} [options.method='GET'] - The HTTP method to use.
  * @param {number} [options.retries=3] - Maximum number of retry attempts.
- * @param {number} [options.retryDelay=1000] - Delay between retries in milliseconds.
+ * @param {number} [options.retryDelay=1000] - Initial delay between retries in milliseconds.
  * @param {number} [options.timeout=10000] - Timeout for each request in milliseconds.
  * @param {function} [options.onRetry] - Callback function called on each retry attempt.
+ * @param {function} [options.onError] - Callback function called on error.
  * @returns {Promise<Object>} The parsed JSON data.
  * @throws {Error} If all retry attempts fail or other errors occur.
  */
@@ -15,43 +19,58 @@ export const fetchJSON = async (url, options = {}) => {
         retryDelay = 1000,
         timeout = 10000,
         onRetry = (attempt, error) => console.warn(`Retry attempt ${attempt} due to:`, error.message),
+        onError = (error) => console.error('Fetch error:', error),
         ...fetchOptions
     } = options;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    if (!url || typeof url !== 'string') {
+        throw new Error('Invalid URL');
+    }
 
-    const attempt = async (attemptNumber) => {
+    const attemptFetch = async (attemptNumber) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
         try {
             const response = await fetch(url, {
                 ...fetchOptions,
                 signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
 
-            const data = await response.json();
-            clearTimeout(timeoutId);
-            return data;
+            return await response.json();
         } catch (error) {
+            clearTimeout(timeoutId);
+
             if (error.name === 'AbortError') {
-                throw new Error(`Request timed out after ${timeout}ms`);
+                error.message = `Request timed out after ${timeout}ms`;
             }
 
             if (attemptNumber < retries) {
                 onRetry(attemptNumber, error);
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-                return attempt(attemptNumber + 1);
+                await delay(retryDelay * Math.pow(2, attemptNumber)); // Exponential backoff
+                return attemptFetch(attemptNumber + 1);
             }
 
+            onError(error);
             throw new Error(`Failed to fetch JSON after ${retries} attempts: ${error.message}`);
         }
     };
 
-    return attempt(1);
+    return attemptFetch(1);
 };
+
+/**
+ * Creates a delay for the specified amount of time.
+ * @param {number} ms - The number of milliseconds to delay.
+ * @returns {Promise<void>}
+ */
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Usage example:
 // try {
@@ -59,7 +78,8 @@ export const fetchJSON = async (url, options = {}) => {
 //         retries: 5,
 //         retryDelay: 2000,
 //         timeout: 15000,
-//         onRetry: (attempt, error) => console.log(`Retrying (${attempt}): ${error.message}`)
+//         onRetry: (attempt, error) => console.log(`Retrying (${attempt}): ${error.message}`),
+//         onError: (error) => console.error('Custom error handler:', error),
 //     });
 //     console.log(data);
 // } catch (error) {
