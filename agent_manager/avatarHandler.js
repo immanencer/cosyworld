@@ -21,7 +21,7 @@ const initializeAvatar = (avatar, locations) => ({
     location: locations.find(loc => loc.name === avatar.location),
     messageCache: [],
     lastProcessedMessageId: null,
-    remember: [...new Set([...(avatar.remember || []), avatar.location, ...(avatar.remembers || [])].flat())]
+    remember: [...new Set([...(avatar.remember || []), avatar.location, ...(avatar.remember || [])].flat())]
         .slice(-5),
     feelings: [],
     lastResponse: null,

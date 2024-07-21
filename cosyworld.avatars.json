@@ -111,7 +111,7 @@
   "emoji": "🐸",
   "name": "Toad",
   "location": "🐸 piedaterre",
-  "remembers": [
+  "remember": [
     "paris",
     "🐸 piedaterre"
   ],
@@ -442,7 +442,7 @@
   "emoji": "🐿️",
   "name": "Benny",
   "location": "🐠 beaver pond",
-  "remembers": [
+  "remember": [
     "🐠 beaver pond"
   ],
   "avatar": "https://i.imgur.com/tVPISBw.png",
