@@ -1,8 +1,9 @@
+import process from 'process';
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { initializeAvatars } from './avatarHandler.js';
-import { processMessagesForAvatar } from './message.js';
+import { processMessagesForAvatar } from './messageHandler.js';
 import { POLL_INTERVAL } from '../tools/config.js';
 import { getLocations } from './locationHandler.js';
 import { performance } from 'perf_hooks';

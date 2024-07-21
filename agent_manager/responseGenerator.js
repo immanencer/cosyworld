@@ -1,5 +1,5 @@
 import { waitForTask } from './task.js';
-import { conversationTag } from './message.js';
+import { conversationTag } from './messageHandler.js/index.js';
 
 export async function generateResponse(avatar, conversation, items, toolResults) {
     const recentConversation = conversation;

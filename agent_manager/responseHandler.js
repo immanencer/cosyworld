@@ -5,6 +5,7 @@ import { moveAvatar } from './movementHandler.js';
 import { updateAvatarState } from './avatarHandler.js';
 import { handleDiscordInteraction } from './discordHandler.js';
 import { getLocationByFuzzyName } from './locationHandler.js';
+import { waitForTask } from '../tools/taskModule.js';
 
 export async function handleResponse(avatar, conversation) {
     try {
