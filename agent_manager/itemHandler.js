@@ -1,7 +1,7 @@
 import { cleanString } from './utils.js';
 import { getLocations } from './locationHandler.js';
 import { updateAvatarLocation } from './avatarHandler.js';
-import { waitForTask } from './task.js';
+import { waitForTask } from './taskHandler.js';
 import { handleDiscordInteraction } from './discordHandler.js';
 
 // Initialize locations

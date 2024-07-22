@@ -1,30 +1,51 @@
-import { waitForTask } from './task.js';
-import { conversationTag } from './messageHandler.js/index.js';
+import { waitForTask } from './taskHandler.js';
+import { conversationTag } from './utils.js';
+
+function parseFeelings(feelings) {
+    if (!feelings || feelings.length === 0) {
+        return 'No specific feelings detected.';
+    }
+
+    const feeling = feelings[0]; // Assuming we are only dealing with the first feeling object for now
+    const haiku = feeling.haiku || 'No haiku provided.';
+    const dominantEmotion = feeling.dominantEmotion || 'No dominant emotion detected.';
+    const keyThemes = feeling.keyThemes ? feeling.keyThemes.join(', ') : 'No key themes detected.';
+    const timestamp = feeling.timestamp || 'No timestamp provided.';
+
+    return `
+        ${haiku}
+        Dominant Emotion: ${dominantEmotion}
+        Key Themes: ${keyThemes}
+        Timestamp: ${timestamp}
+    `;
+}
 
 export async function generateResponse(avatar, conversation, items, toolResults) {
     const recentConversation = conversation;
 
     // Simplify the items and toolResults arrays into a concise string
-    const itemKeys = items.map(T => T.name).join(', ');
+    const itemKeys = items.map(item => item.name).join(', ');
     const toolResultKeys = toolResults.join(', ');
 
     // Create a concise prompt for the final user message
     let userPrompt = avatar.response_style
-    || '\n\nRespond in character, with a short two or three sentences or *actions*.';
+        || '\n\nReply to the conversation, engaging with others using short sentences or *actions*.';
 
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
-        userPrompt = `You have the following items: ${itemKeys}.` + userPrompt;
+        userPrompt = `You have the following items: ${itemKeys}.\n` + userPrompt;
     }
     if (toolResultKeys.length > 0) {
-         console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
-        userPrompt = `Tool results: ${toolResultKeys}.` + userPrompt;
+        console.log(`Tool results for ${avatar.name}: ${toolResultKeys}`);
+        userPrompt = `Tool results: ${toolResultKeys}.\n` + userPrompt;
     }
-    
 
-    if (avatar?.feelings.length > 0) {
-        userPrompt = `Here are your feelings:\n${avatar.feelings[0]}\n${userPrompt}`;
+    if (avatar?.feelings?.length > 0) {
+        userPrompt = `Here are your feelings:\n${parseFeelings(avatar.feelings)}\n` + userPrompt;
     }
+
+    console.log(`Conversation history for ${avatar.name}:`, recentConversation.join('\n'));
+    console.log(`User prompt for ${avatar.name}:\n\n${userPrompt}`);
 
     // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [

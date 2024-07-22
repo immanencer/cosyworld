@@ -48,7 +48,9 @@ export const fetchJSON = async (url, options = {}) => {
             clearTimeout(timeoutId);
 
             if (error.name === 'AbortError') {
-                error.message = `Request timed out after ${timeout}ms`;
+                const timeoutError = new Error(`Request timed out after ${timeout}ms`);
+                timeoutError.name = error.name;
+                throw timeoutError;
             }
 
             if (attemptNumber < retries) {

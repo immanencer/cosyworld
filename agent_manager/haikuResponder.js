@@ -1,4 +1,4 @@
-import { waitForTask } from './task.js';
+import { waitForTask } from './taskHandler/index.js';
 
 export async function checkShouldRespond(avatar, conversation) {
     const recentConversation = conversation.slice(-10);

@@ -1,0 +1,1 @@
+export const conversationTag = avatar => `(${avatar.location.name}) ${avatar.name} ${avatar.emoji || '⚠️'}`;

@@ -1,4 +1,4 @@
-import { waitForTask } from './task.js';
+import { waitForTask } from './taskHandler.js';
 
 export async function generateHaiku(avatar, recentConversation) {
     const haiku = await waitForTask({

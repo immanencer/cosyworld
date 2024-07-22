@@ -1,4 +1,4 @@
-import { waitForTask } from './task.js';
+import { waitForTask } from './taskHandler.js';
 
 export async function moveAvatar(avatar, response, memory) {
     const movementPrompt = `Your current memory: 
