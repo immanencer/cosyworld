@@ -1,4 +1,4 @@
-import { generateHaiku, analyzeHaiku, updateAvatarFeelings } from './haikuHandler.js';
+import { generateSonnet as generateSonnet, analyzeConversation, updateAvatarFeelings } from './haikuHandler.js';
 import { generateResponse } from './responseGenerator.js';
 import { getAvailableItems } from './itemHandler.js';
 import { moveAvatar } from './movementHandler.js';
@@ -29,14 +29,10 @@ async function perceive(avatar, conversation) {
     avatar.availableItems = await getAvailableItems(avatar) || [];
 }
 
-const movementCooldown = 88; // 5 rounds
+const movementCooldown = 8;
 const cooldowns = {};
 async function planActions(avatar) {
-    const haiku = await generateHaiku(avatar, avatar.recentContext);
-    if (!haiku) return { speak: false, useItems: false, move: false };
-
-    const analysisResult = await analyzeHaiku(avatar, haiku, avatar.recentContext);
-    updateAvatarFeelings(avatar, haiku, analysisResult);
+    const analysisResult = await analyzeConversation(avatar, avatar.recentContext);
 
     const shouldSpeak = analysisResult.shouldRespond;
     const hasUsefulItems = avatar.availableItems.length > 0; // Placeholder for more intelligent item check
@@ -45,7 +41,7 @@ async function planActions(avatar) {
     cooldowns[avatar.name] = (cooldowns[avatar.name] || movementCooldown) - (shouldSpeak ? 1 : 0);
     const shouldMove = cooldowns[avatar.name] <= 0;
     if (cooldowns[avatar.name] <= 0) {
-        cooldowns[avatar.name] = movementCooldown;
+        cooldowns[avatar.name] = Math.floor(Math.random() * 8);
     }
     return {
         speak: shouldSpeak,
@@ -126,6 +122,11 @@ async function speak(avatar, usedItems) {
 
 async function move(avatar, response) {
     const proposed = await moveAvatar(avatar, avatar.recentContext, response);
+
+    const sonnet = await generateSonnet(avatar, avatar.recentContext);
+    if (sonnet) {
+        updateAvatarFeelings(avatar, { sonnet });
+    }
 
     if (proposed) {
         const newLocation = await getLocationByFuzzyName(proposed);

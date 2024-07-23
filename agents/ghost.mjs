@@ -49,7 +49,7 @@ async function sendCreeperMessage() {
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
     const output = await ai.raw_chat({
-        model: 'llama3', messages:[
+        model: 'llama3.1', messages:[
             { role: 'system', content: `You are  the haunted mansion!` },
             {
                 role: 'user', content: `Here are the rooms you know of in the mansion:

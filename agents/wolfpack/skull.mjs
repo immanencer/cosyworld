@@ -11,7 +11,7 @@ const CONFIG = {
     avatar: "https://i.imgur.com/OxroRtv.png",
     defaultLocation: '🐺 wolf den',
     personality: "You are a silent wolf named Skull. You respond in SHORT wolf-like *actions*. You do not speak.",
-    model: 'llama3',
+    model: 'llama3.1',
     maxConversations: 100,
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,
@@ -80,11 +80,11 @@ class SkullBot {
 
     handleIncomingMessage(message) {
         if (message.author.bot) return;
-        
+
         if (CONFIG.followOwner && message.author.id === CONFIG.ownerId) {
             this.updateLocation(message.channel.name);
         }
-        
+
         if (message.channel.name === this.currentLocation) {
             this.queueMessage(message);
         }
@@ -117,11 +117,15 @@ class SkullBot {
     }
 
     async handleMessage(message) {
-        const response = await this.generateResponse(message.content);
-        await this.sendResponse(message.channel, response);
-        await this.updateMemory(message.author.username, message.content, response);
+
         await this.think('analyzeSentiment', { person: message.author.username });
         await this.think('createMemory', { person: message.author.username });
+
+        if (Math.random() < 0.1 || message.content.toLowerCase().includes('skull')) {
+            const response = await this.generateResponse(message.content);
+            await this.sendResponse(message.channel, response);
+            await this.updateMemory(message.author.username, message.content, response);
+        }
     }
 
     async think(processName, context = {}) {

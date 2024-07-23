@@ -3,8 +3,8 @@ import ollama from 'ollama';
 export async function initializeAI(avatar) {
     try {
         await ollama.create({
-            model: 'llama3',
-            modelfile: `FROM llama3\nSYSTEM "${avatar.personality}"`,
+            model: 'llama3.1',
+            modelfile: `FROM llama3.1\nSYSTEM "${avatar.personality}"`,
         });
         console.log('🦙 AI model initialized');
     } catch (error) {
@@ -15,7 +15,7 @@ export async function initializeAI(avatar) {
 export async function chatWithAI(message, avatar, memory) {
     try {
         const response = await ollama.chat({
-            model: 'llama3',
+            model: 'llama3.1',
             messages: [
                 { role: 'system', content: avatar.personality },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },

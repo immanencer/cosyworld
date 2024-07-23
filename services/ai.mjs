@@ -7,7 +7,7 @@ class AI {
     }
 
     initializeService() {
-        const supportedModels = ['llama3', 'internlm2', 'qwen2'];
+        const supportedModels = ['llama3.1', 'internlm2', 'qwen2'];
         
         if (!supportedModels.includes(this.model)) {
             throw new Error(`Unsupported model: ${this.model}. Supported models are: ${supportedModels.join(', ')}`);

@@ -28,9 +28,7 @@ export async function generateResponse(avatar, conversation, items, toolResults)
     const toolResultKeys = toolResults.join(', ');
 
     // Create a concise prompt for the final user message
-    let userPrompt = avatar.response_style
-        || '\n\nReply to the conversation, engaging with others using short sentences or *actions*.';
-
+    let userPrompt = avatar.response_style || 'Reply in character using one or two short sentences or *actions*.';
     if (itemKeys.length > 0) {
         console.log(`Items for ${avatar.name}: ${itemKeys}`);
         userPrompt = `You have the following items: ${itemKeys}.\n` + userPrompt;
@@ -44,13 +42,13 @@ export async function generateResponse(avatar, conversation, items, toolResults)
         userPrompt = `Here are your feelings:\n${parseFeelings(avatar.feelings)}\n` + userPrompt;
     }
 
-    console.log(`Conversation history for ${avatar.name}:`, recentConversation.join('\n'));
     console.log(`User prompt for ${avatar.name}:\n\n${userPrompt}`);
+    console.log(`Conversation history for ${avatar.name}:`, recentConversation.join('\n'));
 
     // Generate response using the original conversation plus the optimized user prompt
     const response = await waitForTask(avatar, [
         ...recentConversation.slice(-20),
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: userPrompt },
     ]);
 
     if (!response) {

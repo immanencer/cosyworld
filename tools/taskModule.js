@@ -5,7 +5,7 @@ import { fetchJSON } from './fetchJSON.js';
 export async function createTask(system_prompt, messages, avatar) {
     const task = {
         action: 'ai',
-        model: 'ollama/llama3',
+        model: 'ollama/llama3.1',
         system_prompt: system_prompt,
         messages,
         avatar

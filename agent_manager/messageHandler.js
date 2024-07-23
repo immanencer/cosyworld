@@ -7,7 +7,7 @@ const lastCheckedMessageIdByChannel = new Map();
 export const getMessages = (location, since) =>
     fetchJSON(buildURI(MESSAGES_API, { location, since }));
 
-const fetchMessagesForChannel = async (channelId, since) => {
+const fetchMessagesForChannel = async (channelId, since = null) => {
     try {
         return await getMessages(channelId, since);
     } catch (error) {
@@ -17,14 +17,13 @@ const fetchMessagesForChannel = async (channelId, since) => {
 };
 
 export const fetchAllMessages = async (avatars) => {
-    const locations = avatars.map(avatar => avatar.location);
+    const locations = avatars.map(avatar => avatar.location).filter(location => location);
     const messagesByChannel = {};
 
     for (const location of locations) {
         const channelId = location.id;
-        const lastCheckedId = lastCheckedMessageIdByChannel.get(channelId);
 
-        messagesByChannel[channelId] = (await fetchMessagesForChannel(channelId, lastCheckedId)).reverse();
+        messagesByChannel[channelId] = (await fetchMessagesForChannel(channelId)).reverse();
 
         if (messagesByChannel[channelId].length > 0) {
             lastCheckedMessageIdByChannel.set(channelId, messagesByChannel[channelId].slice(-1)[0]._id);
