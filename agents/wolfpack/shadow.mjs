@@ -185,7 +185,7 @@ Let your response flow like a babbling brook, in 3-4 sentences of whimsical wolf
     async initializeAI() {
         try {
             await ollama.create({
-                model: 'llama3.1',
+                model: `${this.avatar.name.toLowerCase()}_model`,
                 modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
@@ -228,7 +228,7 @@ Let your response flow like a babbling brook, in 3-4 sentences of whimsical wolf
     async chatWithAI(message) {
         try {
             const response = await ollama.chat({
-                model: this.model,
+                model: `${this.avatar.name.toLowerCase()}_model`,
                 messages: [
                     { role: 'system', content: `You are Shadow, a playful wolf cub. Respond using only 1-3 emojis or short *actions* from this list: ${this.emojis.join(', ')}, ${this.actions.join(', ')}. Consider the sentiment, recent interactions, and current goal when responding.` },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },

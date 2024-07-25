@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 const filePath = 'avatars.json';
 
-const SOULS = (await avatarload(filePath) || await avatarload('./avatars.json') || null);
-if (!SOULS) {
+const AVATARS = (await avatarload(filePath) || await avatarload('./avatars.json') || null);
+if (!AVATARS) {
     throw new Error('Failed to load avatars data, check the file path and format.');
 }
 
@@ -32,20 +32,20 @@ async function avatarsave(avatars) {
 
 function avatarfind(name) {
     const normalizedName = name.toLowerCase();
-    return SOULS.find( avatar => {
+    return AVATARS.find( avatar => {
         const avatarNameLower = avatar.name.toLowerCase();
         return avatarNameLower.includes(normalizedName) || normalizedName.includes(avatarNameLower);
     });
 }
 
 function avatarupdate(avatar) {
-    const index = SOULS.findIndex((s) => s.name === avatar.name);
+    const index = AVATARS.findIndex((s) => s.name === avatar.name);
     if (index === -1) {
         console.warn('👻 ❌ avatar terminated:', avatar);
         return;
     }
 
-    SOULS[index] = avatar;
+    AVATARS[index] = avatar;
     console.log('👻 ✅ avatar saved:', avatar);
     avatarsave();
 };
@@ -53,7 +53,7 @@ function avatarupdate(avatar) {
 // Searches for a avatar by name in a case-insensitive manner. Returns the avatar, a zombie avatar, or a default if not found.
 function avatarseek(name,zombie, emoji) {
     // Find the avatar that matches the name in either direction of containment
-    const foundAvatar = avatarfind(name) || SOULS.find(avatar => avatar.emoji === emoji);
+    const foundAvatar = avatarfind(name) || AVATARS.find(avatar => avatar.emoji === emoji);
 
     if (foundAvatar) {
         console.log('👻 ✅ found avatar:', foundAvatar);
@@ -81,7 +81,7 @@ function avatarseek(name,zombie, emoji) {
 }
 
 
-export { SOULS, avatarseek, avatarupdate, avatarsave };
+export { AVATARS as SOULS, avatarseek, avatarupdate, avatarsave };
 
 
 

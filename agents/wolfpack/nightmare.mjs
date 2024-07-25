@@ -115,7 +115,6 @@ class NightmareBot {
             this.avatar.location = data.location;
         }
         if (data.location !== this.avatar.location) return;
-
         this.collectSentiment(data);
         this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (!this.debounce()) return;
@@ -252,7 +251,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
     async initializeAI() {
         try {
             await ollama.create({
-                model: 'llama3.1',
+                model: this.avatar.name,
                 modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
@@ -297,7 +296,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
     async chatWithAI(message) {
         try {
             const response = await ollama.chat({
-                model: this.model,
+                model: this.avatar.name,
                 messages: [
                     { role: 'system', content: this.avatar.personality },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },

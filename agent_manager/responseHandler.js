@@ -1,4 +1,4 @@
-import { generateSonnet as generateSonnet, analyzeConversation, updateAvatarFeelings } from './haikuHandler.js';
+import { analyzeConversation, updateAvatarFeelings } from './haikuHandler.js';
 import { generateResponse } from './responseGenerator.js';
 import { getAvailableItems } from './itemHandler.js';
 import { moveAvatar } from './movementHandler.js';
@@ -7,17 +7,14 @@ import { handleDiscordInteraction } from './discordHandler.js';
 import { getLocationByFuzzyName } from './locationHandler.js';
 import { waitForTask } from '../tools/taskModule.js';
 
+const MOVEMENT_COOLDOWN = 8;
+const MAX_CONTEXT_LENGTH = 10;
+
 export async function handleResponse(avatar, conversation) {
     try {
-        // Perception Phase
         await perceive(avatar, conversation);
-
-        // Planning Phase
         const actionPlan = await planActions(avatar);
-
-        // Action Phase
         return await act(avatar, actionPlan);
-        
     } catch (error) {
         console.error(`Error in handleResponse for ${avatar.name}:`, error);
         return null;
@@ -25,24 +22,26 @@ export async function handleResponse(avatar, conversation) {
 }
 
 async function perceive(avatar, conversation) {
-    avatar.recentContext = conversation.slice(-10) || [];
+    avatar.recentContext = conversation.slice(-MAX_CONTEXT_LENGTH);
     avatar.availableItems = await getAvailableItems(avatar) || [];
 }
 
-const movementCooldown = 8;
-const cooldowns = {};
+const cooldowns = new Map();
+
 async function planActions(avatar) {
     const analysisResult = await analyzeConversation(avatar, avatar.recentContext);
-
     const shouldSpeak = analysisResult.shouldRespond;
     const hasUsefulItems = avatar.availableItems.length > 0; // Placeholder for more intelligent item check
 
-
-    cooldowns[avatar.name] = (cooldowns[avatar.name] || movementCooldown) - (shouldSpeak ? 1 : 0);
-    const shouldMove = cooldowns[avatar.name] <= 0;
-    if (cooldowns[avatar.name] <= 0) {
-        cooldowns[avatar.name] = Math.floor(Math.random() * 8);
+    let currentCooldown = cooldowns.get(avatar.name) || MOVEMENT_COOLDOWN;
+    currentCooldown -= shouldSpeak ? 1 : 0;
+    
+    const shouldMove = currentCooldown <= 0;
+    if (shouldMove) {
+        currentCooldown = Math.floor(Math.random() * MOVEMENT_COOLDOWN);
     }
+    cooldowns.set(avatar.name, currentCooldown);
+
     return {
         speak: shouldSpeak,
         useItems: hasUsefulItems,
@@ -51,36 +50,32 @@ async function planActions(avatar) {
 }
 
 async function act(avatar, actionPlan) {
+    const usedItems = actionPlan.useItems ? await useItems(avatar) : [];
     let response = null;
-    let usedItems = [];
+    let movementResult = null;
     let newLocation = null;
 
-    // Use Items
-    if (actionPlan.useItems) {
-        usedItems = await useItems(avatar);
+    if (actionPlan.move) {
+        ({ newLocation, movementResult } = await move(avatar));
     }
 
-    // Speak
     if (actionPlan.speak) {
         response = await speak(avatar, usedItems);
     }
 
-    // Move (always last)
-    if (actionPlan.move)  {
-        newLocation = await move(avatar, response);
+    if (movementResult) {
+        await handleDiscordInteraction(avatar, movementResult);
     }
 
-    // Update avatar state
     updateState(avatar, response, usedItems, newLocation);
 
     return response;
 }
 
 async function useItems(avatar) {
-    let usedItems = [];
+    const usedItems = [];
     for (const item of avatar.availableItems) {
         try {
-            // Generate tool use instructions directly
             const instruction = await waitForTask({
                 personality: `You are the tool use executive function for this person:
 
@@ -120,33 +115,30 @@ async function speak(avatar, usedItems) {
     return response;
 }
 
-async function move(avatar, response) {
-    const proposed = await moveAvatar(avatar, avatar.recentContext, response);
-
-    const sonnet = await generateSonnet(avatar, avatar.recentContext);
-    if (sonnet) {
-        updateAvatarFeelings(avatar, { sonnet });
-    }
+async function move(avatar) {
+    const proposed = await moveAvatar(avatar, avatar.recentContext);
 
     if (proposed) {
         const newLocation = await getLocationByFuzzyName(proposed);
         let movementResult = null;
-        if (newLocation) {
-            movementResult = `*moved to ${newLocation.name}*`;
 
+        if (newLocation) {
             if (newLocation.name === avatar.location.name) {
                 console.log(`${avatar.name} decided to stay in ${newLocation.name} \n\n <#${newLocation.id}>`);
-                return null;
+                return { newLocation: null, movementResult: null };
             }
-
+            
+            movementResult = `*moved to ${newLocation.name}*`;
+            await updateAvatarFeelings(avatar);
         } else {
             movementResult = `*failed to move to ${proposed}*`;
         }
-        await handleDiscordInteraction(avatar, movementResult);
-        return newLocation;
+
+        return { newLocation, movementResult };
     }
+
     console.log(`${avatar.name} did not propose a new location.`);
-    return null;
+    return { newLocation: null, movementResult: null };
 }
 
 function updateState(avatar, response, usedItems, newLocation) {

@@ -366,7 +366,7 @@ goblins sing
     async initializeAI() {
         try {
             await ollama.create({
-                model: 'llama3.1',
+                model: this.avatar.name,
                 modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');

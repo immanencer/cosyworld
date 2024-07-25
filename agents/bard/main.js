@@ -49,13 +49,13 @@ class BardBot {
         this.isInitialized = false;
         this.messageQueue = [];
 
-        initializeDiscord(this, this.token);
+        initializeDiscord(this);
     }
 
     onReady = async () => {
         console.log(`🎶 BardBot is online`);
         try {
-            await initializeAI(this.avatar);
+            await initializeAI(this.model, this.avatar);
             await initializeChannels(this);
             await loadMemory(this.memoryFile, this.memory);
             await summarizeMemory(this.memory, this.avatar);

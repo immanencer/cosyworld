@@ -158,7 +158,7 @@ class SkullBot {
     async generateAIResponse(prompt, retries = 0) {
         try {
             const response = await ollama.chat({
-                model: CONFIG.model,
+                model: 'skull',
                 messages: [
                     { role: 'system', content: CONFIG.personality },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
@@ -276,7 +276,7 @@ class SkullBot {
     async initializeAI() {
         try {
             await ollama.create({
-                model: CONFIG.model,
+                model: "skull",
                 modelfile: `FROM ${CONFIG.model}\nSYSTEM "${CONFIG.personality}"`,
             });
             this.log('AI model initialized');

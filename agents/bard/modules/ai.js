@@ -1,11 +1,18 @@
 import ollama from 'ollama';
+import crypto from 'crypto';
 
-export async function initializeAI(avatar) {
+const cache = new Map();
+
+export async function initializeAI(base_model = 'llama3.1', avatar) {
+    if (cache.has(avatar.name)) {
+        console.log('🦙 AI model already initialized');
+        return
+    }
     try {
-        await ollama.create({
-            model: 'llama3.1',
-            modelfile: `FROM llama3.1\nSYSTEM "${avatar.personality}"`,
-        });
+        const modelfile = `FROM ${base_model}\nSYSTEM "${avatar.personality}"`;
+        const model = crypto.createHash('md5').update(modelfile).digest('hex');
+        await ollama.create({ model, modelfile });
+        cache.set(avatar.name, model);
         console.log('🦙 AI model initialized');
     } catch (error) {
         console.error('🦙 Failed to initialize AI model:', error);
@@ -15,7 +22,7 @@ export async function initializeAI(avatar) {
 export async function chatWithAI(message, avatar, memory) {
     try {
         const response = await ollama.chat({
-            model: 'llama3.1',
+            model: cache.get(avatar.name),
             messages: [
                 { role: 'system', content: avatar.personality },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },

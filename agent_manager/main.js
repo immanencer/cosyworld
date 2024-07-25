@@ -3,7 +3,6 @@ dotenv.config();
 
 import { initializeAvatars } from './avatarHandler.js';
 import { getLocations } from './locationHandler.js';
-import { fetchAllMessages } from './messageHandler.js';
 import { processAvatarsByPriority } from './avatarProcessor.js';
 import { POLL_INTERVAL } from '../tools/config.js';
 import { performance } from 'perf_hooks';
@@ -15,8 +14,7 @@ async function main() {
             const avatars = await initializeAvatars();
             const locations = await getLocations();
 
-            const messagesByChannel = await fetchAllMessages(avatars);
-            await processAvatarsByPriority(avatars, locations, messagesByChannel);
+            await processAvatarsByPriority(avatars, locations);
         } catch (error) {
             console.error('Error in main loop:', error);
         } finally {

@@ -1,8 +1,9 @@
-import { prioritizeChannels } from './messageHandler.js';
+import {  fetchAllMessages, prioritizeChannels, fetchMessagesForChannel } from './messageHandler.js';
 import { processMessagesForAvatar } from './avatarMessageHandler.js';
 
-async function processAvatarsInChannel(avatars, locations, channelId, messages) {
+async function processAvatarsInChannel(avatars, locations, channelId) {
     for (const avatar of avatars.filter(av => av.location.id === channelId)) {
+        const messages = await fetchMessagesForChannel(avatar.location.id);
         console.log(`${avatar.emoji || ''} Processing messages for ${avatar.name} in channel ${avatar.location.name}`);
         try {
             await processMessagesForAvatar(avatar, locations, messages);
@@ -12,10 +13,11 @@ async function processAvatarsInChannel(avatars, locations, channelId, messages) 
     }
 }
 
-export const processAvatarsByPriority = async (avatars, locations, messagesByChannel) => {
+export const processAvatarsByPriority = async (avatars, locations) => {
+    const messagesByChannel = await fetchAllMessages(avatars);
     const prioritizedChannels = prioritizeChannels(messagesByChannel);
 
     for (const channelId of prioritizedChannels) {
-        await processAvatarsInChannel(avatars, locations, channelId, messagesByChannel[channelId]);
+        await processAvatarsInChannel(avatars, locations, channelId);
     }
 };

@@ -201,7 +201,7 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
     async initializeAI() {
         try {
             await ollama.create({
-                model: this.model,
+                model: this.model + '::bard',
                 modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
