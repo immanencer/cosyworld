@@ -38,7 +38,7 @@ export const updateAvatarLocation = async (avatar) => {
     }
 };
 
-const updateRememberedLocations = ({ remember, location }) =>
+const updateRememberedLocations = ({ remember = [], location }) =>
     [...new Set([...remember, location.name])].slice(-18);
 
 const updateAvatarOnServer = async (avatar) => {

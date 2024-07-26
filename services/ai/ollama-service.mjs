@@ -15,7 +15,8 @@ class OllamaService {
       modelOverride,
       temperature = 0.7,
       maxTokens = 4096,
-      signal
+      signal,
+      tools = []
     } = params;
 
     const modelToUse = modelOverride || this.model;
@@ -33,11 +34,20 @@ class OllamaService {
         options: {
           temperature,
           num_predict: maxTokens,
-        }
+        },
+         tools
       });
 
-      if (!result.message || !result.message.content) {
+      if (!result.message) {
         throw new Error('Empty or invalid response from Ollama');
+      }
+
+      // Handle tool calls if present
+      if (result.message.tool_calls) {
+        return {
+          content: result.message.content,
+          tool_calls: result.message.tool_calls
+        };
       }
 
       return result.message.content;
@@ -46,6 +56,7 @@ class OllamaService {
       throw new Error('Failed to get response from Ollama');
     }
   }
+
 
   #formatMessages(systemPrompt, messages) {
     return [

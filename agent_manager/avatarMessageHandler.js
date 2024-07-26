@@ -18,6 +18,7 @@ export async function processMessagesForAvatar(avatar, locations, messages) {
         console.error(`Error processing messages for ${avatar.name}:`, error);
         throw error;
     }
+    return 1;
 }
 
 const isValidMessageFormat = (message) => {

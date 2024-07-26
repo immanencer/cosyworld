@@ -1,4 +1,3 @@
-import { cleanString } from './utils.js';
 import { getLocations } from './locationHandler.js';
 import { updateAvatarLocation } from './avatarHandler.js';
 import { waitForTask } from './taskHandler.js';
@@ -13,7 +12,7 @@ try {
 }
 
 // Define item types
-const itemTypes = {
+export const itemTypes = {
     MOVABLE: 'movable',
     USABLE: 'usable',
     CRAFTABLE: 'craftable',
@@ -49,41 +48,42 @@ class ItemHandler {
     async useItem(avatar, itemName, ...args) {
         const item = this.getItem(itemName);
         if (!item) {
-            return `${itemName} not found.`;
+            return { error: `${itemName} not found.` };
         }
         if (item.holder !== avatar) {
-            return `You don't have ${itemName}.`;
+            return { error: `You don't have ${itemName}.` };
         }
-        return await item.use(avatar, ...args);
+        const result = await item.use(avatar, ...args);
+        return { result };
     }
 
     async pickUpItem(avatar, itemName) {
         const item = this.getItem(itemName);
         if (!item) {
-            return `${itemName} not found.`;
+            return { error: `${itemName} not found.` };
         }
         if (item.holder) {
-            return `${itemName} is already held by ${item.holder.name}.`;
+            return { error: `${itemName} is already held by ${item.holder.name}.` };
         }
         if (item.location !== avatar.location) {
-            return `${itemName} is not in this location.`;
+            return { error: `${itemName} is not in this location.` };
         }
         item.holder = avatar;
         item.location = null;
-        return `Picked up ${itemName}.`;
+        return { result: `Picked up ${itemName}.` };
     }
 
     async dropItem(avatar, itemName) {
         const item = this.getItem(itemName);
         if (!item) {
-            return `${itemName} not found.`;
+            return { error: `${itemName} not found.` };
         }
         if (item.holder !== avatar) {
-            return `You don't have ${itemName}.`;
+            return { error: `You don't have ${itemName}.` };
         }
         item.holder = null;
         item.location = avatar.location;
-        return `Dropped ${itemName}.`;
+        return { result: `Dropped ${itemName}.` };
     }
 
     async searchRoom(avatar) {
@@ -101,61 +101,26 @@ class ItemHandler {
             message += `${item.name} - ${item.description}\n`;
         }
 
-        return message;
+        return { result: message };
     }
 
-    async craftItem(avatar, name, description) {
-        if (!name || !description) {
-            return 'Name and description required for crafting.';
-        }
-        const newItem = new Item(name, description, itemTypes.CRAFTABLE, 
-            (user) => `${user.name} used ${name}.`);
-        newItem.holder = avatar;
-        this.addItem(newItem);
-        return `Crafted ${name}.`;
-    }
-}
-
-// Initialize ItemHandler
-export const itemHandler = new ItemHandler();
-
-// Initialize basic items/abilities
-itemHandler.addItem(new Item('Move', 'Allows movement between locations', itemTypes.TOOL, 
-    async (avatar, destination) => {
+    async moveAvatar(avatar, destination) {
         console.log(`${avatar.emoji || '⚠️'} ${avatar.name} 🏃💨 ${destination}`);
-        const newLocation = locations.find(loc => loc.name === destination);
+        const newLocation = locations.find(loc => loc.name.toLowerCase() === destination.toLowerCase());
         if (newLocation) {
             avatar.location = newLocation;
             await updateAvatarLocation(avatar);
-            return `Moved to ${newLocation.name}.`;
+            return { result: `Moved to ${newLocation.name}.` };
         }
-        return `Location ${destination} not found.`;
+        return { error: `Location ${destination} not found.` };
     }
-));
 
-itemHandler.addItem(new Item('Search', 'Allows searching the current room', itemTypes.TOOL, 
-    async (avatar) => itemHandler.searchRoom(avatar)
-));
-
-// Main function to handle item usage
-export async function handleItems(avatar, conversation, command) {
-    const [action, ...args] = cleanString(command).replace(')', '').split('(');
-    
-    switch(action.toLowerCase()) {
-        case 'use':
-            return await itemHandler.useItem(avatar, ...args);
-        case 'take':
-            return await itemHandler.pickUpItem(avatar, args[0]);
-        case 'drop':
-            return await itemHandler.dropItem(avatar, args[0]);
-        case 'craft':
-            return await itemHandler.craftItem(avatar, ...args);
-        default:
-            return `Unknown action: ${action}`;
+    getAvailableItems(avatar) {
+        return Array.from(this.items.values())
+            .filter(item => item.holder === avatar || item.location === avatar.location)
+            .map(item => `${item.name} (${item.type})`);
     }
 }
 
-export const getAvailableItems = (avatar) => 
-    Array.from(itemHandler.items.values())
-        .filter(item => item.holder === avatar || item.location === avatar.location)
-        .map(item => `${item.name} (${item.type})`);
+// Initialize and export ItemHandler
+export const itemHandler = new ItemHandler();

@@ -17,7 +17,7 @@ class AI {
         this.service = new OllamaService(this.model);
     }
 
-    async generateResponse(systemPrompt, messages, currentLocation, botName) {
+    async generateResponse(systemPrompt, messages, currentLocation, botName, tools) {
         const MAX_RETRIES = 3;
         const INITIAL_RETRY_DELAY = 1000; // 1 second
 
@@ -39,14 +39,15 @@ class AI {
             }
         };
     
-        console.log('🤖 AI:', systemPrompt, messages.join('').length);
+        console.log('🤖 AI:', systemPrompt, messages.length);
     
         const generateResponseInternal = async () => {
             return await this.service.chatCompletion({
                 systemPrompt,
                 messages: this.formatMessages(messages, currentLocation, botName),
                 temperature: 0.8,
-                maxTokens: 2048
+                maxTokens: 2048,
+                tools
             });
         };
     

@@ -13,7 +13,7 @@ router.use(bodyParser.json());
 
 // Endpoint to create a new task
 router.post('/tasks', async (req, res) => {
-    const { model, system_prompt, messages } = req.body;
+    const { avatar, model, system_prompt, messages, tools } = req.body;
 
     if (!model || !system_prompt || !messages) {
         return res.status(400).send({ error: 'Missing required fields: model, system_prompt, messages' });
@@ -21,10 +21,11 @@ router.post('/tasks', async (req, res) => {
 
     const newTask = {
         model: 'llama3.1',
-        system_prompt,
+        system_prompt: system_prompt || avatar.personality,
         messages,
         status: 'pending',
-        createdAt: new Date()
+        createdAt: new Date(),
+        tools,
     };
 
     try {

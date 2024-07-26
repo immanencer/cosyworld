@@ -1,11 +1,12 @@
-
 import AI from './ai.mjs';
 import db from '../database/index.js';
-
 import process from 'process';
 
+import { executeToolCall } from '../agent_manager/toolUseHandler.js';
+import { formatToolResponse } from './formatToolResponse.mjs';
+
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'llama3.1-groq-tool-use';
+const DEFAULT_MODEL = 'llama3.1';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {
@@ -32,19 +33,70 @@ class TaskProcessor {
         }
 
         try {
-
-            const response = await ai.generateResponse(
+            // Initial call with tools
+            const initialResponse = await ai.generateResponse(
                 task.system_prompt,
                 task.messages,
                 task.avatar.location.name,
-                task.avatar.name
+                task.avatar.name,
+                task.tools
             );
 
-            await this.updateTaskStatus(task._id, 'completed', { response });
+            let finalResponse;
+
+            if (initialResponse.tool_calls) {
+                // Handle tool calls
+                const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, task.tools, task.avatar);
+                const formattedToolResponses = toolResponses.map(T => formatToolResponse(T, task.avatar.location.name));
+
+                // Make a final call with tool responses
+                finalResponse = await ai.generateResponse(
+                    task.system_prompt,
+                    [...task.messages, ...formattedToolResponses],
+                    task.avatar.location.name,
+                    task.avatar.name,
+                    [] // No tools for the final call
+                );
+            } else {
+                // No tool calls, use the initial response as final
+                finalResponse = initialResponse;
+            }
+
+            await this.updateTaskStatus(task._id, 'completed', { response: finalResponse });
         } catch (error) {
             console.error('Error processing task:', error);
             await this.updateTaskStatus(task._id, 'failed', { error: error.message });
         }
+    }
+
+    async handleToolCalls(toolCalls, availableTools, avatar) {
+        const toolResponses = [];
+
+        for (const toolCall of toolCalls) {
+            const tool = availableTools.find(t => t.function.name === toolCall.function.name);
+            if (!tool) {
+                console.error(`Tool ${toolCall.function.name} not found`);
+                continue;
+            }
+
+            try {
+                const result = await executeToolCall(toolCall, avatar);
+                toolResponses.push({
+                    role: 'tool',
+                    content: JSON.stringify(result),
+                    name: toolCall.function.name
+                });
+            } catch (error) {
+                console.error(`Error executing tool ${toolCall.function.name}:`, error);
+                toolResponses.push({
+                    role: 'tool',
+                    content: JSON.stringify({ error: error.message }),
+                    name: toolCall.function.name
+                });
+            }
+        }
+
+        return toolResponses;
     }
 
     async updateTaskStatus(taskId, status, additionalFields = {}) {

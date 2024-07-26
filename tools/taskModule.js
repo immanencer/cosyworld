@@ -1,14 +1,16 @@
 import { TASKS_API, POLL_INTERVAL } from './config.js';
 import { postJSON } from './postJSON.js';
 import { fetchJSON } from './fetchJSON.js';
+import { availableTools } from '../agent_manager/toolUseHandler.js';
 
-export async function createTask(system_prompt, messages, avatar) {
+export async function createTask(avatar, messages, tools) {
     const task = {
         action: 'ai',
         model: 'ollama/llama3.1',
-        system_prompt: system_prompt,
+        system_prompt: avatar.personality,
         messages,
-        avatar
+        avatar,
+        tools
     };
 
     const response = await postJSON(TASKS_API, task);
@@ -40,14 +42,14 @@ export function pollTaskCompletion(taskId) {
     });
 }
 
-export async function waitForTask(avatar, conversation) {
+export async function waitForTask(avatar, messages, tools = availableTools) {
     let taskId;
 
     try {
-        taskId = await createTask(avatar.personality, conversation, avatar);
+        taskId = await createTask(avatar, messages, tools);
     } catch (error) {
         console.error(`Failed to create task for ${avatar.name}:`, error);
-        return;
+        return null;
     }
 
     let result;
@@ -55,8 +57,21 @@ export async function waitForTask(avatar, conversation) {
         result = await pollTaskCompletion(taskId);
     } catch (error) {
         console.error(`Failed to poll task completion for ${avatar.name}:`, error);
-        return;
+        return null;
     }
 
-    return result;
+    // Parse the result to check for tool calls
+    try {
+        const parsedResult = JSON.parse(result);
+        if (parsedResult.tool_calls) {
+            return {
+                tool_calls: parsedResult.tool_calls
+            };
+        } else {
+            return parsedResult.content || result;
+        }
+    } catch (error) {
+        // If parsing fails, assume it's a regular string response
+        return result;
+    }
 }
