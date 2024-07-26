@@ -8,34 +8,18 @@ export async function generateResponse(avatar, conversation) {
     console.log(`User prompt for ${avatar.name}:\n\n${userPrompt}`);
     console.log(`Conversation history for ${avatar.name}:`, recentConversation.join('\n'));
 
-    let finalResponse = '';
     let messages = [...recentConversation, { role: 'user', content: userPrompt }];
 
-    while (true) {
-        const response = await waitForTask(avatar, messages, availableTools);
+    const response = await waitForTask(avatar, messages, availableTools);
 
         if (!response) {
             console.error('No response generated');
             return null;
         }
 
-        if (response.tool_calls) {
-            const toolResponses = [];
-            for (const toolCall of response.tool_calls) {
-                const result = await executeToolCall(toolCall, avatar);
-                toolResponses.push({
-                    role: 'tool',
-                    content: JSON.stringify(result),
-                    name: toolCall.function.name
-                });
-            }
-            messages = [...messages, ...toolResponses];
-            finalResponse = response.content;
-        } else {
-            finalResponse = response;
-            break;
-        }
+    if (response.tool_calls) {
+        throw new Error('Tool calls not handled here');
     }
 
-    return finalResponse;
+    return response;
 }

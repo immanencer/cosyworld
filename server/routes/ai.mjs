@@ -26,6 +26,7 @@ router.post('/tasks', async (req, res) => {
         status: 'pending',
         createdAt: new Date(),
         tools,
+        avatar
     };
 
     try {

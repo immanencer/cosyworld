@@ -37,7 +37,7 @@ class TaskProcessor {
             const initialResponse = await ai.generateResponse(
                 task.system_prompt,
                 task.messages,
-                task.avatar.location.name,
+                task.avatar.location?.name || 'unknown',
                 task.avatar.name,
                 task.tools
             );
@@ -47,7 +47,7 @@ class TaskProcessor {
             if (initialResponse.tool_calls) {
                 // Handle tool calls
                 const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, task.tools, task.avatar);
-                const formattedToolResponses = toolResponses.map(T => formatToolResponse(T, task.avatar.location.name));
+                const formattedToolResponses = toolResponses.map(T => formatToolResponse(T, task.avatar.location?.name));
 
                 // Make a final call with tool responses
                 finalResponse = await ai.generateResponse(
