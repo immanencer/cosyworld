@@ -6,7 +6,7 @@ import { executeToolCall } from './toolUseHandler.js';
 import { formatToolResponse } from './formatToolResponse.mjs';
 
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'llama3.1';
+const DEFAULT_MODEL = 'llama3.1:8b-instruct-q3_K_M';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {
@@ -25,6 +25,10 @@ class TaskProcessor {
     }
 
     async processTask(task) {
+        const timeout = setTimeout(() => {
+            this.updateTaskStatus(task._id, 'failed', { error: 'Task processing timeout' });
+        }, 300000); // 5 minutes timeout
+        
         console.log(`Processing task: ${task._id.toHexString()}`);
         const ai = new AI(task.model || DEFAULT_MODEL);
 
@@ -140,6 +144,11 @@ class TaskProcessor {
     stop() {
         this.isRunning = false;
         console.log('Stopping task processor...');
+    }
+
+    async disconnect() {
+        await db.close();
+        console.log('Database connection closed.');
     }
 }
 

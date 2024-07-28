@@ -4,7 +4,7 @@ import crypto from 'crypto';
 class OllamaService {
   static #modelCache = new Set();
 
-  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3.1') {
+  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3.1:8b-instruct-q3_K_M') {
     this.model = model;
   }
 

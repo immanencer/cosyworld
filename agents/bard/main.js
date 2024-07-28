@@ -21,7 +21,7 @@ class BardBot {
         this.lastProcessed = 0;
         this.messageCache = [];
         this.webhookCache = {};
-        this.model = 'llama3.1';
+        this.model = 'llama3.1:8b-instruct-q3_K_M';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';

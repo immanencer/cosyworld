@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 const cache = new Map();
 
-export async function initializeAI(base_model = 'llama3.1', avatar) {
+export async function initializeAI(base_model = 'llama3.1:8b-instruct-q3_K_M', avatar) {
     if (cache.has(avatar.name)) {
         console.log('🦙 AI model already initialized');
         return

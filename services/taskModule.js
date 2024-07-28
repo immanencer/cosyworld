@@ -6,7 +6,7 @@ import { availableTools } from './toolUseHandler.js';
 export async function createTask(avatar, messages, tools) {
     const task = {
         action: 'ai',
-        model: 'ollama/llama3.1',
+        model: 'ollama/llama3.1:8b-instruct-q3_K_M',
         system_prompt: avatar.personality,
         messages,
         avatar,

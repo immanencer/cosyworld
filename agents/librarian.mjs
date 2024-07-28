@@ -1,6 +1,7 @@
-import { Client, GatewayIntentBits, WebhookClient } from 'discord.js';
+import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
 import mongo from '../database/index.js';
 import fetch from 'node-fetch';
+import chunkText from '../tools/chunk-text.js';
 
 const db = {
     avatars: mongo.collection('avatars'),
@@ -12,8 +13,8 @@ const config = {
     token: process.env.DISCORD_BOT_TOKEN,
     guildId: process.env.DISCORD_GUILD_ID,
     ollamaUri: process.env.OLLAMA_URI || 'http://localhost:11434/api',
-    messageThreshold: 5,
-    asherInterval: 3600000 // 1 hour
+    messageThreshold: 1,
+    asherInterval: 86400000 // 24 hours
 };
 
 class LibrarianAsherBot {
@@ -25,59 +26,33 @@ class LibrarianAsherBot {
                 GatewayIntentBits.MessageContent,
             ]
         });
-        this.webhooks = new Map();
+        this.webhookCache = {};
         this.messageCache = [];
+        this.lastProcessed = 0;
+        this.debounceTime = 5000;
+
+        this.setupEventListeners();
     }
 
-    async initialize() {
-        if (!config.token || !config.guildId) {
-            throw new Error('Discord token and guild ID are required');
-        }
+    setupEventListeners() {
+        this.client.once(Events.ClientReady, this.onReady.bind(this));
+        this.client.on(Events.MessageCreate, this.handleMessage.bind(this));
+    }
 
-        this.client.on('ready', () => console.log(`Logged in as ${this.client.user.tag}`));
-        this.client.on('messageCreate', this.handleMessage.bind(this));
-        this.client.on('error', this.handleError.bind(this));
-
-        await this.client.login(config.token);
+    async onReady() {
+        console.log(`Logged in as ${this.client.user.tag}`);
         await this.setupWebhooks();
-
-        this.startAsherScribe();
-    }
-
-    async getOrCreateWebhook(channel, avatarName, avatarUrl) {
-        const webhooks = await channel.fetchWebhooks();
-        let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id && wh.name === avatarName);
-        
-        if (!webhook) {
-            webhook = await channel.createWebhook({
-                name: avatarName,
-                avatar: avatarUrl
-            });
-            console.log(`Created new webhook for ${avatarName}`);
-        } else if (webhook.avatarURL() !== avatarUrl) {
-            await webhook.edit({
-                name: avatarName,
-                avatar: avatarUrl
-            });
-            console.log(`Updated webhook for ${avatarName}`);
-        }
-        
-        return webhook;
+        this.startAsherSummarizer();
     }
 
     async setupWebhooks() {
         const guild = await this.client.guilds.fetch(config.guildId);
-        const avatars = await db.avatars.find().toArray();
+        const locations = await db.locations.find().toArray();
 
-        for (const avatar of avatars) {
-            const channel = await this.client.channels.fetch(avatar.channelId);
-            if (!channel) continue;
-
-            try {
-                const webhook = await this.getOrCreateWebhook(channel, avatar.name, avatar.avatar);
-                this.webhooks.set(avatar.name, new WebhookClient({ id: webhook.id, token: webhook.token }));
-            } catch (error) {
-                this.handleError(`Error setting up webhook for ${avatar.name}`, error);
+        for (const location of locations) {
+            const channel = guild.channels.cache.get(location.channelId);
+            if (channel) {
+                await this.getOrCreateWebhook(channel);
             }
         }
     }
@@ -94,9 +69,16 @@ class LibrarianAsherBot {
             channelName: location.channelName,
         });
 
-        if (this.messageCache.length >= config.messageThreshold) {
+        if (this.messageCache.length >= config.messageThreshold && this.debounce()) {
             await this.processMessages();
         }
+    }
+
+    debounce() {
+        const now = Date.now();
+        if (now - this.lastProcessed < this.debounceTime) return false;
+        this.lastProcessed = now;
+        return true;
     }
 
     async processMessages() {
@@ -111,17 +93,22 @@ class LibrarianAsherBot {
         }
 
         const response = await this.generateResponse(librarian, context);
-        await this.sendWebhookMessage(librarian.name, librarian.location, response);
+        if (response.trim() !== "") {
+            console.log('Librarian responds:', response);
+            await this.sendAsAvatar(librarian, response, librarian.location);
+        } else {
+            console.error('Librarian has no response');
+        }
 
         this.messageCache = [];
     }
 
-    startAsherScribe() {
-        this.asherScribe();
-        setInterval(() => this.asherScribe(), config.asherInterval);
+    startAsherSummarizer() {
+        this.asherSummarize();
+        setInterval(() => this.asherSummarize(), config.asherInterval);
     }
 
-    async asherScribe() {
+    async asherSummarize() {
         const asher = await db.avatars.findOne({ name: 'Scribe Asher' });
         if (!asher) {
             console.error('Asher avatar not found');
@@ -129,11 +116,11 @@ class LibrarianAsherBot {
         }
 
         try {
-            const messages = await db.messages.aggregate([{ $sample: { size: 100 } }]).toArray();
+            const recentMessages = await db.messages.find().sort({ createdAt: -1 }).limit(100).toArray();
             const locations = await db.locations.find().toArray();
             const locationMap = new Map(locations.map(l => [l.channelId, l.channelName]));
 
-            const formattedMessages = messages.map(m => ({
+            const formattedMessages = recentMessages.map(m => ({
                 timestamp: m.createdAt,
                 author: m.author.username,
                 channel: locationMap.get(m.channelId) || 'unknown',
@@ -144,16 +131,12 @@ class LibrarianAsherBot {
                 `[${m.timestamp.toISOString()}] ${m.author} (${m.channel}): ${m.content}`
             ).join('\n');
 
-            const prompt = `You've discovered an ancient scroll in the depths of the Lonely Forest library:
+            const prompt = `As Scribe Asher, create a whimsical daily summary of recent events in the Lonely Forest library, based on these messages:\n\n${context}\n\nCraft a short, engaging summary in the style of a Victorian-era woodland chronicle. Include notable happenings, interesting conversations, and any recurring themes. End with a playful prediction or question about tomorrow's potential adventures.`;
 
-${context}
-
-Craft a short, whimsical poem or story snippet inspired by this scroll, set in the Victorian era woodland. Attribute it to a fictional forest creature author.`;
-
-            const story = await this.generateResponse(asher, prompt);
-            await this.sendWebhookMessage(asher.name, asher.location, story);
+            const summary = await this.generateResponse(asher, prompt);
+            await this.sendAsAvatar(asher, summary, asher.location);
         } catch (error) {
-            this.handleError('Error in Asher Scribe process', error);
+            console.error('Error in Asher Summarizer process:', error);
         }
     }
 
@@ -179,66 +162,95 @@ Craft a short, whimsical poem or story snippet inspired by this scroll, set in t
             const data = await response.json();
             return data.message.content;
         } catch (error) {
-            this.handleError('Error generating response', error);
+            console.error('Error generating response:', error);
             return 'Apologies, I am unable to respond at the moment.';
         }
     }
 
-    async sendWebhookMessage(avatarName, location, content) {
-        let webhook = this.webhooks.get(avatarName);
-        const channel = this.client.channels.cache.find(c => c.name === location);
-        
-        if (!webhook && channel) {
-            try {
-                const avatar = await db.avatars.findOne({ name: avatarName });
-                const newWebhook = await this.getOrCreateWebhook(channel, avatarName, avatar.avatar);
-                webhook = new WebhookClient({ id: newWebhook.id, token: newWebhook.token });
-                this.webhooks.set(avatarName, webhook);
-            } catch (error) {
-                this.handleError(`Error creating webhook for ${avatarName}`, error);
-            }
+    async sendAsAvatar(avatar, message, channelName) {
+        const channel = this.client.channels.cache.find(c => c.name === channelName);
+        if (!channel) {
+            console.error('Channel not found:', channelName);
+            return;
         }
 
-        if (webhook) {
-            try {
-                const avatar = await db.avatars.findOne({ name: avatarName });
-                await webhook.send({
-                    content: content,
-                    username: avatarName,
-                    avatarURL: avatar?.avatar
+        const webhookData = await this.getOrCreateWebhook(channel);
+        const chunks = chunkText(message, 2000);
+
+        for (const chunk of chunks) {
+            if (chunk.trim() !== '') {
+                try {
+                    if (webhookData) {
+                        const { client: webhook, threadId } = webhookData;
+                        await webhook.send({
+                            content: chunk,
+                            username: avatar.name,
+                            avatarURL: avatar.avatar,
+                            threadId: threadId
+                        });
+                    } else {
+                        await channel.send(`**${avatar.name}:** ${chunk}`);
+                    }
+                } catch (error) {
+                    console.error(`Failed to send message as ${avatar.name}:`, error);
+                }
+            }
+        }
+    }
+
+    async getOrCreateWebhook(channel) {
+        if (this.webhookCache[channel.id]) {
+            return this.webhookCache[channel.id];
+        }
+
+        let targetChannel = channel;
+        let threadId = null;
+
+        if (channel.isThread()) {
+            threadId = channel.id;
+            targetChannel = channel.parent;
+        }
+
+        if (!targetChannel.isTextBased()) {
+            return null;
+        }
+
+        try {
+            const webhooks = await targetChannel.fetchWebhooks();
+            let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
+
+            if (!webhook && targetChannel.permissionsFor(this.client.user).has('ManageWebhooks')) {
+                webhook = await targetChannel.createWebhook({
+                    name: 'LibrarianAsherBot Webhook',
+                    avatar: this.client.user.displayAvatarURL()
                 });
-            } catch (error) {
-                this.handleError(`Error sending webhook message for ${avatarName}`, error);
-                await this.fallbackSend(location, content);
             }
-        } else {
-            console.error(`Webhook for ${avatarName} not found`);
-            await this.fallbackSend(location, content);
+
+            if (webhook) {
+                const webhookClient = new WebhookClient({ id: webhook.id, token: webhook.token });
+                this.webhookCache[channel.id] = { client: webhookClient, threadId };
+                return this.webhookCache[channel.id];
+            }
+        } catch (error) {
+            console.error('Error fetching or creating webhook:', error);
         }
+
+        return null;
     }
 
-    async fallbackSend(location, content) {
-        const channel = this.client.channels.cache.find(c => c.name === location);
-        if (channel) {
-            try {
-                await channel.send(content);
-            } catch (error) {
-                this.handleError(`Error sending fallback message to ${location}`, error);
-            }
-        } else {
-            console.error(`Channel ${location} not found for fallback message`);
+    async login() {
+        try {
+            await this.client.login(config.token);
+        } catch (error) {
+            console.error('Failed to login:', error);
+            throw error;
         }
-    }
-
-    handleError(context, error) {
-        console.error(`${new Date().toISOString()} - Error: ${context}`, error);
-        // Here you could add more sophisticated error handling, like sending to a logging service
     }
 }
 
 // Run the bot
 const bot = new LibrarianAsherBot();
-bot.initialize().catch(error => {
+bot.login().catch(error => {
     console.error('Failed to initialize bot:', error);
     process.exit(1);
 });

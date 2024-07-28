@@ -9,7 +9,7 @@ class GoblinCave {
         this.spawnInterval = 10;
         this.loadAvatars();
 
-        this.model = 'llama3.1';
+        this.model = 'llama3.1:8b-instruct-q3_K_M';
         this.isInitialized = false;
         this.messageQueue = [];
 

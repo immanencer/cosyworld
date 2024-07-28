@@ -20,7 +20,7 @@ class BardBot {
         this.lastProcessed = 0;
         this.messageCache = [];
         this.webhookCache = {};
-        this.model = 'llama3.1';
+        this.model = 'llama3.1:8b-instruct-q3_K_M';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';
@@ -201,8 +201,8 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
     async initializeAI() {
         try {
             await ollama.create({
-                model: this.model + '::bard',
-                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
+                model: 'bard',
+                modelfile: `FROM llama3.1:8b-instruct-q3_K_M\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {
@@ -248,7 +248,7 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
     async chatWithAI(message) {
         try {
             const response = await ollama.chat({
-                model: this.model,
+                model: 'bard',
                 embedding: {
                   api: "ollama",
                   model: "nomic-embed-text"

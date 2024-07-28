@@ -31,7 +31,7 @@ class ShadowBot {
             personality: `You are Shadow, Wolf777Link's wolf cub. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
         };
 
-        this.model = 'llama3.1';
+        this.model = 'llama3.1:8b-instruct-q3_K_M';
         this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
         this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
         this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {} };
@@ -186,7 +186,7 @@ Let your response flow like a babbling brook, in 3-4 sentences of whimsical wolf
         try {
             await ollama.create({
                 model: `${this.avatar.name.toLowerCase()}_model`,
-                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM llama3.1:8b-instruct-q3_K_M\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {

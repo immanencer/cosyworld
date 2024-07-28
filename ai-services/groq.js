@@ -28,7 +28,7 @@ class GroqService extends AIService {
         if (message.role === 'assistant') { return; }
         return mapAsyncIterator(await groq.chat.completions.create({
             messages: this.messages,
-            model: "llama3.1-70b-8192",
+            model: "llama3.1:8b-instruct-q3_K_M-70b-8192",
             stream: true
         }), (message) => {
             if (message.object !== "chat.completion.chunk") return;

@@ -49,7 +49,7 @@ async function loadAvatars() {
 
     avatars.forEach(avatar => {
         ollamaServices[avatar.name] = new OllamaService({
-            model: 'llama3.1',
+            model: 'llama3.1:8b-instruct-q3_K_M',
             systemPrompt: avatar.personality
         });
         
@@ -148,7 +148,7 @@ app.post('/create-avatar', async (req, res) => {
         // Update local data structures
         avatars.push(newAvatar);
         ollamaServices[newAvatar.name] = new OllamaService({
-            model: 'llama3.1',
+            model: 'llama3.1:8b-instruct-q3_K_M',
             systemPrompt: newAvatar.personality
         });
         channelMap[newAvatar.name] = [newAvatar.name];
