@@ -103,6 +103,7 @@ export async function executeToolCall(toolCall, avatar) {
     try {
         const args = toolCall.function.arguments;
         const handler = toolUseHandler[tool.function.name];
+        console.log(`Executing tool ${toolCall.function.name} with args:`, args);
         if (handler) {
             return await handler(avatar, args);
         } else {

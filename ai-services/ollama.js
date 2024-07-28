@@ -33,16 +33,11 @@ class OllamaService {
      * @param {OllamaConfig} config
      * @returns {Promise<string|null>} The model hash or null if creation failed
      */
-    async updateConfig({ model = this.model, systemPrompt = this.systemPrompt }) {
-        this.model = model;
-        this.systemPrompt = `${systemPrompt}`.trim();
-
-        const modelfile = `
-FROM ${model}
-SYSTEM "${this.systemPrompt}"
-        `.trim();
+    async updateConfig({ baseModel = 'llama3.1', systemPrompt = this.systemPrompt }) {
+        const modelfile = `FROM llama3.1\nSYSTEM "${systemPrompt}"`
 
         const modelHash = generateHash(modelfile);
+        this.model = modelHash;
 
         if (!this.modelCache.has(modelHash)) {
             try {

@@ -1,7 +1,7 @@
-import { getLocations } from './locationHandler.js';
-import { updateAvatarLocation } from './avatarHandler.js';
-import { waitForTask } from './taskHandler.js';
-import { handleDiscordInteraction } from './discordHandler.js';
+import { getLocations } from '../agent_manager/locationHandler.js';
+import { updateAvatarLocation } from '../agent_manager/avatarHandler.js';
+import AI from './ai.mjs';
+import { handleDiscordInteraction } from '../agent_manager/discordHandler.js';
 import { db } from '../database/index.js';
 
 // Initialize locations
@@ -20,14 +20,32 @@ export const itemTypes = {
     TOOL: 'tool'
 };
 
+const ai_cache = new Map();
 // Item class
 class Item {
+    name;
+    description;
+    type;
     constructor(data) {
         Object.assign(this, data);
-        this.use = async (avatar, ...args) => {
+        this.use = async (avatar) => {
             // Implement the use function based on the item's type or specific logic
-            console.log(`${avatar.name} is using ${this.name}`);
-            // Add your logic here
+            console.log(`${avatar.name} is using ${this.name}`)
+
+            const ai = ai_cache.get(this.name) || new AI();
+            ai_cache.set(this.name, ai);
+
+                // Make a final call with tool responses
+            const response = await ai.generateResponse(
+                    this.description,
+                    avatar.messages,
+                    avatar.location.name,
+                    avatar.name,
+                    [] // No tools for the final call
+                );
+            
+            await handleDiscordInteraction({ ...this, location: avatar.location }, response);
+            return response;
         };
     }
 }
@@ -66,8 +84,11 @@ class ItemHandler {
         if (!item) {
             return { error: `${itemName} not found.` };
         }
-        if (item.holder !== avatar?.name) {
+        if (item.holder && item.holder !== avatar?._id.toString()) {
             return { error: `You don't have ${itemName}.` };
+        }
+        if (!item.holder && item.location && item.location !== avatar.location.name) {
+            return { error: `${itemName} is not in this location.` };
         }
         const result = await item.use(avatar, ...args);
         return { result };
@@ -81,7 +102,7 @@ class ItemHandler {
         if (item.holder) {
             return { error: `${itemName} is already held by someone.` };
         }
-        if (item.location !== avatar.location) {
+        if (item.location !== avatar.location.name) {
             return { error: `${itemName} is not in this location.` };
         }
         item.holder = avatar._id.toString();
@@ -99,7 +120,7 @@ class ItemHandler {
             return { error: `You don't have ${itemName}.` };
         }
         item.holder = null;
-        item.location = avatar.location;
+        item.location = avatar.location.name;
         await this.saveItem(item);
         return { result: `Dropped ${itemName}.` };
     }
@@ -111,7 +132,7 @@ class ItemHandler {
         let message = `Found ${itemsInRoom.length} items:\n`;
 
         for (const item of itemsInRoom) {
-            await handleDiscordInteraction({ ...item, location: avatar.location}, item.description);
+            await handleDiscordInteraction({ ...item, location: avatar.location }, item.description);
             message += `${item.name} - ${item.description}\n`;
         }
 
@@ -148,4 +169,8 @@ export const itemHandler = new ItemHandler();
 // Connect to MongoDB and load items
 (async () => {
     await itemHandler.loadItems();
+
+    setInterval(async () => {
+        await itemHandler.loadItems();
+    },  60000);
 })();

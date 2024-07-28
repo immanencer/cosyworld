@@ -2,7 +2,7 @@ import AI from './ai.mjs';
 import db from '../database/index.js';
 import process from 'process';
 
-import { executeToolCall } from '../agent_manager/toolUseHandler.js';
+import { executeToolCall } from './toolUseHandler.js';
 import { formatToolResponse } from './formatToolResponse.mjs';
 
 const COLLECTION_NAME = 'tasks';
@@ -46,7 +46,7 @@ class TaskProcessor {
 
             if (initialResponse.tool_calls) {
                 // Handle tool calls
-                const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, task.tools, task.avatar);
+                const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, task.tools, task.avatar, task.messages);
                 const formattedToolResponses = toolResponses.map(T => formatToolResponse(T, task.avatar.location?.name));
 
                 // Make a final call with tool responses
@@ -69,8 +69,9 @@ class TaskProcessor {
         }
     }
 
-    async handleToolCalls(toolCalls, availableTools, avatar) {
+    async handleToolCalls(toolCalls, availableTools, avatar, messages) {
         const toolResponses = [];
+        avatar.messages = messages;
 
         for (const toolCall of toolCalls) {
             const tool = availableTools.find(t => t.function.name === toolCall.function.name);
@@ -95,6 +96,8 @@ class TaskProcessor {
                 });
             }
         }
+
+        console.log('Tool responses:', JSON.stringify(toolResponses, null, 2));
 
         return toolResponses;
     }

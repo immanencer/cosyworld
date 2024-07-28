@@ -1,7 +1,7 @@
 import { AVATARS_API, ENQUEUE_API } from '../tools/config.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
 import { postJSON } from '../tools/postJSON.js';
-import { waitForTask } from '../tools/taskModule.js';
+import { waitForTask } from '../services/taskModule.js';
 import { getLocations } from './locationHandler.js';
 import { isEqual } from '../tools/isEqual.js';
 

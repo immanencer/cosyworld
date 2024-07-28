@@ -1,4 +1,4 @@
-import * as originalModule from '../tools/taskModule.js';
+import * as originalModule from '../services/taskModule.js';
 
 function warnOnce() {
     if (!warnOnce.hasWarned) {
@@ -30,4 +30,4 @@ export function waitForTask(...args) {
 }
 
 // Re-export any constants or other exports from the original module
-export * from '../tools/taskModule.js';
+export * from '../services/taskModule.js';

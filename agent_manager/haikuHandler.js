@@ -1,4 +1,4 @@
-import { waitForTask } from './taskHandler.js';
+import { waitForTask } from '../services/taskModule.js';
 
 export async function generateSonnet(avatar, recentConversation) {
     const sonnet = await waitForTask({

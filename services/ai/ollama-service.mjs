@@ -31,6 +31,10 @@ class OllamaService {
         model: modelHash,
         messages: formattedMessages,
         stream: false,
+        embedding: {
+          api: "ollama",
+          model: "nomic-embed-text"
+        },
         options: {
           temperature,
           num_predict: maxTokens,

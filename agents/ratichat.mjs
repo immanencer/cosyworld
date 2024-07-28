@@ -120,7 +120,11 @@ ratichat.enhancedChat = async function (options) {
     const chatOptions = {
         model: options.model,
         messages: options.messages,
-        stream: options.stream || false
+        stream: options.stream || false,
+        embedding: {
+          api: "ollama",
+          model: "nomic-embed-text"
+        }
     };
 
     if (chatOptions.stream) {

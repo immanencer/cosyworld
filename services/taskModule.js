@@ -1,7 +1,7 @@
-import { TASKS_API, POLL_INTERVAL } from './config.js';
-import { postJSON } from './postJSON.js';
-import { fetchJSON } from './fetchJSON.js';
-import { availableTools } from '../agent_manager/toolUseHandler.js';
+import { TASKS_API, POLL_INTERVAL } from '../tools/config.js';
+import { postJSON } from '../tools/postJSON.js';
+import { fetchJSON } from '../tools/fetchJSON.js';
+import { availableTools } from './toolUseHandler.js';
 
 export async function createTask(avatar, messages, tools) {
     const task = {

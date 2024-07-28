@@ -27,6 +27,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "🕰️ steamclock",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/steamclock.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🐺 skull",
             "skipFiles": [
                 "<node_internals>/**"

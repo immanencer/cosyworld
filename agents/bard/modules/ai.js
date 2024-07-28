@@ -23,6 +23,10 @@ export async function chatWithAI(message, avatar, memory) {
     try {
         const response = await ollama.chat({
             model: cache.get(avatar.name),
+            embedding: {
+              api: "ollama",
+              model: "nomic-embed-text"
+            },
             messages: [
                 { role: 'system', content: avatar.personality },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },

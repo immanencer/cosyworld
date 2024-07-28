@@ -414,6 +414,10 @@ goblins sing
         
         try {
             const response = await ollama.chat({
+                embedding: {
+                  api: "ollama",
+                  model: "nomic-embed-text"
+                },
                 model: this.model,
                 messages: this.conversations[hash]
             });
