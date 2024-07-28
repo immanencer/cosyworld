@@ -229,6 +229,10 @@ Let your response flow like a babbling brook, in 3-4 sentences of whimsical wolf
         try {
             const response = await ollama.chat({
                 model: `${this.avatar.name.toLowerCase()}_model`,
+                embedding: {
+                  api: "ollama",
+                  model: "nomic-embed-text"
+                },
                 messages: [
                     { role: 'system', content: `You are Shadow, a playful wolf cub. Respond using only 1-3 emojis or short *actions* from this list: ${this.emojis.join(', ')}, ${this.actions.join(', ')}. Consider the sentiment, recent interactions, and current goal when responding.` },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },

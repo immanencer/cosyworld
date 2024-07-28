@@ -23,7 +23,11 @@ SYSTEM "${config.system_prompt}123"`;
     async chat(message) {
         this.messages.push(message);            
         if (message.role === 'assistant') { return; }
-        return await ollama.chat({ model: this.model, messages: this.messages, stream: true})
+        return await ollama.chat({ model: this.model, 
+            embedding: {
+              api: "ollama",
+              model: "nomic-embed-text"
+            },messages: this.messages, stream: true})
     }
 }
 

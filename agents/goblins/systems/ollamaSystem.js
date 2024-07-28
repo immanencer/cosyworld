@@ -33,6 +33,10 @@ class OllamaSystem {
         try {
             const response = await ollama.chat({
                 model: this.model,
+                embedding: {
+                  api: "ollama",
+                  model: "nomic-embed-text"
+                },
                 messages: this.conversations[hash]
             });
             this.conversations[hash].push({ role: 'assistant', content: response.message.content });

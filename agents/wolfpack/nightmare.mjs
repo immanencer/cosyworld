@@ -297,6 +297,10 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
         try {
             const response = await ollama.chat({
                 model: this.avatar.name,
+                embedding: {
+                  api: "ollama",
+                  model: "nomic-embed-text"
+                },
                 messages: [
                     { role: 'system', content: this.avatar.personality },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },

@@ -159,6 +159,10 @@ class SkullBot {
         try {
             const response = await ollama.chat({
                 model: 'skull',
+                embedding: {
+                  api: "ollama",
+                  model: "nomic-embed-text"
+                },
                 messages: [
                     { role: 'system', content: CONFIG.personality },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
