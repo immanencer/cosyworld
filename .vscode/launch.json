@@ -77,21 +77,21 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "🎶 bard",
+            "name": "📚 librarian",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/bard/main.js",
+            "program": "${workspaceFolder}/agents/librarian.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "😡 goblins",
+            "name": "🎶 bard",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/goblins/goblinCave.js",
+            "program": "${workspaceFolder}/agents/bard/main.js",
             "envFile": "${workspaceFolder}/.env"
         },
         {

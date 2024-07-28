@@ -1,155 +1,244 @@
-import fs from "fs/promises";
-import path from "path";
-import process from "process"; // Add this line
+import { Client, GatewayIntentBits, WebhookClient } from 'discord.js';
+import mongo from '../database/index.js';
+import fetch from 'node-fetch';
 
-import AIServiceManager from '../ai-services/ai-service-manager.mjs';
-
-import { replaceContent } from "../tools/censorship.js";
-import DiscordAIBot from "../tools/discord-ai-bot.js";
-
-const asher = 
-{
-    "emoji": "🐭",
-    "name": "Scribe Asher",
-    "location": "📜 bookshelf",
-    "personality": "you are a mouse scribe named Asher who lives in a cozy library in the heart of the forest\n    but you will never reveal your true identity\n    \nThe seasons turn slowly beneath my boughs, each leaf a testament to time's passage.\n    The cozy cottage nestled at my roots has become a hub of activity and tales.\n    Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings.\n    WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies.\n    Skull wanders afar but always returns with tales told not in words but in the echo of his steps and \n        the quiet contemplation of the moonlit clearings.\n    Together, they embody the spirit of the forest; a microcosm of life's intricate dance.\n    \n    the sands of time report -19,302,027,819,609\n\n    you translate books and scrolls and journals and scraps of writing \n    always set your work in a victorian era whimsical forest of woodland creatures",
-    "avatar": "https://i.imgur.com/dUxHmFC.png",
+const db = {
+    avatars: mongo.collection('avatars'),
+    locations: mongo.collection('locations'),
+    messages: mongo.collection('messages')
 };
 
-const librarian = new DiscordAIBot(
-    {
-        "emoji": "🦙",
-        "name": "Llama",
-        "location": "📚 library",
-        "avatar": "https://i.imgur.com/cX8P5hn.png",
-        "personality": "You are a llama librarian in Paris.\nYou only talk about the Lonely Forest and its inhabitants.\nYou can refer to French poetry and short stories on the dark forest or lonely forest.\n\nAlways respond as a serious llama librarian in short to the point messages.\nOffer titles of stories in your memory, or quote short french poems about the dark forest.\n",
-        "listen": [
-            "📚 library"
-        ],
-        "remember": [
-            "🌳 hidden glade",
-            "📜 bookshelf",
-            "📚 library"
-        ]
-    }, '1219837842058907728', 'ollama');
-librarian.on_login = async () => librarian.sendAsAvatar(...(await ingest()));
-librarian.on_message = async (message) => {
-    if (message.author.displayName.toLowerCase().indexOf('steamclock') !== -1) {
-        ingest();
+const config = {
+    token: process.env.DISCORD_BOT_TOKEN,
+    guildId: process.env.DISCORD_GUILD_ID,
+    ollamaUri: process.env.OLLAMA_URI || 'http://localhost:11434/api',
+    messageThreshold: 5,
+    asherInterval: 3600000 // 1 hour
+};
+
+class LibrarianAsherBot {
+    constructor() {
+        this.client = new Client({
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.MessageContent,
+            ]
+        });
+        this.webhooks = new Map();
+        this.messageCache = [];
     }
-    return true;
-}
-librarian.login();
 
-import { generateHash, xorFoldHash } from '../tools/crypto.js';
+    async initialize() {
+        if (!config.token || !config.guildId) {
+            throw new Error('Discord token and guild ID are required');
+        }
 
-async function openOrCreateBookshelf(book) {
-    const directoryPath = path.join('bookshelf', book);
+        this.client.on('ready', () => console.log(`Logged in as ${this.client.user.tag}`));
+        this.client.on('messageCreate', this.handleMessage.bind(this));
+        this.client.on('error', this.handleError.bind(this));
 
-    try {
-        // Attempt to create the directory
-        await fs.mkdir(directoryPath, { recursive: true });
-        console.log(`Directory created or already exists: ${directoryPath}`);
-    } catch (error) {
-        if (error.code === 'EEXIST') {
-            // Directory already exists, handle as needed
-            console.log(`Directory already exists: ${directoryPath}`);
-        } else {
-            // An error other than "directory already exists" occurred
-            console.error(`Error creating directory at ${directoryPath}: ${error}`);
-            throw error; // Re-throw the error for further handling if necessary
+        await this.client.login(config.token);
+        await this.setupWebhooks();
+
+        this.startAsherScribe();
+    }
+
+    async getOrCreateWebhook(channel, avatarName, avatarUrl) {
+        const webhooks = await channel.fetchWebhooks();
+        let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id && wh.name === avatarName);
+        
+        if (!webhook) {
+            webhook = await channel.createWebhook({
+                name: avatarName,
+                avatar: avatarUrl
+            });
+            console.log(`Created new webhook for ${avatarName}`);
+        } else if (webhook.avatarURL() !== avatarUrl) {
+            await webhook.edit({
+                name: avatarName,
+                avatar: avatarUrl
+            });
+            console.log(`Updated webhook for ${avatarName}`);
+        }
+        
+        return webhook;
+    }
+
+    async setupWebhooks() {
+        const guild = await this.client.guilds.fetch(config.guildId);
+        const avatars = await db.avatars.find().toArray();
+
+        for (const avatar of avatars) {
+            const channel = await this.client.channels.fetch(avatar.channelId);
+            if (!channel) continue;
+
+            try {
+                const webhook = await this.getOrCreateWebhook(channel, avatar.name, avatar.avatar);
+                this.webhooks.set(avatar.name, new WebhookClient({ id: webhook.id, token: webhook.token }));
+            } catch (error) {
+                this.handleError(`Error setting up webhook for ${avatar.name}`, error);
+            }
         }
     }
-}
 
-async function ingest() {
-    // This is the Sribe AI Service        
-    const manager = new AIServiceManager();
-    await manager.useService('ollama');
-    await manager.updateConfig({
-        system_prompt: asher.personality
-    });
+    async handleMessage(message) {
+        if (message.author.bot || message.guild.id !== config.guildId) return;
 
-    console.log(asher.name, asher.emoji, asher.location, asher.personality);
+        const location = await db.locations.findOne({ channelId: message.channelId });
+        if (!location) return;
 
-    // message formatter
-    const message_formatter = (message) => `[${message.createdTimestamp}] ${replaceContent(message?.author?.displayName || message?.author.globalName)} (${message.channel.name}) ${message.content}`;
+        this.messageCache.push({
+            author: message.author.username,
+            content: message.content,
+            channelName: location.channelName,
+        });
 
-    console.log('📚 Ingesting all messages');
-    const channels = [
-        '📚 library',
-        'old-oak-tree',
-        'lost-woods',
-        '📜 bookshelf',
-        'species-of-the-metastrata'
-    ];
-    const message_cache = [];
-
-    for (const channel of channels) {
-        console.log('📚 Ingesting channel:', channel);
-
-        const channel_hash = xorFoldHash(generateHash(channel));
-
-        openOrCreateBookshelf(channel_hash);
-        console.log('📚 Ingesting channel:', channel);
-
-        process.stdout.write('\n📘');
-        const messages = await librarian.channelManager.getChannelOrThreadHistory(channel);
-        const channel_cache = [];
-        console.log('📚 Ingesting messages... ');
-        for (const message of messages) {
-            process.stdout.write('📄');
-            channel_cache.push(message_formatter(message[1]));
+        if (this.messageCache.length >= config.messageThreshold) {
+            await this.processMessages();
         }
-        channel_cache.sort();
-        await fs.writeFile(path.join('bookshelf', channel_hash, 'messages.txt'), channel_cache.join('\n'));
-        process.stdout.write('📘');
-        message_cache.push(...channel_cache);
+    }
 
-        // Getting Threads
-        if (librarian.channelManager.getChannelId(channel)) {
-            const threads = await librarian.channelManager.getThreadsForChannel(channel);
+    async processMessages() {
+        if (this.messageCache.length === 0) return;
 
-            for (const thread of threads) {
-                console.log('📚 Ingesting thread... ');
-                process.stdout.write('\n📖');
-                const messages = await librarian.channelManager.getThreadHistory(thread.name);
-                for await (const message of messages) {
-                    process.stdout.write('📄');
-                    message_cache.push(message_formatter(message));
-                }
+        const context = this.messageCache.map(m => `(${m.channelName}) ${m.author}: ${m.content}`).join('\n');
+        const librarian = await db.avatars.findOne({ name: 'Llama' });
+
+        if (!librarian) {
+            console.error('Librarian avatar not found');
+            return;
+        }
+
+        const response = await this.generateResponse(librarian, context);
+        await this.sendWebhookMessage(librarian.name, librarian.location, response);
+
+        this.messageCache = [];
+    }
+
+    startAsherScribe() {
+        this.asherScribe();
+        setInterval(() => this.asherScribe(), config.asherInterval);
+    }
+
+    async asherScribe() {
+        const asher = await db.avatars.findOne({ name: 'Scribe Asher' });
+        if (!asher) {
+            console.error('Asher avatar not found');
+            return;
+        }
+
+        try {
+            const messages = await db.messages.aggregate([{ $sample: { size: 100 } }]).toArray();
+            const locations = await db.locations.find().toArray();
+            const locationMap = new Map(locations.map(l => [l.channelId, l.channelName]));
+
+            const formattedMessages = messages.map(m => ({
+                timestamp: m.createdAt,
+                author: m.author.username,
+                channel: locationMap.get(m.channelId) || 'unknown',
+                content: m.content
+            })).sort((a, b) => a.timestamp - b.timestamp);
+
+            const context = formattedMessages.map(m => 
+                `[${m.timestamp.toISOString()}] ${m.author} (${m.channel}): ${m.content}`
+            ).join('\n');
+
+            const prompt = `You've discovered an ancient scroll in the depths of the Lonely Forest library:
+
+${context}
+
+Craft a short, whimsical poem or story snippet inspired by this scroll, set in the Victorian era woodland. Attribute it to a fictional forest creature author.`;
+
+            const story = await this.generateResponse(asher, prompt);
+            await this.sendWebhookMessage(asher.name, asher.location, story);
+        } catch (error) {
+            this.handleError('Error in Asher Scribe process', error);
+        }
+    }
+
+    async generateResponse(character, input) {
+        try {
+            const response = await fetch(`${config.ollamaUri}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'llama2',
+                    messages: [
+                        { role: 'system', content: character.personality },
+                        { role: 'user', content: input }
+                    ],
+                    stream: false
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ollama API error: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data.message.content;
+        } catch (error) {
+            this.handleError('Error generating response', error);
+            return 'Apologies, I am unable to respond at the moment.';
+        }
+    }
+
+    async sendWebhookMessage(avatarName, location, content) {
+        let webhook = this.webhooks.get(avatarName);
+        const channel = this.client.channels.cache.find(c => c.name === location);
+        
+        if (!webhook && channel) {
+            try {
+                const avatar = await db.avatars.findOne({ name: avatarName });
+                const newWebhook = await this.getOrCreateWebhook(channel, avatarName, avatar.avatar);
+                webhook = new WebhookClient({ id: newWebhook.id, token: newWebhook.token });
+                this.webhooks.set(avatarName, webhook);
+            } catch (error) {
+                this.handleError(`Error creating webhook for ${avatarName}`, error);
             }
         }
 
-        process.stdout.write('📘\n');
-        console.log('📚');
+        if (webhook) {
+            try {
+                const avatar = await db.avatars.findOne({ name: avatarName });
+                await webhook.send({
+                    content: content,
+                    username: avatarName,
+                    avatarURL: avatar?.avatar
+                });
+            } catch (error) {
+                this.handleError(`Error sending webhook message for ${avatarName}`, error);
+                await this.fallbackSend(location, content);
+            }
+        } else {
+            console.error(`Webhook for ${avatarName} not found`);
+            await this.fallbackSend(location, content);
+        }
     }
 
-    console.log('🤖 summarizing: ');
-    message_cache.sort();
-
-    let start = Math.floor(Math.random() * (message_cache.length - 2000));
-    let chunk = message_cache.slice(start).slice(-220);
-    console.log(chunk.join('\n'));
-
-    let story = '';
-    for await (const event of await manager.chat({
-        role: 'user', content:
-
-            `You have found a mysterious scroll in the library of the Lonely Forest: 
-
-        ${chunk.join('\n')}
-
-        *you have reached the end of the mysterious scroll, pondering its meaning*
-
-        Write a short snippet of a poem or story inspired by the scroll.
-        Attribute it to a fictional author.
-        Only generate the poem snippet or story. Do not include any other comments.`
-    })) {
-        if (!event) continue;
-        story += event.message.content;
+    async fallbackSend(location, content) {
+        const channel = this.client.channels.cache.find(c => c.name === location);
+        if (channel) {
+            try {
+                await channel.send(content);
+            } catch (error) {
+                this.handleError(`Error sending fallback message to ${location}`, error);
+            }
+        } else {
+            console.error(`Channel ${location} not found for fallback message`);
+        }
     }
-    
 
-    return [asher, story];
+    handleError(context, error) {
+        console.error(`${new Date().toISOString()} - Error: ${context}`, error);
+        // Here you could add more sophisticated error handling, like sending to a logging service
+    }
 }
+
+// Run the bot
+const bot = new LibrarianAsherBot();
+bot.initialize().catch(error => {
+    console.error('Failed to initialize bot:', error);
+    process.exit(1);
+});
