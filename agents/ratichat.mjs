@@ -4,7 +4,7 @@ import { avatarseek } from './avatars.js';
 import ollama from 'ollama'; // Adjust the import path as necessary
 
 const model_settings ={
-    max_gen_len: 50,
+    max_gen_len: 256,
     temperature: 1.0,
     top_p: 0.9,
 };
@@ -41,11 +41,12 @@ ratichat.rumble = async function () {
     try {
         await this.initializeMemory();
 
-        const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         
-        const dream = await this.generateDream(ratichat.avatar, oaken_memory);
+        const dream_memory = await this.loadMemory([ratichat.avatar.location]);
+        const dream = await this.generateDream(ratichat.avatar, dream_memory);
         await ratichat.sendAsAvatar(ratichat.avatar, dream);
 
+        const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         const oaken_response = await this.enhancedChat({
             model: 'llama3.1:8b-instruct-q3_K_M',
             messages: [
@@ -110,7 +111,7 @@ ratichat.rumble = async function () {
 ratichat.generateDream = async function (avatar, memory = '') {
     const response = await ollama.generate({
         model: 'llama3.1:8b-instruct-q3_K_M',
-        prompt: 'Describe your dreams.' + memory,
+        prompt: memory + '\n\n' + avatar.personality,
         system: avatar?.personality || ratichat.avatar.personality || 'you are an alien intelligence from the future',
         options: model_settings
     });

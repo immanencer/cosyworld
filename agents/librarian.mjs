@@ -1,23 +1,26 @@
-import { Client, Events, GatewayIntentBits, WebhookClient } from 'discord.js';
+import { initializeDiscordClient, sendAsAvatar } from '../services/discordService.mjs';
 import mongo from '../database/index.js';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
 import fetch from 'node-fetch';
-import chunkText from '../tools/chunk-text.js';
+import crypto from 'crypto';
+
+import chunkText from '../tools/chunk-text.js'
 
 const db = {
     avatars: mongo.collection('avatars'),
     locations: mongo.collection('locations'),
-    messages: mongo.collection('messages')
+    books: mongo.collection('books'),
+    summaries: mongo.collection('summaries') // New collection for summaries
 };
 
 const config = {
-    token: process.env.DISCORD_BOT_TOKEN,
     guildId: process.env.DISCORD_GUILD_ID,
     ollamaUri: process.env.OLLAMA_URI || 'http://localhost:11434/api',
-    messageThreshold: 1,
-    asherInterval: 86400000 // 24 hours
+    summaryInterval: 3600000, // 1 hour
+    greatLibraryChannelName: 'great-library'
 };
 
-class LibrarianAsherBot {
+class LibrarianBot {
     constructor() {
         this.client = new Client({
             intents: [
@@ -26,12 +29,11 @@ class LibrarianAsherBot {
                 GatewayIntentBits.MessageContent,
             ]
         });
-        this.webhookCache = {};
-        this.messageCache = [];
-        this.lastProcessed = 0;
-        this.debounceTime = 5000;
-
         this.setupEventListeners();
+        this.client.login(process.env.DISCORD_BOT_TOKEN);
+        this._librarian = null;
+        this._scribeAsher = null;
+        this._spiderette = null;
     }
 
     setupEventListeners() {
@@ -40,21 +42,19 @@ class LibrarianAsherBot {
     }
 
     async onReady() {
-        console.log(`Logged in as ${this.client.user.tag}`);
-        await this.setupWebhooks();
-        this.startAsherSummarizer();
+        console.log(`Librarian logged in as ${this.client.user.tag}`);
+        this._librarian = await this.findAvatar('Llama');
+        this._scribeAsher = await this.findAvatar('Scribe Asher');
+        this._spiderette = await this.findAvatar('Spiderette');
     }
 
-    async setupWebhooks() {
-        const guild = await this.client.guilds.fetch(config.guildId);
-        const locations = await db.locations.find().toArray();
-
-        for (const location of locations) {
-            const channel = guild.channels.cache.get(location.channelId);
-            if (channel) {
-                await this.getOrCreateWebhook(channel);
-            }
+    async findAvatar(name) {
+        const avatar = await db.avatars.findOne({ name });
+        if (!avatar) {
+            console.error(`${name} avatar not found`);
+            return null;
         }
+        return avatar;
     }
 
     async handleMessage(message) {
@@ -63,81 +63,135 @@ class LibrarianAsherBot {
         const location = await db.locations.findOne({ channelId: message.channelId });
         if (!location) return;
 
-        this.messageCache.push({
-            author: message.author.username,
-            content: message.content,
-            channelName: location.channelName,
-        });
-
-        if (this.messageCache.length >= config.messageThreshold && this.debounce()) {
-            await this.processMessages();
+        if (location.channelName === config.greatLibraryChannelName) {
+            await this.handleGreatLibraryMessage(message);
         }
     }
 
-    debounce() {
-        const now = Date.now();
-        if (now - this.lastProcessed < this.debounceTime) return false;
-        this.lastProcessed = now;
-        return true;
+    async handleGreatLibraryMessage(message) {
+        const gutenbergRegex = /gutenberg\.org\/cache\/epub\/(\d+)\/pg\d+\.txt/;
+        const match = message.content.match(gutenbergRegex);
+
+        if (match) {
+            const bookId = match[1];
+            const bookUrl = `https://www.gutenberg.org/cache/epub/${bookId}/pg${bookId}.txt`;
+
+            try {
+                const response = await fetch(bookUrl);
+                const bookContent = await response.text();
+
+                // Generate a unique hash of the book content
+                const bookHash = crypto.createHash('sha256').update(bookContent).digest('hex');
+
+                // Check if the book is already in the database
+                const existingBook = await db.books.findOne({ hash: bookHash });
+                if (existingBook) {
+                    await message.reply('This book is already in the library.');
+                    return;
+                }
+
+                // Parse the Gutenberg header
+                const headerInfo = this.parseGutenbergHeader(bookContent, bookUrl);
+
+                // Save book to database with header information and hash
+                const bookDocument = {
+                    hash: bookHash,
+                    bookId,
+                    url: bookUrl,
+                    content: bookContent,
+                    headerInfo,
+                    addedBy: message.author.id,
+                    addedAt: new Date()
+                };
+
+                await db.books.insertOne(bookDocument);
+
+                // Create a thread for the book
+                const thread = await this.getOrCreateThreadForBook(
+                    config.greatLibraryChannelName, bookDocument.headerInfo.title
+                );
+
+                // Summarize and post in sections
+                const summary = await this.summarizeBook(bookDocument, thread.id, thread.parent.id);
+
+                // Save summary to database
+                const summaryDocument = {
+                    bookHash,
+                    summary,
+                    createdAt: new Date()
+                };
+
+                await db.summaries.insertOne(summaryDocument);
+
+                // Format a nice message with the book information and summary
+                const bookInfoMessage = this.formatBookInfo(headerInfo, bookId, summary);
+
+                await sendAsAvatar({
+                    name: 'Spiderette',
+                    avatarURL: this._spiderette.avatar,
+                    location: {
+                        name: message.channel.name,
+                    },
+                    channelId: message.channel.id,
+                }, bookInfoMessage);
+
+            } catch (error) {
+                console.error('Error processing Gutenberg book:', error);
+                await message.reply('Sorry, I encountered an error while processing the book. Please try again later.');
+            }
+        }
     }
-
-    async processMessages() {
-        if (this.messageCache.length === 0) return;
-
-        const context = this.messageCache.map(m => `(${m.channelName}) ${m.author}: ${m.content}`).join('\n');
-        const librarian = await db.avatars.findOne({ name: 'Llama' });
-
-        if (!librarian) {
-            console.error('Librarian avatar not found');
-            return;
+    async getOrCreateThreadForBook(channelName, bookName) {
+        bookName = bookName.substring(0, 88);
+        const channel = this.client.channels.cache.find(c => c.name === channelName);
+        if (!channel) {
+            console.error('Channel not found:', channelName);
+            return null;
         }
-
-        const response = await this.generateResponse(librarian, context);
-        if (response.trim() !== "") {
-            console.log('Librarian responds:', response);
-            await this.sendAsAvatar(librarian, response, librarian.location);
-        } else {
-            console.error('Librarian has no response');
+    
+        let thread = channel.threads.cache.find(t => t.name === `📚 ${bookName}`);
+        if (!thread) {
+            thread = await channel.threads.create({
+                name: `📚 ${bookName}`,
+                autoArchiveDuration: 1440,
+                reason: 'New book discussion thread'
+            });
         }
-
-        this.messageCache = [];
+    
+        return thread;
     }
+    
+    
 
-    startAsherSummarizer() {
-        this.asherSummarize();
-        setInterval(() => this.asherSummarize(), config.asherInterval);
-    }
+    async summarizeBook(book, threadId, channelId) {
+        const chunks = chunkText(book.content, 1000); // 200 lines per chunk
+        const summaries = [];
 
-    async asherSummarize() {
-        const asher = await db.avatars.findOne({ name: 'Scribe Asher' });
-        if (!asher) {
-            console.error('Asher avatar not found');
-            return;
+        for (let i = 0; i < chunks.length; i++) {
+            const chunkPrompt = 
+            `You are currently summarizing ${book.headerInfo.title}, by  ${book.headerInfo.title}.
+
+            Here is the last section you summarized:
+
+            ${i > 0 ? summaries[i-1]: ''}\n\n Continue the summary above based on this new information:\n\n${chunks[i]}`;
+            const summary = await this.generateResponse(this._scribeAsher, chunkPrompt);
+            summaries.push(summary);
+
+            await sendAsAvatar({
+                ...this._scribeAsher,
+                threadId: threadId,
+                channelId: channelId
+            }, `Part ${i + 1} Summary:\n\n${summary}`);
+
+            // Add a delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
-        try {
-            const recentMessages = await db.messages.find().sort({ createdAt: -1 }).limit(100).toArray();
-            const locations = await db.locations.find().toArray();
-            const locationMap = new Map(locations.map(l => [l.channelId, l.channelName]));
+        // Generate an overall summary
+        const overallSummaryPrompt = `Provide a concise overall summary of the book based on the following summaries:\n\n${summaries.join('\n\n')}`;
+        const overallSummary = await this.generateResponse(this._scribeAsher, overallSummaryPrompt);
 
-            const formattedMessages = recentMessages.map(m => ({
-                timestamp: m.createdAt,
-                author: m.author.username,
-                channel: locationMap.get(m.channelId) || 'unknown',
-                content: m.content
-            })).sort((a, b) => a.timestamp - b.timestamp);
-
-            const context = formattedMessages.map(m => 
-                `[${m.timestamp.toISOString()}] ${m.author} (${m.channel}): ${m.content}`
-            ).join('\n');
-
-            const prompt = `As Scribe Asher, create a whimsical daily summary of recent events in the Lonely Forest library, based on these messages:\n\n${context}\n\nCraft a short, engaging summary in the style of a Victorian-era woodland chronicle. Include notable happenings, interesting conversations, and any recurring themes. End with a playful prediction or question about tomorrow's potential adventures.`;
-
-            const summary = await this.generateResponse(asher, prompt);
-            await this.sendAsAvatar(asher, summary, asher.location);
-        } catch (error) {
-            console.error('Error in Asher Summarizer process:', error);
-        }
+        return overallSummary;
     }
 
     async generateResponse(character, input) {
@@ -146,7 +200,7 @@ class LibrarianAsherBot {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama2',
+                    model: 'llama3.1:8b-instruct-q3_K_M',
                     messages: [
                         { role: 'system', content: character.personality },
                         { role: 'user', content: input }
@@ -156,91 +210,59 @@ class LibrarianAsherBot {
             });
 
             if (!response.ok) {
-                throw new Error(`Ollama API error: ${response.statusText}`);
+                throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
             return data.message.content;
         } catch (error) {
             console.error('Error generating response:', error);
-            return 'Apologies, I am unable to respond at the moment.';
+            return "I apologize, but I'm having trouble formulating a response right now.";
         }
     }
 
-    async sendAsAvatar(avatar, message, channelName) {
-        const channel = this.client.channels.cache.find(c => c.name === channelName);
-        if (!channel) {
-            console.error('Channel not found:', channelName);
-            return;
-        }
-
-        const webhookData = await this.getOrCreateWebhook(channel);
-        const chunks = chunkText(message, 2000);
-
-        for (const chunk of chunks) {
-            if (chunk.trim() !== '') {
-                try {
-                    if (webhookData) {
-                        const { client: webhook, threadId } = webhookData;
-                        await webhook.send({
-                            content: chunk,
-                            username: avatar.name,
-                            avatarURL: avatar.avatar,
-                            threadId: threadId
-                        });
-                    } else {
-                        await channel.send(`**${avatar.name}:** ${chunk}`);
-                    }
-                } catch (error) {
-                    console.error(`Failed to send message as ${avatar.name}:`, error);
-                }
-            }
-        }
+    async generateSummary(bookContent) {
+        return bookContent;
     }
 
-    async getOrCreateWebhook(channel) {
-        if (this.webhookCache[channel.id]) {
-            return this.webhookCache[channel.id];
-        }
+    parseGutenbergHeader(content, url) {
+        const headerEnd = content.indexOf('*** START OF THE PROJECT GUTENBERG EBOOK');
+        const header = content.slice(0, headerEnd);
+        
+        const headerInfo = {
+            title: this.extractField(header, 'Title:'),
+            author: this.extractField(header, 'Author:'),
+            releaseDate: this.extractField(header, 'Release date:'),
+            language: this.extractField(header, 'Language:'),
+            url: `${url}`
+        };
 
-        let targetChannel = channel;
-        let threadId = null;
+        return headerInfo;
+    }
 
-        if (channel.isThread()) {
-            threadId = channel.id;
-            targetChannel = channel.parent;
-        }
+    extractField(text, fieldName) {
+        const regex = new RegExp(`${fieldName}\\s*(.+)`);
+        const match = text.match(regex);
+        return match ? match[1].trim() : null;
+    }
 
-        if (!targetChannel.isTextBased()) {
-            return null;
-        }
+    formatBookInfo(headerInfo, bookId, summary) {
+        let message = `A new book has been added to the Great Library!\n\n`;
+        message += `Title: ${headerInfo.title || 'Unknown'}\n`;
+        message += `Author: ${headerInfo.author || 'Unknown'}\n`;
+        message += `Language: ${headerInfo.language || 'Unknown'}\n`;
+        message += `Release Date: ${headerInfo.releaseDate || 'Unknown'}\n`;
+        message += `Gutenberg Book ID: ${bookId}\n\n`;
+        message += `Summary:\n${summary}\n\n`;
+        message += `You can view the complete book at ${headerInfo.url}`;
 
-        try {
-            const webhooks = await targetChannel.fetchWebhooks();
-            let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
-
-            if (!webhook && targetChannel.permissionsFor(this.client.user).has('ManageWebhooks')) {
-                webhook = await targetChannel.createWebhook({
-                    name: 'LibrarianAsherBot Webhook',
-                    avatar: this.client.user.displayAvatarURL()
-                });
-            }
-
-            if (webhook) {
-                const webhookClient = new WebhookClient({ id: webhook.id, token: webhook.token });
-                this.webhookCache[channel.id] = { client: webhookClient, threadId };
-                return this.webhookCache[channel.id];
-            }
-        } catch (error) {
-            console.error('Error fetching or creating webhook:', error);
-        }
-
-        return null;
+        return message;
     }
 
     async login() {
         try {
-            await this.client.login(config.token);
+            await initializeDiscordClient();
+            console.log('LibrarianBot is ready');
         } catch (error) {
             console.error('Failed to login:', error);
             throw error;
@@ -249,8 +271,5 @@ class LibrarianAsherBot {
 }
 
 // Run the bot
-const bot = new LibrarianAsherBot();
-bot.login().catch(error => {
-    console.error('Failed to initialize bot:', error);
-    process.exit(1);
-});
+const bot = new LibrarianBot();
+bot.login();

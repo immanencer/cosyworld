@@ -87,6 +87,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "📜 asher",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/asher.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "🎶 bard",
             "skipFiles": [
                 "<node_internals>/**"

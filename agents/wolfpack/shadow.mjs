@@ -80,7 +80,7 @@ class ShadowBot {
     }
 
     async onMessage(message) {
-        if (message.author.bot || message.author.id === this.client.user.id) return;
+        if (message.author.displayName.includes(this.avatar.name)) return;
 
         const data = {
             author: message.author.displayName || message.author.globalName,

@@ -1,4 +1,4 @@
-import DiscordBot from './discord.js';
+import DiscordBot from './discordService.js';
 import AIServiceManager from '../tools/ai-service-manager.mjs';
 
 class DiscordGroqBot extends DiscordBot {

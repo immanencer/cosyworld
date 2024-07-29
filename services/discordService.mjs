@@ -37,6 +37,22 @@ export async function sendMessage(channelId, message, threadId = null) {
     await channel.send({ content: message, threadId });
 }
 
+export async function getOrCreateThread(threadName, message) {
+    const channel = discordClient.channels.cache.find(ch => ch.name === threadName && ch.isThread());
+    if (channel) return channel;
+
+    // If thread doesn't exist, create it in the first available text channel
+    const textChannel = await discordClient.channels.fetch(message.channel.id);
+    if (!textChannel) throw new Error('No text channel available to create thread');
+
+    return await textChannel.threads.create({
+        startMessage: message.id,
+        name: threadName,
+        autoArchiveDuration: 60,
+        reason: 'Created for avatar interaction'
+    });
+}
+
 export async function sendAsAvatar(avatar, message) {
     console.log('🎮 🗣️:', `(${avatar.location.name}) ${avatar.name}: ${message}`);
     let channel = await discordClient.channels.fetch(avatar.channelId);
