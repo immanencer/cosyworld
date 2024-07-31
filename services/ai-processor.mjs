@@ -4,6 +4,7 @@ import process from 'process';
 
 import { executeToolCall } from './toolUseHandler.js';
 import { formatToolResponse } from './formatToolResponse.mjs';
+import { itemHandler } from './itemHandler.js';
 
 const COLLECTION_NAME = 'tasks';
 const DEFAULT_MODEL = 'llama3.1:8b-instruct-q3_K_M';
@@ -36,6 +37,11 @@ class TaskProcessor {
             task.avatar = { location: { name: 'default' }, name: 'default' };
         }
 
+        const availableItems = await itemHandler.getAvailableItems(task.avatar);
+        if (availableItems.length > 0) {
+            task.messages.push({ role: 'system', content: 'These are the available items: ' + availableItems.map(i => i.name).join(', ') });
+        }
+
         try {
             // Initial call with tools
             const initialResponse = await ai.generateResponse(
@@ -43,7 +49,14 @@ class TaskProcessor {
                 task.messages,
                 task.avatar.location?.name || 'unknown',
                 task.avatar.name,
-                task.tools
+                task.tools.filter(T => {
+                    const name = T.function.name; 
+                    // Skip USE, TAKE, DROP if no items are available
+                    if (["USE", "TAKE", "DROP"].includes(name) && availableItems.length === 0) {
+                        return false;
+                    }
+                    return true;
+                })
             );
 
             let finalResponse;
@@ -70,6 +83,8 @@ class TaskProcessor {
         } catch (error) {
             console.error('Error processing task:', error);
             await this.updateTaskStatus(task._id, 'failed', { error: error.message });
+        } finally {
+            clearTimeout(timeout);
         }
     }
 

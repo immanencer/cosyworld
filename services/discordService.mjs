@@ -1,6 +1,5 @@
 import process from 'process';
-
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import chunkText from '../tools/chunk-text.js';
 
 const discordClient = new Client({
@@ -37,16 +36,15 @@ export async function sendMessage(channelId, message, threadId = null) {
     await channel.send({ content: message, threadId });
 }
 
-export async function getOrCreateThread(threadName, message) {
+export async function getOrCreateThread(threadName, channelId) {
     const channel = discordClient.channels.cache.find(ch => ch.name === threadName && ch.isThread());
     if (channel) return channel;
 
     // If thread doesn't exist, create it in the first available text channel
-    const textChannel = await discordClient.channels.fetch(message.channel.id);
+    const textChannel = await discordClient.channels.fetch(channelId);
     if (!textChannel) throw new Error('No text channel available to create thread');
 
     return await textChannel.threads.create({
-        startMessage: message.id,
         name: threadName,
         autoArchiveDuration: 60,
         reason: 'Created for avatar interaction'
@@ -56,7 +54,7 @@ export async function getOrCreateThread(threadName, message) {
 export async function sendAsAvatar(avatar, message) {
     console.log('🎮 🗣️:', `(${avatar.location.name}) ${avatar.name}: ${message}`);
     let channel = await discordClient.channels.fetch(avatar.channelId);
-    
+
     if (channel.type === 'GUILD_CATEGORY') {
         channel = await discordClient.channels.fetch(avatar.location.id);
         delete avatar.threadId;
@@ -69,10 +67,10 @@ export async function sendAsAvatar(avatar, message) {
     try {
         const webhook = await getOrCreateWebhook(channel);
         const chunks = chunkText(message, 2000);
-    
+
         for (const chunk of chunks) {
             await webhook.send({
-                content: chunk,
+                content: chunk.substring(0, 2000),
                 username: `${avatar.name} ${avatar.emoji || '⚠️'}`,
                 avatarURL: avatar.avatar,
                 threadId: avatar.threadId
@@ -87,14 +85,14 @@ export async function sendAsAvatar(avatar, message) {
 async function getOrCreateWebhook(channel) {
     const webhooks = await channel.fetchWebhooks();
     let webhook = webhooks.find(wh => wh.owner.id === discordClient.user.id);
-    
+
     if (!webhook) {
         webhook = await channel.createWebhook({
             name: 'Bot Webhook',
             avatar: 'https://i.imgur.com/jqNRvED.png'
         });
     }
-    
+
     return webhook;
 }
 
@@ -126,3 +124,13 @@ export async function listChannels() {
         ...(categorizedChannels.ThreadChannel || [])
     ];
 }
+
+export async function getChannelByName(name) {
+    return discordClient.channels.cache.find(channel => channel.name === name);
+}
+
+export async function loginDiscordClient() {
+    return discordClient.login(process.env.DISCORD_BOT_TOKEN);
+}
+
+export { discordClient };

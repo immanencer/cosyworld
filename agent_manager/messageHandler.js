@@ -34,13 +34,19 @@ export const fetchAllMessages = async (avatars) => {
 };
 
 export const prioritizeChannels = (messagesByChannel) => {
-    const channelsWithHumanActivity = [];
+    const channelsWithRecentHumanActivity = [];
 
     for (const [channelId, messages] of Object.entries(messagesByChannel)) {
-        if (messages.some(message => !message.author.bot)) {
-            channelsWithHumanActivity.push(channelId);
+        if (messages.length === 0) continue;
+
+        // Check the last one or two messages for human activity
+        const recentMessages = messages.slice(-2);
+        if (recentMessages.some(message => !message.author.bot)) {
+            channelsWithRecentHumanActivity.push(channelId);
         }
     }
 
-    return channelsWithHumanActivity.sort((a, b) => messagesByChannel[b].length - messagesByChannel[a].length);
+    // Sort channels by the number of recent messages
+    return channelsWithRecentHumanActivity.sort((a, b) => messagesByChannel[b].length - messagesByChannel[a].length);
 };
+

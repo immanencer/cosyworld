@@ -23,7 +23,7 @@ export const availableTools = [
         type: "function",
         function: {
             name: "SEARCH",
-            description: "Search the current location for items",
+            description: "Search the current location for items you can TAKE or USE.",
             parameters: {
                 type: "object",
                 properties: {}
@@ -34,7 +34,7 @@ export const availableTools = [
         type: "function",
         function: {
             name: "MOVE",
-            description: "Move to a different location",
+            description: "MOVE to a different location",
             parameters: {
                 type: "object",
                 properties: {
@@ -68,7 +68,7 @@ export const availableTools = [
         type: "function",
         function: {
             name: "DROP",
-            description: "Drop an item from the avatar's inventory",
+            description: "Drop an item from the avatar's inventory, it will remain in the current location",
             parameters: {
                 type: "object",
                 properties: {

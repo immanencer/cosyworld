@@ -5,7 +5,7 @@ export async function generateResponse(avatar, conversation) {
     const recentConversation = conversation.slice(-20);
     let userPrompt = avatar.response_style || 'Reply in character using one or two short sentences or *actions*.';
 
-    userPrompt = `You are in ${avatar.location.name}.\n\n` + userPrompt;
+    userPrompt = `(${avatar.location.name}) system: Here are some other locations you remember: ${(avatar.remember||[]).join(',')}.\n\n` + userPrompt;
 
     console.log(`User prompt for ${avatar.name}:\n\n${userPrompt}`);
     console.log(`Conversation history for ${avatar.name}:\n\n`, recentConversation.join('\n'));

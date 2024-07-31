@@ -141,6 +141,7 @@ class Whisper extends DiscordBot {
             return;
         }
         const result = await ai.chatSync({ role: 'user', content: this.message_cache.join('\n') });
+        if (!result) return;
         await ai.chatSync({ role: 'assistant', content: `${result}` });
         await this.sendAsAvatar(this.avatar, `${result}`);
         this.message_cache = [];

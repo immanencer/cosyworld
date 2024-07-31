@@ -6,16 +6,16 @@ export default function chunkText(message, chunkSize = 2000) {
         return [];
     }
 
-    //censorship - remove sensitive usernames from the message
+    // Censorship - remove sensitive usernames from the message
     message = replaceContent(message);
 
-    // Split the message at every heading or double newline to ensure logical sectioning.
-    let sections = message.split(/(\n\n|\n#+\s|\*\*[^*]+\*\*|\*\*\s)/);
+    // Split the message at every heading, double newline, or bold text to ensure logical sectioning.
+    let sections = message.split(/(\n\n|\n#+\s|\*\*[^*]+\*\*|\*\*\s)/g);
     let chunks = [];
     let currentChunk = "";
 
     sections.forEach(section => {
-        if (currentChunk.length + section.length <= chunkSize) {
+        if ((currentChunk.length + section.length) <= chunkSize) {
             currentChunk += section;
         } else {
             if (currentChunk) {

@@ -3,6 +3,7 @@ import { updateAvatarLocation } from '../agent_manager/avatarHandler.js';
 import AI from './ai.mjs';
 import { handleDiscordInteraction } from '../agent_manager/discordHandler.js';
 import { db } from '../database/index.js';
+import { fuzzyMatch } from '../tools/fuzzymatch.js';
 
 // Initialize locations
 let locations = [];
@@ -37,7 +38,7 @@ class Item {
 
                 // Make a final call with tool responses
             const response = await ai.generateResponse(
-                    this.description,
+                    `You are ${this.description}. Always respond with an appropriate *action*`,
                     avatar.messages,
                     avatar.location.name,
                     avatar.name,
@@ -106,7 +107,7 @@ class ItemHandler {
             return { error: `${itemName} is not in this location.` };
         }
         item.holder = avatar._id.toString();
-        item.location = null;
+        item.location = avatar.location.name;
         await this.saveItem(item);
         return { result: `Picked up ${itemName}.` };
     }
@@ -127,23 +128,37 @@ class ItemHandler {
 
     async searchRoom(avatar) {
         const itemsInRoom = Array.from(this.items.values())
-            .filter(item => item.location === avatar.location.name && (!item.holder || item.holder === avatar.name));
+            .filter(item => item.location === avatar.location.name);
         
-        let message = `Found ${itemsInRoom.length} items:\n`;
-
-        for (const item of itemsInRoom) {
-            await handleDiscordInteraction({ ...item, location: avatar.location }, item.description);
-            message += `${item.name} - ${item.description}\n`;
+        let message = '';
+    
+        if (itemsInRoom.length === 0) {
+            message = 'No items found in this location.';
+        } else {
+            message = `Found ${itemsInRoom.length} items:\n`;
+            for (const item of itemsInRoom) {
+                message += `${item.name} - ${item.description}\n`;
+            }
         }
-
+    
+        // Send the search results as the "Search Results 🔎" avatar
+        await handleDiscordInteraction({
+            ...avatar,
+            name: 'Search Results 🔎',
+            avatar: 'https://i.imgur.com/jQ7LA0U.png', // Replace with actual avatar image URL
+        }, message);
+    
         return { result: message };
     }
 
     async moveAvatar(avatar, destination) {
         console.log(`${avatar.emoji || '⚠️'} ${avatar.name} 🏃💨 ${destination}`);
-        const newLocation = locations.find(loc => loc.name.toLowerCase() === destination.toLowerCase());
+        if (!destination) {
+            return { error: 'Please provide a destination.' };
+        }
+        const newLocation = fuzzyMatch(locations, 'name', destination);
         if (newLocation) {
-            avatar.location = newLocation._id.toString();
+            avatar.location = newLocation;
             await updateAvatarLocation(avatar);
             return { result: `Moved to ${newLocation.name}.` };
         }
@@ -155,7 +170,7 @@ class ItemHandler {
         const availableItems = await itemsCollection.find({
             $or: [
                 { holder: avatar._id.toString() },
-                { location: avatar.location }
+                { location: avatar.location.name }
             ]
         }).toArray();
 
