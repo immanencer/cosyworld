@@ -4,6 +4,7 @@ import { postJSON } from '../tools/postJSON.js';
 import { waitForTask } from '../services/taskModule.js';
 import { getLocations } from './locationHandler.js';
 import { isEqual } from '../tools/isEqual.js';
+import { fuzzyMatch } from '../tools/fuzzymatch.js';
 
 export const initializeAvatars = async () => {
     const [locations, allAvatars] = await Promise.all([
@@ -28,18 +29,34 @@ const initializeAvatar = (avatar, locations) => ({
     lastUsedItems: []
 });
 
+
+export const moveAvatar = async (avatar, destination) => {
+    console.log(`${avatar.emoji || '⚠️'} ${avatar.name} 🏃💨 ${destination}`);
+    if (!destination) {
+        return { error: 'Please provide a destination.' };
+    }
+    const newLocation = fuzzyMatch(locations, 'name', destination);
+    if (newLocation) {
+        avatar.location = newLocation;
+        await updateAvatarLocation(avatar);
+        return { result: `Moved to ${newLocation.name}.` };
+    }
+    return { error: `Location ${destination} not found.` };
+}
+
 export const updateAvatarLocation = async (avatar) => {
     avatar.remember = updateRememberedLocations(avatar);
 
     try {
         await updateAvatarOnServer(avatar);
+        await initializeAvatar(avatar, await getLocations());
     } catch (error) {
         console.error(`Failed to update location for ${avatar.name}:`, error);
     }
 };
 
 const updateRememberedLocations = ({ remember = [], location }) =>
-    [...new Set([...remember, location.name])].slice(-18);
+    [...new Set([...remember, location.name])].slice(-8);
 
 const updateAvatarOnServer = async (avatar) => {
     if (!avatar || !avatar._id) {
@@ -146,3 +163,14 @@ export function addFeelingToAvatar(avatar, feeling) {
         console.error(`Failed to sync new feeling for ${avatar.name}:`, error);
     });
 }
+
+export const getAvatarInfo = async (avatarId) => {
+    try {
+        const url = `${AVATARS_API}/${avatarId}`;
+        const avatarInfo = await fetchJSON(url);
+        return await initializeAvatar(avatarInfo, await getLocations());
+    } catch (error) {
+        console.error(`Failed to fetch avatar info for ID ${avatarId}:`, error);
+        throw error;
+    }
+};

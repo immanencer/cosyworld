@@ -1,17 +1,12 @@
 import { handleResponse } from "./responseHandler.js";
 import shouldRespond from './agentMind/shouldRespondHeuristic.js';
 
-export async function processMessagesForAvatar(avatar, locations, messages) {
+export async function processMessagesForAvatar(avatar, locations, messages, avatarsInRoom) {
     try {
-        if (messages.length === 0) {
-            avatar.initiative = (avatar.initiative || 10) - 1;
-            return;
-        }
-
         const conversation = [...buildConversation(messages, locations)];
         validateMessages(conversation);
 
-        if (shouldRespond(avatar, conversation)) {
+        if (shouldRespond(avatar, conversation, avatarsInRoom)) {
             await handleResponse(avatar, conversation);
         }
     } catch (error) {

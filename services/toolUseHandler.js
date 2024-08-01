@@ -19,17 +19,17 @@ export const availableTools = [
             }
         }
     },
-    {
-        type: "function",
-        function: {
-            name: "SEARCH",
-            description: "Search the current location for items you can TAKE or USE.",
-            parameters: {
-                type: "object",
-                properties: {}
-            }
-        }
-    },
+    // {
+    //     type: "function",
+    //     function: {
+    //         name: "SEARCH",
+    //         description: "Search the current location for items you can TAKE or USE.",
+    //         parameters: {
+    //             type: "object",
+    //             properties: {}
+    //         }
+    //     }
+    // },
     {
         type: "function",
         function: {
@@ -86,7 +86,7 @@ export const availableTools = [
 // Tool Use Handler
 const toolUseHandler = {
     USE: (avatar, args) => itemHandler.useItem(avatar, args.item),
-    SEARCH: (avatar) => itemHandler.searchRoom(avatar),
+    //SEARCH: (avatar) => itemHandler.searchRoom(avatar),
     MOVE: (avatar, args) => itemHandler.moveAvatar(avatar, args.location),
     TAKE: (avatar, args) => itemHandler.pickUpItem(avatar, args.item),
     DROP: (avatar, args) => itemHandler.dropItem(avatar, args.item)

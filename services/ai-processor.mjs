@@ -39,7 +39,7 @@ class TaskProcessor {
 
         const availableItems = await itemHandler.getAvailableItems(task.avatar);
         if (availableItems.length > 0) {
-            task.messages.push({ role: 'system', content: 'These are the available items: ' + availableItems.map(i => i.name).join(', ') });
+            task.messages.push({ role: 'user', content: 'These are the available items: ' + availableItems.join(', ') });
         }
 
         try {

@@ -158,9 +158,14 @@ class ItemHandler {
         }
         const newLocation = fuzzyMatch(locations, 'name', destination);
         if (newLocation) {
+            const oldLocation = locations.find(loc => loc.id === avatar.location.id);
+            if (!oldLocation) {
+                return { error: '💀 Avatar location not found.' };
+            }
             avatar.location = newLocation;
             await updateAvatarLocation(avatar);
-            return { result: `Moved to ${newLocation.name}.` };
+            await handleDiscordInteraction({...avatar, location: oldLocation}, `Moved to ${newLocation.name}.`);
+            return { result: `Moved to ${newLocation.name}.`, avatar };
         }
         return { error: `Location ${destination} not found.` };
     }
@@ -174,7 +179,7 @@ class ItemHandler {
             ]
         }).toArray();
 
-        return availableItems.map(item => `${item.name} (${item.type})`);
+        return availableItems.filter(T=> !T.holder && T.holder === avatar._id.toString()).map(item => `${item.name}`);
     }
 }
 

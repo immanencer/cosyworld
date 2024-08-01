@@ -19,7 +19,6 @@ class GoblinCave {
 
         this.token = process.env.DISCORD_BOT_TOKEN;
         this.guild = '1219837842058907728';
-        this.messageCount = 0;
         this.spawnInterval = 10;
         this.goblins = [];
         this.loadGoblins();
@@ -36,9 +35,6 @@ class GoblinCave {
         this.messageQueue = [];
         this.webhookCache = {};
         this.conversations = {};
-
-        this.sharedDreamState = [];
-        this.memorySummaryInterval = 100;
 
         this.setupEventListeners();
     }
@@ -61,6 +57,7 @@ class GoblinCave {
         await this.initializeDatabase();
         this.isInitialized = true;
         this.processQueuedMessages();
+        setInterval(() => this.spawnGoblin(), this.spawnInterval * 1000);
     }
 
     async initializeChannels() {
@@ -94,24 +91,21 @@ class GoblinCave {
     }
 
     async onMessage(message) {
-        this.messageCount++;
-        if (this.messageCount >= this.memorySummaryInterval) {
-            this.messageCount = 0;
-            await this.summarizeMemories();
-        }
         await this.handleGoblins(message);
     }
 
     async handleGoblins(message) {
-        this.goblins = this.goblins.map(g => g.stats ? g : { ...g, stats: { hp: 10, dex: 10, wins: 0, losses: 0 } });
+        this.goblins.forEach(goblin => {
+            if (!goblin.stats) {
+                goblin.stats = { hp: 10, dex: 10, wins: 0, losses: 0 };
+            }
 
-        for (const goblin of this.goblins.filter(g => g.active)) {
             if (message.content.toLowerCase().includes(goblin.name.toLowerCase())) {
                 if (message.author.username === goblin.target) {
                     goblin.memories.push(`Interacted with ${message.author.username} and vanished.`);
-                    this.goblins = this.goblins.filter(g => g.name !== goblin.name);
-                    await this.saveGoblins();
-                    await this.sendAsAvatar(`*vanishes into the shadows*`, message.channel, goblin);
+                    goblin.active = false;
+                    this.saveGoblins();
+                    this.sendAsAvatar(`*vanishes into the shadows*`, message.channel, goblin);
                 } else {
                     goblin.target = message.author.username;
                     goblin.memories.push(`Changed target to ${message.author.username}.`);
@@ -119,31 +113,26 @@ class GoblinCave {
             } else if (!goblin.target || message.author.username === goblin.target) {
                 goblin.target = message.author.username;
                 goblin.messageCount = (goblin.messageCount || 0) + 1;
-                if (goblin.messageCount >= this.getRandomInt(2, 3)) {
-                    await this.sendAsAvatar(await this.getGoblinAction(goblin), message.channel, goblin);
+                if (goblin.messageCount >= 2) {
+                    this.sendAsAvatar(this.getGoblinAction(goblin), message.channel, goblin);
                     goblin.memories.push(`Interacted with ${message.author.username}.`);
                     goblin.messageCount = 0;
                 }
             }
 
             if (Math.random() < 0.1) {
-                await this.moveGoblin(goblin);
+                this.moveGoblin(goblin);
             }
 
             const otherGoblin = this.goblins.find(g => g.name !== goblin.name && !g.target && g.stats.hp > 0);
             if (otherGoblin) {
-                await this.goblinBattle(goblin, otherGoblin);
+                this.goblinBattle(goblin, otherGoblin);
             }
-        }
+        });
     }
 
     async goblinBattle(goblin1, goblin2) {
         const roll = (sides) => Math.floor(Math.random() * sides) + 1;
-        const defaultStats = { hp: 10, dex: 10, wins: 0, losses: 0 };
-
-        goblin1.stats = { ...defaultStats, ...goblin1.stats };
-        goblin2.stats = { ...defaultStats, ...goblin2.stats };
-
         const battleOrder = roll(20) + goblin1.stats.dex > roll(20) + goblin2.stats.dex ? [goblin1, goblin2] : [goblin2, goblin1];
         let battleLog = `${battleOrder[0].name} wins initiative and attacks first!\n`;
 
@@ -178,13 +167,13 @@ class GoblinCave {
 
         const goblinCaveChannel = this.channels.get('goblin-cave');
         if (goblinCaveChannel) {
-            await this.sendAsAvatar(battleDescription, goblinCaveChannel, this.avatar);
+            this.sendAsAvatar(battleDescription, goblinCaveChannel, this.avatar);
         }
 
         console.log(battleLog);
         console.log(`${winner.name} wins the battle!`);
 
-        await this.saveGoblins();
+        this.saveGoblins();
         return { winner, loser, battleLog };
     }
 
@@ -198,8 +187,8 @@ class GoblinCave {
                 goblin.location = randomLocation.channelName;
                 goblin.memories.push(`Moved to ${randomLocation.channelName}`);
                 goblin.xp = (goblin.xp || 0) + 10;
-                await this.sendAsAvatar(`*moves to ${randomLocation.channelName} with a ghostly presence*`, channel, goblin);
-                await this.saveGoblins();
+                this.sendAsAvatar(`*moves to ${randomLocation.channelName} with a ghostly presence*`, channel, goblin);
+                this.saveGoblins();
             }
         }
     }
@@ -220,7 +209,7 @@ class GoblinCave {
 
         const newGoblin = { ...goblinData, target: null, messageCount: 0, active: true, xp: 0 };
         this.goblins.push(newGoblin);
-        await this.saveGoblins();
+        this.saveGoblins();
     }
 
     async createGoblinData() {
@@ -269,14 +258,14 @@ goblins sing
 
             if (goblinCaveChannel) {
                 const firstMessage = await this.chatWithAI(`You, little void goblin named ${name}, born of night and shadows, with the goal: ${goal}. \n\nOnly respond with SHORT goblin actions or mischievous deeds.`, goblinCaveChannel);
-                await this.sendAsAvatar(firstMessage, goblinCaveChannel, goblin);
+                this.sendAsAvatar(firstMessage, goblinCaveChannel, goblin);
             }
             return goblin;
         } catch (error) {
             console.error('👻 Failed to parse new goblin JSON:', error);
             if (goblinCaveChannel) {
                 const dramaticFailureMessage = await this.chatWithAI(`Hraa'khor! The void goblin creation ritual has failed!`);
-                await this.sendAsAvatar(dramaticFailureMessage, goblinCaveChannel, this.avatar);
+                this.sendAsAvatar(dramaticFailureMessage, goblinCaveChannel, this.avatar);
             }
             return this.getRandomAvatar();
         }
@@ -284,10 +273,6 @@ goblins sing
 
     getRandomAvatar() {
         return this.avatars[Math.floor(Math.random() * this.avatars.length)];
-    }
-
-    getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     async getGoblinAction(goblin) {
@@ -434,7 +419,7 @@ goblins sing
             if (goblin.memories.length > 0) {
                 const summary = await this.chatWithAI(`Summarize the following memories of ${goblin.name} in one or two sentences: ${goblin.memories.join('. ')}`);
                 goblin.memories = [summary];
-                await this.saveGoblins();
+                this.saveGoblins();
             }
         }
     }

@@ -11,15 +11,15 @@ export function formatToolResponse(toolResponse, location) {
         try {
             const parsedContent = JSON.parse(toolResponse.content);
             if (parsedContent.error) {
-                content = `error: ${parsedContent.error}`;
+                content = `${parsedContent.error}`;
             } else if (parsedContent.result) {
-                content = `result: ${JSON.stringify(parsedContent.result)}`;
+                content = `${JSON.stringify(parsedContent.result)}`;
             } else {
-                content = `result: ${JSON.stringify(parsedContent)}`;
+                content = `${JSON.stringify(parsedContent)}`;
             }
         } catch (error) {
             // If parsing fails, use the content as is
-            content = `result: ${toolResponse.content}`;
+            content = `${toolResponse.content}`;
         }
     }
 
