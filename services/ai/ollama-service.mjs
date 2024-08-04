@@ -1,5 +1,6 @@
 import ollama from 'ollama';
 import crypto from 'crypto';
+import process from 'process';
 
 class OllamaService {
   static #modelCache = new Set();
@@ -104,7 +105,7 @@ class OllamaService {
   static async listAvailableModels() {
     try {
       const models = await ollama.list();
-      return models.map(model => model.name);
+      return models.models.map(model => model.name);
     } catch (error) {
       console.error('Failed to list available models:', error);
       throw new Error('Failed to list available Ollama models');
