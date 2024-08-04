@@ -29,16 +29,46 @@ async function processAvatarsInChannel(avatars, locations, channelId) {
 }
 
 // Main function to process avatars by priority across channels
+// Main function to process avatars by priority across channels
 export const processAvatarsByPriority = async (avatars, locations) => {
     let counter = 0;
     const messagesByChannel = await fetchAllMessages(avatars);
-    const prioritizedChannels = Object.keys(messagesByChannel)
-        .filter(channelId => messagesByChannel[channelId].some(msg => !msg.author.bot))
-        .sort((a, b) => messagesByChannel[b].length - messagesByChannel[a].length);
 
-    for (const channelId of prioritizedChannels) {
+    // Create a priority queue for channels
+    const prioritizedChannels = [];
+
+    // Process each channel to determine priority
+    for (const channelId of Object.keys(messagesByChannel)) {
+        const messages = messagesByChannel[channelId];
+        if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            const lastNonBotMessage = [...messages].reverse().find(msg => !msg.author.bot);
+
+            // Prioritize channels where the last comment was not from a bot
+            if (!lastMessage.author.bot) {
+                prioritizedChannels.push({ channelId, timestamp: lastMessage.createdAt, priority: 1 });
+            }
+
+            // Also add channels based on the last non-bot comment
+            if (lastNonBotMessage) {
+                prioritizedChannels.push({ channelId, timestamp: lastNonBotMessage.createdAt, priority: 2 });
+            }
+        }
+    }
+
+    // Sort the channels by priority first, then by timestamp
+    prioritizedChannels.sort((a, b) => {
+        if (a.priority === b.priority) {
+            return a.timestamp - b.timestamp;
+        }
+        return a.priority - b.priority;
+    });
+
+    // Process the prioritized channels asynchronously
+    for (const { channelId } of prioritizedChannels) {
         counter += await processAvatarsInChannel(avatars, locations, channelId);
     }
 
     return counter;
 };
+
