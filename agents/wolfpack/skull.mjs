@@ -23,7 +23,7 @@ const CONFIG = {
 const THOUGHT_PROCESSES = {
     wake: { prompt: "You're waking up. How do you feel? What's your first thought?", frequency: 'daily' },
     dream: { prompt: "You're dreaming. What do you see in your dream?", frequency: 'daily' },
-    reflect: { prompt: "Reflect on your recent experiences and memories. What stands out?", frequency: 'hourly' },
+    reflect: { prompt: "You're daydreaming. Reflect on your recent experiences and memories. What stands out?", frequency: 'hourly' },
     setGoal: { prompt: "Based on your reflections, what's your new goal?", frequency: 'daily' },
     analyzeSentiment: { prompt: "Analyze your feelings towards {person}. Express it in 3 emojis.", frequency: 'per_interaction' },
     createMemory: { prompt: "Create a short memory about {person} based on your recent interactions.", frequency: 'per_interaction' }

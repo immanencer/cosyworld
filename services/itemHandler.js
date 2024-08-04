@@ -156,7 +156,7 @@ class ItemHandler {
         if (!destination) {
             return { error: 'Please provide a destination.' };
         }
-        const newLocation = fuzzyMatch(locations, 'name', destination);
+        const newLocation = fuzzyMatch(locations, 'name', destination, 0.5);
         if (newLocation) {
             const oldLocation = locations.find(loc => loc.id === avatar.location.id);
             if (!oldLocation) {

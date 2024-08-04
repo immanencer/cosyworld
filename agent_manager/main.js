@@ -8,7 +8,8 @@ import { POLL_INTERVAL } from '../tools/config.js';
 import { performance } from 'perf_hooks';
 
 async function main() {
-    while (true) {
+    const isRunning = true;
+    while (isRunning) {
         let count = 0;
         const startTime = performance.now();
         try {

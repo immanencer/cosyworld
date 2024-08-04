@@ -39,7 +39,7 @@ export const getLocationByName = async (name) => {
     return locations.find(loc => loc.name === name);
 }
 
-export const getLocationByFuzzyName = async (name, threshold = 0.4) => {
+export const getLocationByFuzzyName = async (name, threshold = 0.8) => {
     const locations = await getLocations();
     const bestMatch = fuzzyMatch(
         locations.filter(T => ['channel', 'thread'].includes(T.type)),

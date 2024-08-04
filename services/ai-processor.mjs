@@ -21,9 +21,13 @@ class TaskProcessor {
         return this.collection.findOneAndUpdate(
             { status: 'pending' },
             { $set: { status: 'processing', processingStartTime: new Date() } },
-            { returnDocument: 'after' }
+            {
+                sort: { createdAt: 1 }, // Ensure we sort by the creation date in ascending order
+                returnDocument: 'after'
+            }
         );
     }
+    
 
     async processTask(task) {
         const timeout = setTimeout(() => {
@@ -108,11 +112,11 @@ class TaskProcessor {
                 });
             } catch (error) {
                 console.error(`Error executing tool ${toolCall.function.name}:`, error);
-                toolResponses.push({
-                    role: 'tool',
-                    content: JSON.stringify({ error: error.message }),
-                    name: toolCall.function.name
-                });
+                // toolResponses.push({
+                //     role: 'tool',
+                //     content: JSON.stringify({ error: error.message }),
+                //     name: toolCall.function.name
+                // });
             }
         }
 
