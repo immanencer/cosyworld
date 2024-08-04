@@ -8,7 +8,7 @@ import { conversationTag } from '../utils.js';
  * @returns {boolean} Whether the avatar should respond.
  */
 const shouldRespond = (avatar, conversation, avatarsInRoom = []) => {
-    if (avatarsInRoom.length > 1 && Math.random() > 0.01) {
+    if (avatarsInRoom.length > 1 && Math.random() < 0.1) {
         return true;
     }
     if (conversation.length === 0) {

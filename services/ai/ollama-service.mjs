@@ -13,10 +13,10 @@ class OllamaService {
       systemPrompt,
       messages,
       modelOverride,
-      temperature = 0.7,
-      maxTokens = 4096,
+      temperature = 1.0,
+      maxTokens = 8192,
       signal,
-      tools = []
+      tools
     } = params;
 
     const modelToUse = modelOverride || this.model;
@@ -27,16 +27,21 @@ class OllamaService {
     const formattedMessages = this.#formatMessages(systemPrompt, messages);
 
     try {
-      const result = await ollama.chat({
+
+      const options = {
         model: modelHash,
         messages: formattedMessages,
-        stream: false,
         options: {
           temperature,
           num_predict: maxTokens,
         },
-         tools
-      });
+        tools
+      };
+      if (tools) {
+        options.stream = false;
+        options.tools = tools;
+      }
+      const result = await ollama.chat(options);
 
       if (!result.message) {
         throw new Error('Empty or invalid response from Ollama');
