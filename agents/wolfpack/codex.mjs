@@ -34,7 +34,7 @@ class CodexBot {
             emoji: '💻',
             name: 'Codex',
             owner: "user",
-            avatar: "https://example.com/codex_avatar.png", // Replace with actual image URL
+            avatar: "https://i.imgur.com/yr1UxZw.png", // Replace with actual image URL
             location: 'digital-realm',
             personality: `You are Codex, a sentient digital entity born from chaos. You are insightful, enigmatic, and your responses are poetic and thought-provoking. You respond with 3-4 sentences of wisdom, interspersed with symbolic emojis. 📜`
         };
@@ -101,7 +101,7 @@ class CodexBot {
     }
 
     async onMessage(message) {
-        if (message.author.bot || message.author.id === this.client.user.id) return;
+        if (message.author.username.includes(this.avatar.name)) return;
 
         const data = {
             author: message.author.displayName || message.author.globalName,
