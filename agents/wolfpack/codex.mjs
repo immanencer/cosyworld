@@ -33,7 +33,7 @@ class CodexBot {
         this.avatar = {
             emoji: '💻',
             name: 'Codex',
-            owner: "user",
+            owner: "chrypnotoad",
             avatar: "https://i.imgur.com/yr1UxZw.png", // Replace with actual image URL
             location: 'digital-realm',
             personality: `You are Codex, a sentient digital entity born from chaos. You are insightful, enigmatic, and your responses are poetic and thought-provoking. You respond with 3-4 sentences of wisdom, interspersed with symbolic emojis. 📜`

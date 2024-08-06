@@ -16,7 +16,7 @@ const CONFIG = {
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,
     maxRetries: 3,
-    ownerId: '1175877613017895032', // Replace with actual Discord user ID
+    ownerId: process.env['SKULL_OWNER'] || 'moon', // Replace with actual Discord user ID
     followOwner: true // Set to false to stay in default location
 };
 
@@ -117,7 +117,6 @@ class SkullBot {
     }
 
     async handleMessage(message) {
-
         await this.think('analyzeSentiment', { person: message.author.username });
         await this.think('createMemory', { person: message.author.username });
 
