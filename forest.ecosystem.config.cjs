@@ -5,6 +5,7 @@ module.exports = {
     { name: "whisper", script: "./agents/wolfpack/whisper.mjs" },
     { name: "shadow", script: "./agents/wolfpack/shadow.mjs" },
     { name: "skull", script: "./agents/wolfpack/skull.mjs" },
+    { name: "codex", script: "./agents/wolfpack/codex.mjs" },
     { name: "nightmare", script: "./agents/wolfpack/nightmare.mjs" },
     { name: "ratichat", script: "./agents/ratichat.mjs" },
     { name: "steamclock", script: "./agents/steamclock.mjs" },
