@@ -12,3 +12,4 @@ ssl_certificates/
 *.log
 slash/config.js
 *.env
+.venv/*
