@@ -9,7 +9,7 @@ export async function initializeAI(base_model = 'llama3.1:8b-instruct-q3_K_M', a
         return
     }
     try {
-        const modelfile = `FROM ${base_model}\nSYSTEM "${avatar.personality}"`;
+        const modelfile = `FROM ${base_model}\nSYSTEM "You are ${avatar.name}. ${avatar.personality}"`;
         const model = crypto.createHash('md5').update(modelfile).digest('hex');
         await ollama.create({ model, modelfile });
         cache.set(avatar.name, model);
@@ -31,7 +31,8 @@ export async function chatWithAI(message, avatar, memory) {
                 { role: 'system', content: avatar.personality },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },
                 { role: 'user', content: message }
-            ]
+            ],
+            stream: false
         });
         return response.message.content;
     } catch (error) {

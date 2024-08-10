@@ -1,113 +1,129 @@
 import { itemHandler } from './itemHandler.js';
 
-// Define available tools
-export const availableTools = [
+// Define a base structure for each tool
+const toolDefinitions = [
     {
-        type: "function",
-        function: {
-            name: "USE",
-            description: "Use an item in the avatar's inventory",
-            parameters: {
-                type: "object",
-                properties: {
-                    item: {
-                        type: "string",
-                        description: "The name of the item to use",
-                    }
-                },
-                required: ["item"],
+        name: "USE",
+        description: "Use an item in the avatar's inventory",
+        cooldown: 5000, // 5 seconds cooldown for USE
+        parameters: {
+            item: {
+                type: "string",
+                description: "The name of the item to use",
             }
-        }
-    },
-    // {
-    //     type: "function",
-    //     function: {
-    //         name: "SEARCH",
-    //         description: "Search the current location for items you can TAKE or USE.",
-    //         parameters: {
-    //             type: "object",
-    //             properties: {}
-    //         }
-    //     }
-    // },
-    {
-        type: "function",
-        function: {
-            name: "MOVE",
-            description: "MOVE to a different location",
-            parameters: {
-                type: "object",
-                properties: {
-                    location: {
-                        type: "string",
-                        description: "The name of the location to move to",
-                    }
-                },
-                required: ["location"],
-            }
-        }
+        },
+        handler: (avatar, args) => itemHandler.useItem(avatar, args.item)
     },
     {
-        type: "function",
-        function: {
-            name: "TAKE",
-            description: "Take an item from the current location",
-            parameters: {
-                type: "object",
-                properties: {
-                    item: {
-                        type: "string",
-                        description: "The name of the item to take",
-                    }
-                },
-                required: ["item"],
-            }
-        }
+        name: "SEARCH",
+        description: "Search the current location for items you can TAKE or USE.",
+        cooldown: 3000, // 3 seconds cooldown for SEARCH
+        parameters: {},
+        handler: (avatar) => itemHandler.searchRoom(avatar) // Assuming searchRoom is implemented
     },
     {
-        type: "function",
-        function: {
-            name: "DROP",
-            description: "Drop an item from the avatar's inventory, it will remain in the current location",
-            parameters: {
-                type: "object",
-                properties: {
-                    item: {
-                        type: "string",
-                        description: "The name of the item to drop",
-                    }
-                },
-                required: ["item"],
+        name: "MOVE",
+        description: "MOVE to a different location",
+        cooldown: 10000, // 10 seconds cooldown for MOVE
+        parameters: {
+            location: {
+                type: "string",
+                description: "The name of the location to move to",
             }
-        }
+        },
+        handler: (avatar, args) => itemHandler.moveAvatar(avatar, args.location)
+    },
+    {
+        name: "TAKE",
+        description: "Take an item from the current location",
+        cooldown: 2000, // 2 seconds cooldown for TAKE
+        parameters: {
+            item: {
+                type: "string",
+                description: "The name of the item to take",
+            }
+        },
+        handler: (avatar, args) => itemHandler.pickUpItem(avatar, args.item)
+    },
+    {
+        name: "DROP",
+        description: "Drop an item from the avatar's inventory; it will remain in the current location",
+        cooldown: 2000, // 2 seconds cooldown for DROP
+        parameters: {
+            item: {
+                type: "string",
+                description: "The name of the item to drop",
+            }
+        },
+        handler: (avatar, args) => itemHandler.dropItem(avatar, args.item)
     }
 ];
 
-// Tool Use Handler
-const toolUseHandler = {
-    USE: (avatar, args) => itemHandler.useItem(avatar, args.item),
-    //SEARCH: (avatar) => itemHandler.searchRoom(avatar),
-    MOVE: (avatar, args) => itemHandler.moveAvatar(avatar, args.location),
-    TAKE: (avatar, args) => itemHandler.pickUpItem(avatar, args.item),
-    DROP: (avatar, args) => itemHandler.dropItem(avatar, args.item)
-};
+// Generate the available tools list dynamically
+const availableTools = toolDefinitions.map(tool => ({
+    name: tool.name,
+    description: tool.description,
+    parameters: {
+        type: "object",
+        properties: tool.parameters,
+        required: Object.keys(tool.parameters)
+    },
+    cooldown: tool.cooldown,
+    handler: tool.handler
+}));
 
-// Function to execute tool calls
-export async function executeToolCall(toolCall, avatar) {
-    const tool = availableTools.find(t => t.function.name === toolCall.function.name);
-    if (!tool) {
-        console.error(`Tool ${toolCall.function.name} not found`);
-        return { error: `Tool ${toolCall.function.name} not found` };
+// Cooldowns storage: { avatarName: { toolName: cooldownEndTime } }
+const toolCooldowns = {};
+
+// Function to handle cooldowns and return available tools
+export function getAvailableTools(avatar) {
+    const currentTime = Date.now();
+    const available = [];
+
+    for (const tool of availableTools) {
+        const cooldownEndTime = toolCooldowns[avatar.name]?.[tool.name] || 0;
+
+        if (currentTime >= cooldownEndTime) {
+            available.push(tool);
+        } else {
+            console.log(`Tool ${tool.name} for avatar ${avatar.name} is on cooldown, available in ${cooldownEndTime - currentTime}ms`);
+        }
     }
 
+    return available;
+}
+
+// Function to execute tool calls with cooldown management
+export async function executeToolCall(toolCall, avatar) {
     try {
-        const args = toolCall.function.arguments;
-        const handler = toolUseHandler[tool.function.name];
-        console.log(`Executing tool ${toolCall.function.name} with args:`, args);
-        if (handler) {
-            return await handler(avatar, args);
+        const tool = availableTools.find(t => t.name === toolCall.function.name);
+
+        if (!tool) {
+            throw new Error(`Tool ${toolCall.function.name} not found`);
+        }
+
+        const currentTime = Date.now();
+        const cooldownEndTime = toolCooldowns[avatar.name]?.[tool.name] || 0;
+
+        if (currentTime < cooldownEndTime) {
+            throw new Error(`Tool ${tool.name} is on cooldown. Please wait ${cooldownEndTime - currentTime}ms.`);
+        }
+
+        const args = toolCall.function.arguments || {};
+        console.log(`Executing tool ${tool.name} with args:`, args);
+
+        if (typeof tool.handler === 'function') {
+            const result = await tool.handler(avatar, args);
+
+            // Set the new cooldown time
+            toolCooldowns[avatar.name] = {
+                ...toolCooldowns[avatar.name],
+                [tool.name]: currentTime + tool.cooldown
+            };
+
+            return result;
         } else {
-            return { error: `Handler for ${tool.function.name} not implemented` };
+            throw new Error(`Handler for ${tool.name} is not implemented`);
         }
     } catch (error) {
         console.error(`Error executing tool ${toolCall.function.name}:`, error);

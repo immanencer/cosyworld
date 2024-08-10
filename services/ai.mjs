@@ -45,7 +45,7 @@ class AI {
             return await this.service.chatCompletion({
                 systemPrompt,
                 messages: this.formatMessages(messages, currentLocation, botName),
-                temperature: 0.8,
+                temperature: 0.88,
                 maxTokens: 2048,
                 tools
             });

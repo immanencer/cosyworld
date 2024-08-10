@@ -31,7 +31,7 @@ class NightmareBot {
         this.avatar = {
             emoji: '🐺',
             name: 'Nightmare',
-            owner: "moon",
+            owner: "lilcraig",
             "avatar": "https://i.imgur.com/sldkB3U.png",
             location: 'circle-of-the-moon',
             personality: `You are Nightmare, wolf cub and sister of shadow. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
@@ -111,7 +111,7 @@ class NightmareBot {
             location: message.channel.name
         };
 
-        if (data.author === this.avatar.owner && data.location.indexOf('🥩') === -1) {
+        if (data.author === message.author.username && data.location.indexOf('🥩') === -1) {
             this.avatar.location = data.location;
         }
         if (data.location !== this.avatar.location) return;

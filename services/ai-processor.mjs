@@ -2,7 +2,7 @@ import AI from './ai.mjs';
 import db from '../database/index.js';
 import process from 'process';
 
-import { executeToolCall } from './toolUseHandler.js';
+import { executeToolCall, getAvailableTools } from './toolUseHandler.js';
 import { formatToolResponse } from './formatToolResponse.mjs';
 import { itemHandler } from './itemHandler.js';
 
@@ -27,13 +27,12 @@ class TaskProcessor {
             }
         );
     }
-    
 
     async processTask(task) {
         const timeout = setTimeout(() => {
             this.updateTaskStatus(task._id, 'failed', { error: 'Task processing timeout' });
         }, 300000); // 5 minutes timeout
-        
+
         console.log(`Processing task: ${task._id.toHexString()}`);
         const ai = new AI(task.model || DEFAULT_MODEL);
 
@@ -47,36 +46,38 @@ class TaskProcessor {
         }
 
         try {
+            // Get available tools, considering cooldowns
+            const tools = getAvailableTools(task.avatar).filter(T => {
+                const name = T.name; 
+                // Skip USE, TAKE, DROP if no items are available
+                if (["USE", "TAKE", "DROP"].includes(name) && availableItems.length === 0) {
+                    return false;
+                }
+                return true;
+            })
+
             // Initial call with tools
             const initialResponse = await ai.generateResponse(
                 task.system_prompt,
                 task.messages,
                 task.avatar.location?.name || 'unknown',
                 task.avatar.name,
-                task.tools.filter(T => {
-                    const name = T.function.name; 
-                    // Skip USE, TAKE, DROP if no items are available
-                    if (["USE", "TAKE", "DROP"].includes(name) && availableItems.length === 0) {
-                        return false;
-                    }
-                    return true;
-                })
+                (tools.length > 0 ? tools : undefined)
             );
 
             let finalResponse;
 
             if (initialResponse.tool_calls) {
                 // Handle tool calls
-                const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, task.tools, task.avatar, task.messages);
+                const toolResponses = await this.handleToolCalls(initialResponse.tool_calls, tools, task.avatar, task.messages);
                 const formattedToolResponses = toolResponses.map(T => formatToolResponse(T, task.avatar.location?.name));
 
                 // Make a final call with tool responses
                 finalResponse = await ai.generateResponse(
                     task.system_prompt,
-                    [...task.messages, ...formattedToolResponses],
+                    [...formattedToolResponses, ...task.messages],
                     task.avatar.location.name,
-                    task.avatar.name,
-                    [] // No tools for the final call
+                    task.avatar.name
                 );
             } else {
                 // No tool calls, use the initial response as final
@@ -92,14 +93,14 @@ class TaskProcessor {
         }
     }
 
-    async handleToolCalls(toolCalls, availableTools, avatar, messages) {
+    async handleToolCalls(toolCalls, tools, avatar, messages) {
         const toolResponses = [];
         avatar.messages = messages;
 
         for (const toolCall of toolCalls) {
-            const tool = availableTools.find(t => t.function.name === toolCall.function.name);
+            const tool = tools.find(t => t.name === toolCall.function.name);
             if (!tool) {
-                console.error(`Tool ${toolCall.function.name} not found`);
+                console.error(`Tool ${toolCall.function.name} not found or on cooldown`);
                 continue;
             }
 
@@ -112,11 +113,6 @@ class TaskProcessor {
                 });
             } catch (error) {
                 console.error(`Error executing tool ${toolCall.function.name}:`, error);
-                // toolResponses.push({
-                //     role: 'tool',
-                //     content: JSON.stringify({ error: error.message }),
-                //     name: toolCall.function.name
-                // });
             }
         }
 

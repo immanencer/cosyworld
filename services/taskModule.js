@@ -1,7 +1,7 @@
 import { TASKS_API, POLL_INTERVAL } from '../tools/config.js';
 import { postJSON } from '../tools/postJSON.js';
 import { fetchJSON } from '../tools/fetchJSON.js';
-import { availableTools } from './toolUseHandler.js';
+import { getAvailableTools } from './toolUseHandler.js';
 
 export async function createTask(avatar, messages, tools) {
     const task = {
@@ -42,11 +42,11 @@ export function pollTaskCompletion(taskId) {
     });
 }
 
-export async function waitForTask(avatar, messages, tools = availableTools) {
+export async function waitForTask(avatar, messages) {
     let taskId;
 
     try {
-        taskId = await createTask(avatar, messages, tools);
+        taskId = await createTask(avatar, messages, getAvailableTools(avatar));
     } catch (error) {
         console.error(`Failed to create task for ${avatar.name}:`, error);
         return null;

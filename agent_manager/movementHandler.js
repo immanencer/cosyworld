@@ -1,5 +1,6 @@
 import { waitForTask } from './taskHandler.js';
 
+
 export async function moveAvatar(avatar, response, memory) {
     const movementPrompt = `Your current memory: 
     ${JSON.stringify(memory)}

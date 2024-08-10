@@ -138,7 +138,7 @@ class BardBot {
                             threadId: threadId
                         });
                     } else {
-                        await channel.send(`**${this.avatar.name} ${this.avatar.emoji || ''}:** ${chunk}`);
+                        console.error(`🎶 Failed to send message as ${this.avatar.name}: No webhook available.`);
                     }
                 } catch (error) {
                     console.error(`🎶 Failed to send message as ${this.avatar.name}:`, error);

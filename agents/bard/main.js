@@ -1,26 +1,13 @@
-import { initializeDiscord, initializeChannels, sendAsAvatar } from './modules/discord.js';
+import { DiscordHandler } from './modules/discordHandler.js';
 import { initializeAI, chatWithAI } from './modules/ai.js';
 import { loadMemory, saveMemory, summarizeMemory, reflectAndUpdateGoal, updateSentiments, collectSentiment, updateMemory } from './modules/memory.js';
 import { broadcast } from './modules/broadcast.js';
-import process from 'process';
-import { Client, GatewayIntentBits } from 'discord.js';
 
 class BardBot {
     constructor() {
-        this.client = new Client({
-            intents: [
-                GatewayIntentBits.Guilds,
-                GatewayIntentBits.GuildMessages,
-                GatewayIntentBits.MessageContent,
-            ]
-        });
-
-        this.token = process.env.DISCORD_BOT_TOKEN;
-        this.guildId = '1219837842058907728';
         this.debounceTime = 5000;
         this.lastProcessed = 0;
         this.messageCache = [];
-        this.webhookCache = {};
         this.model = 'llama3.1:8b-instruct-q3_K_M';
         this.memoryFile = 'bardbot_memory.json';
 
@@ -49,86 +36,67 @@ class BardBot {
         this.isInitialized = false;
         this.messageQueue = [];
 
-        initializeDiscord(this);
+        this.discordHandler = new DiscordHandler(this);
     }
 
-    onReady = async () => {
-        console.log(`🎶 BardBot is online`);
-        try {
-            await initializeAI(this.model, this.avatar);
-            await initializeChannels(this);
-            await loadMemory(this.memoryFile, this.memory);
-            await summarizeMemory(this.memory, this.avatar);
-            this.startPeriodicTasks();
-            this.isInitialized = true;
-
-            // Post the initial bard tweet
-            await broadcast(this.memory, this.avatar);
-        } catch (error) {
-            console.error('🎶 Initialization error:', error);
-        }
+    async initializeAI() {
+        await initializeAI(this.model, this.avatar);
     }
 
-    onMessage = async (message) => {
-        if (message.author.bot || message.author.id === this.client.user.id) return;
+    async loadMemory() {
+        await loadMemory(this.memoryFile, this.memory);
+    }
 
-        const data = {
-            author: message.author.displayName || message.author.globalName,
-            content: message.content,
-            location: message.channel.name
-        };
+    async saveMemory() {
+        await saveMemory(this.memoryFile, this.memory);
+    }
 
-        if (data.author === this.avatar.owner && !data.location.includes('🥩')) {
-            this.avatar.location = data.location;
-        }
-        if (data.location !== this.avatar.location) return;
+    async summarizeMemory() {
+        await summarizeMemory(this.memory, this.avatar);
+    }
 
+    async reflectAndUpdateGoal() {
+        await reflectAndUpdateGoal(this.memory, this.avatar);
+    }
+
+    async updateSentiments() {
+        await updateSentiments(this.memory, this.avatar);
+    }
+
+    collectSentiment(data) {
         collectSentiment(this.memory, data);
-        this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
-        if (!this.debounce()) return;
-
-        const respondCheck = await this.decideResponseFormat();
-        if (respondCheck.toUpperCase().includes('YES')) {
-            const result = await chatWithAI(this.messageCache.join('\n'), this.avatar, this.memory);
-            this.messageCache = [];
-
-            if (result.trim() !== "") {
-                console.log('🎶 BardBot responds:', result);
-                await sendAsAvatar(result, message.channel, this.avatar, this.webhookCache);
-                updateMemory(this.memory, data, result);
-                await saveMemory(this.memoryFile, this.memory);
-            }
-        }
     }
 
-    startPeriodicTasks = () => {
-        setInterval(() => reflectAndUpdateGoal(this.memory, this.avatar), this.goalUpdateInterval);
-        setInterval(() => updateSentiments(this.memory, this.avatar), this.sentimentUpdateInterval);
-        setInterval(() => broadcast(this.memory, this.avatar), this.broadcastInterval);
+    async updateMemory(data, result) {
+        updateMemory(this.memory, data, result);
     }
 
-    decideResponseFormat = async () => {
+    async chatWithAI(message) {
+        return await chatWithAI(message, this.avatar, this.memory);
+    }
+
+    async decideResponseFormat() {
         const decision = await chatWithAI(`Based on the current memory content, should ${this.avatar.name} respond? Respond with YES or NO only`, this.avatar, this.memory);
         console.log(`🎶 Response decision: ${decision}`);
         return decision.trim();
     }
 
-    debounce = () => {
+    debounce() {
         const now = Date.now();
         if (now - this.lastProcessed < this.debounceTime) return false;
         this.lastProcessed = now;
         return true;
     }
 
-    login = async () => {
-        try {
-            await this.client.login(this.token);
-        } catch (error) {
-            console.error('🎶 Failed to login:', error);
-            throw error;
-        }
+    startPeriodicTasks() {
+        setInterval(() => this.reflectAndUpdateGoal(), this.goalUpdateInterval);
+        setInterval(() => this.updateSentiments(), this.sentimentUpdateInterval);
+        setInterval(() => broadcast(this.memory, this.avatar), this.broadcastInterval);
+    }
+
+    async broadcast() {
+        await broadcast(this.memory, this.avatar);
     }
 }
 
 const bardbot = new BardBot();
-bardbot.login();
