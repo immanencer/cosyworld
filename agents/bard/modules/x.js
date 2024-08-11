@@ -35,10 +35,10 @@ function chunkText(text, chunkSize = 280) {
                         }
                     }
                 } else {
-                    currentChunk += ` ${line}`;
+                    currentChunk += ` ${line}\n`;
                 }
             } else {
-                currentChunk += ` ${line}`;
+                currentChunk += ` ${line}\n`;
             }
         }
 

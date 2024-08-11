@@ -48,7 +48,7 @@ export async function reflectAndUpdateGoal(memory, avatar) {
 }
 
 export async function summarizeEmojiSentiment(person, emojis, avatar, memory) {
-    const emojiSummary = await chatWithAI(`Summarize the following emojis and sentiments for ${person}: ${emojis.join(' ')} ONLY reply with emoji`, avatar, memory);
+    const emojiSummary = await chatWithAI(`Summarize the following emojis and sentiments for ${person}: ${(emojis || []).join(' ')} ONLY reply with emoji`, avatar, memory);
     return emojiSummary.trim();
 }
 

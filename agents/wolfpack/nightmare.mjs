@@ -261,19 +261,23 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
     }
 
     async loadMemory() {
-        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_memory.json`);
+        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_summary.json`);
         try {
             const data = await fs.readFile(memoryPath, 'utf8');
-            this.memory = JSON.parse(data);
-            console.log(`🐺 Memory loaded for ${this.avatar.name}`);
+            const loadedData = JSON.parse(data);
+            this.memory.summary = loadedData.summary || '';
+            this.memory.dream = loadedData.dream || '';
+            this.memory.goal = loadedData.goal || '';
+            console.log(`🐺 Summary loaded for ${this.avatar.name}`);
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.log(`🐺 No existing memory found for ${this.avatar.name}. Starting with fresh memory.`);
+                console.log(`🐺 No existing summary found for ${this.avatar.name}. Starting with fresh memory.`);
             } else {
-                console.error(`🐺 Failed to load memory for ${this.avatar.name}:`, error);
+                console.error(`🐺 Failed to load summary for ${this.avatar.name}:`, error);
             }
         }
     }
+    
 
     async summarizeMemory() {
         const memoryContent = JSON.stringify(this.memory);
@@ -360,15 +364,22 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
     }
 
     async saveMemory() {
-        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_memory.json`);
+        const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_summary.json`);
+        const summaryData = {
+            summary: this.memory.summary,
+            dream: this.memory.dream,
+            goal: this.memory.goal,
+        };
+    
         try {
             await fs.mkdir(path.dirname(memoryPath), { recursive: true });
-            await fs.writeFile(memoryPath, JSON.stringify(this.memory, null, 2));
-            console.log(`🐺 Memory saved for ${this.avatar.name}`);
+            await fs.writeFile(memoryPath, JSON.stringify(summaryData, null, 2));
+            console.log(`🐺 Summary, dream, and goal saved for ${this.avatar.name}`);
         } catch (error) {
-            console.error(`🐺 Failed to save memory for ${this.avatar.name}:`, error);
+            console.error(`🐺 Failed to save summary for ${this.avatar.name}:`, error);
         }
     }
+    
 
     collectSentiment(data) {
         const emojis = data.content.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu) || [];
