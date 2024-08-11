@@ -36,10 +36,10 @@ class OllamaService {
           temperature,
           num_predict: maxTokens,
         },
+        stream: false,
         tools
       };
       if (tools) {
-        options.stream = false;
         options.tools = tools;
       }
       const result = await ollama.chat(options);
