@@ -11,7 +11,7 @@ const CONFIG = {
     avatar: "https://i.imgur.com/OxroRtv.png",
     defaultLocation: '🐺 wolf den',
     personality: "You are a silent wolf named Skull. You respond in SHORT wolf-like *actions*. You do not speak.",
-    model: 'llama3.1:8b-instruct-q3_K_M',
+    model: 'llama3.1',
     maxConversations: 100,
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,

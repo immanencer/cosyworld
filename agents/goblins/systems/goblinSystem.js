@@ -1,4 +1,5 @@
 import { Goblin } from '../components/goblin.js';
+import { ObjectId } from 'mongodb';
 
 export class GoblinSystem {
     constructor(db) {
@@ -12,6 +13,9 @@ export class GoblinSystem {
     }
 
     async updateGoblin(goblin) {
+        if (!goblin.toJSON) {
+            goblin = new Goblin(goblin);
+        }
         await this.collection.updateOne({ _id: goblin._id }, { $set: goblin.toJSON() });
     }
 
@@ -20,7 +24,7 @@ export class GoblinSystem {
     }
 
     async getGoblinById(id) {
-        return await this.collection.findOne({ _id: new ObjectId(id) });
+        return await this.collection.findOne({ _id: ObjectId.createFromTime(id) });
     }
 
     async deactivateGoblin(goblin) {

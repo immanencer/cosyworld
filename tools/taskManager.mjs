@@ -5,7 +5,7 @@ import { postJSON, fetchJSON } from './fetchJson.mjs';
 async function createTask(system_prompt, messages) {
     const task = {
         action: 'ai',
-        model: 'ollama/llama3.1:8b-instruct-q3_K_M',
+        model: 'ollama/llama3.1',
         system_prompt: system_prompt,
         messages
     };

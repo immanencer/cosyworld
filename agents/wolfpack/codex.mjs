@@ -229,7 +229,7 @@ class CodexBot {
         const decisionPrompt = `${memoryContent} Based on the above memory content, should I respond to the recent messages in my location? Respond with YES or NO only.`;
         const decision = await this.chatWithAI(decisionPrompt);
         console.log(`💻 Response decision: ${decision}`);
-        return decision.trim();
+        return decision.trim() || 'YES';
     }
 
     async chatWithAI(message) {

@@ -7,7 +7,7 @@ import { formatToolResponse } from './formatToolResponse.mjs';
 import { itemHandler } from './itemHandler.js';
 
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'llama3.1:8b-instruct-q3_K_M';
+const DEFAULT_MODEL = 'llama3.1';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {

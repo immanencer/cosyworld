@@ -48,7 +48,7 @@ ratichat.rumble = async function () {
 
         const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         const oaken_response = await this.enhancedChat({
-            model: 'llama3.1:8b-instruct-q3_K_M',
+            model: 'llama3.1',
             messages: [
                 {
                     role: 'system',
@@ -73,7 +73,7 @@ ratichat.rumble = async function () {
             const avatar_memory = await this.loadMemory(ratichat.avatars[avatar].remember);
             const avatar_dreams = await this.generateDream(ratichat.avatars[avatar], avatar_memory.join('\n'));
             const avatar_response = await this.enhancedChat({
-                model: 'llama3.1:8b-instruct-q3_K_M',
+                model: 'llama3.1',
                 messages: [
                     {
                         role: 'system',
@@ -110,7 +110,7 @@ ratichat.rumble = async function () {
 
 ratichat.generateDream = async function (avatar, memory = '') {
     const response = await ollama.generate({
-        model: 'llama3.1:8b-instruct-q3_K_M',
+        model: 'llama3.1',
         prompt: memory + '\n\n' + avatar.personality,
         system: avatar?.personality || ratichat.avatar.personality || 'you are an alien intelligence from the future',
         options: model_settings
@@ -163,7 +163,7 @@ ratichat.handleMessage = async function (message) {
         }
         const memory = `I remember ${(await this.loadMemory([avatar.location])).slice(-88).join('\n')}`;
         const avatar_response = await ratichat.enhancedChat({
-            model: 'llama3.1:8b-instruct-q3_K_M',
+            model: 'llama3.1',
             messages: [
                 {
                     role: 'system',
@@ -186,7 +186,7 @@ ratichat.handleMessage = async function (message) {
         const moveChance = Math.random();
         if (moveChance < 0.02) {
             const new_location = await ratichat.enhancedChat({
-                model: 'llama3.1:8b-instruct-q3_K_M',
+                model: 'llama3.1',
                 messages: [
                     {
                         role: 'system',
