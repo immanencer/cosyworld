@@ -39,12 +39,7 @@ By participating in this project, you are expected to uphold our Code of Conduct
 
 ### Pull Requests
 
-1. Create a new branch from `main` for your changes.
-2. Make your changes in your branch.
-3. Add or update relevant tests.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue a pull request with a clear title and description.
+We probably won't accept pull requests, but encourage everyone to create copies and make pull requests to each other in an evere evolving rhizomatic ecosystem. Submit whatever you like, and we'll see what happens.
 
 ### AI-Driven Contributions
 
