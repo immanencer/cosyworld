@@ -31,13 +31,13 @@ class NightmareBot {
         this.avatar = {
             emoji: '🐺',
             name: 'Nightmare',
-            owner: "lilcraig",
-            "avatar": "https://i.imgur.com/sldkB3U.png",
+            owner: "cognitivetech",
+            avatar: "https://i.imgur.com/sldkB3U.png",
             location: 'circle-of-the-moon',
             personality: `You are Nightmare, wolf cub and sister of shadow. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
         };
 
-        this.model = 'llama3.1';
+        this.model = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
         this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
         this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
         this.memory = {
@@ -173,9 +173,9 @@ class NightmareBot {
     async summarizeSentiment() {
         for (const [person, emojis] of Object.entries(this.memory.sentiments)) {
             const emojiSummary = await this.summarizeEmojiSentiment(person, emojis);
-            const memorySummary = await this.summarizePersonMemory(person, emojis);
-
-            this.memory.sentiments[person] = emojiSummary;
+            const memorySummary = await this.summarizePersonMemory(person, emojiSummary);
+    
+            this.memory.sentiments[person] = emojiSummary; // Save as a string of emojis
             if (!this.memory.characterMemories) {
                 this.memory.characterMemories = {};
             }
@@ -184,6 +184,7 @@ class NightmareBot {
         console.log('🐺 Sentiment summary updated');
         await this.saveMemory();
     }
+    
 
     async summarizeEmojiSentiment(person, emojis) {
         const emojiCounts = emojis.reduce((acc, emoji) => {
@@ -192,18 +193,21 @@ class NightmareBot {
         }, {});
         const sortedEmojis = Object.entries(emojiCounts)
             .sort((a, b) => b[1] - a[1])
-            .map(([emoji, count]) => `${emoji}: ${count}`)
-            .join(', ');
-
+            .map(([emoji, count]) => `${emoji}`)
+            .join('');
+    
         const prompt = `As ${this.persona}, analyze these emojis related to ${person}:
       ${sortedEmojis}
       
       Provide exactly three emojis that best represent your current feelings towards ${person}.
       Only respond with the three emojis, nothing else.`;
-
+    
         const response = await this.chatWithAI(prompt);
-        return extractEmojis(response).slice(0, 3);
+        const summarizedEmojis = extractEmojis(response).slice(0, 3).join('');
+    
+        return summarizedEmojis;
     }
+    
 
     async summarizePersonMemory(person, emojis) {
         const emojiSummary = emojis.join(' ');
@@ -219,8 +223,6 @@ class NightmareBot {
 
     async reflectAndUpdateGoal() {
         const reflection = await this.chatWithAI(`
-Here's a revised version for Nightmare, the wolf cub and sister of Shadow:
-
 As Nightmare, let your imagination haunt moonlit forests and shadowy skies.
 Reflect on your recent experiences, the whispers of your nightmares, and the echoes of your memories:
 
@@ -252,7 +254,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
         try {
             await ollama.create({
                 model: this.avatar.name,
-                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM mannix/llama3.1-8b-abliterated:tools-q4_0\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {

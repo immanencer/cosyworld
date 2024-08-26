@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 const cache = new Map();
 
-export async function initializeAI(base_model = 'llama3.1', avatar) {
+export async function initializeAI(base_model = 'mannix/llama3.1-8b-abliterated:tools-q4_0', avatar) {
     if (cache.has(avatar.name)) {
         console.log('🦙 AI model already initialized');
         return

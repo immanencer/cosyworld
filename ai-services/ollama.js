@@ -4,7 +4,7 @@ import { generateHash } from '../tools/crypto.js';
 class OllamaService {
     /**
      * @typedef {Object} OllamaConfig
-     * @property {string} [model='llama3.1'] - The base model to use
+     * @property {string} [model='mannix/llama3.1-8b-abliterated:tools-q4_0'] - The base model to use
      * @property {string} [systemPrompt='You are an AI assistant.'] - The system prompt
      * @property {string} [personality=''] - The personality traits
      */
@@ -20,7 +20,7 @@ class OllamaService {
      * @param {OllamaConfig} config
      */
     constructor(config = {}) {
-        this.model = 'llama3.1';
+        this.model = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
         this.systemPrompt = config.systemPrompt || "Hraa'khor";
         this.modelCache = new Map();
         /** @type {ollama.Message[]} */
@@ -33,8 +33,8 @@ class OllamaService {
      * @param {OllamaConfig} config
      * @returns {Promise<string|null>} The model hash or null if creation failed
      */
-    async updateConfig({ baseModel = 'llama3.1', systemPrompt = this.systemPrompt }) {
-        const modelfile = `FROM llama3.1\nSYSTEM "${systemPrompt}"`
+    async updateConfig({ baseModel = 'mannix/llama3.1-8b-abliterated:tools-q4_0', systemPrompt = this.systemPrompt }) {
+        const modelfile = `FROM mannix/llama3.1-8b-abliterated:tools-q4_0\nSYSTEM "${systemPrompt}"`
 
         const modelHash = generateHash(modelfile);
         this.model = modelHash;

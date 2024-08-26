@@ -51,7 +51,7 @@ class DiscordSystem {
                         const { client: webhook, threadId } = webhookData;
                         await webhook.send({
                             content: chunk,
-                            username: `${avatar.name} ${avatar.emoji || ''}`.trim(),
+                            username: `${avatar.name} ${avatar.emoji || ''}`.substring(0,80).trim(),
                             avatarURL: avatar.avatar,
                             threadId: threadId
                         });

@@ -34,7 +34,7 @@ class Whisper extends DiscordBot {
         const history = (await this.channels.getChannelOrThreadHistory(this.soul.location)).join('\n');
         console.log(`${this.soul.emoji} ${this.soul.name} heard: `, history);
 
-        const memory = await ai.currentService.raw_chat('llama3.1', [
+        const memory = await ai.currentService.raw_chat('mannix/llama3.1-8b-abliterated:tools-q4_0', [
             { role, content },
             {
                 role: 'user', content: `You are ${this.soul.name} memory.
@@ -110,7 +110,7 @@ class Whisper extends DiscordBot {
 
         console.log(this.message_cache.join('\n'));
 
-        const respond = await ai.currentService.raw_chat('llama3.1', [
+        const respond = await ai.currentService.raw_chat('mannix/llama3.1-8b-abliterated:tools-q4_0', [
             { role: 'system', content: `${this.soul.personality}. You are the executive function.` },
             {
                 role: 'user', content: `

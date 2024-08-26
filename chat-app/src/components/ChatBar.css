@@ -1,0 +1,30 @@
+.chat-bar {
+    display: flex;
+    padding: 10px;
+    background-color: #1e2e22;
+    border-top: 1px solid #3a5440;
+  }
+  
+  .chat-input {
+    flex: 1;
+    padding: 10px;
+    background-color: #253629;
+    border: none;
+    color: white;
+    font-size: 16px;
+    outline: none;
+  }
+  
+  .send-button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    background-color: #3a5440;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .send-button:hover {
+    background-color: #4a6540;
+  }
+  

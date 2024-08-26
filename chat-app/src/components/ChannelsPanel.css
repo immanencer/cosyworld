@@ -1,0 +1,22 @@
+.channels-panel {
+    width: 15%;
+    background-color: #1e2e22;
+    padding: 10px;
+    color: white;
+  }
+  
+  .channel {
+    padding: 8px;
+    cursor: pointer;
+    color: white;
+  }
+  
+  .channel.selected {
+    background-color: #3a5440;
+  }
+  
+  .channel.primary {
+    font-weight: bold;
+    background-color: #4a6540;
+  }
+  

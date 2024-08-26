@@ -48,7 +48,16 @@ export async function reflectAndUpdateGoal(memory, avatar) {
 }
 
 export async function summarizeEmojiSentiment(person, emojis, avatar, memory) {
-    const emojiSummary = await chatWithAI(`Summarize the following emojis and sentiments for ${person}: ${(emojis || []).join(' ')} ONLY reply with emoji`, avatar, memory);
+    if (!emojis.length) {
+        console.error('🎶 No emojis found for', person);
+        console.log(JSON.stringify(emojis, null, 2));
+        return '';
+    }
+    if (!emojis.join) {
+        emojis = [emojis];
+    }
+        
+    const emojiSummary = await chatWithAI(`Summarize the following emojis and sentiments for ${person}: ${emojis.join(' ')} ONLY reply with emoji`, avatar, memory);
     return emojiSummary.trim();
 }
 

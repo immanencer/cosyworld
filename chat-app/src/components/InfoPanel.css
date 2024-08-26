@@ -1,0 +1,12 @@
+.info-panel {
+    width: 20%;
+    background-color: #1e2e22;
+    padding: 10px;
+    color: white;
+    transition: transform 0.3s ease;
+  }
+  
+  .info-panel.closed {
+    transform: translateX(100%);
+  }
+  

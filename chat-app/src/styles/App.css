@@ -1,0 +1,44 @@
+.app-container {
+    display: flex;
+    height: 100vh;
+    background-color: #2e4230;
+    color: #f0f0f0;
+  }
+  
+  .channels-panel {
+    width: 15%;
+    background-color: #1e2e22;
+    padding: 10px;
+  }
+  
+  .channel {
+    padding: 8px;
+    cursor: pointer;
+  }
+  
+  .channel.selected {
+    background-color: #3a5440;
+  }
+  
+  .chat-window {
+    flex: 1;
+    padding: 20px;
+    background-color: #253629;
+    overflow-y: auto;
+  }
+  
+  .message {
+    margin-bottom: 15px;
+  }
+  
+  .info-panel {
+    width: 20%;
+    background-color: #1e2e22;
+    padding: 10px;
+    transition: transform 0.3s ease;
+  }
+  
+  .info-panel.closed {
+    transform: translateX(100%);
+  }
+  

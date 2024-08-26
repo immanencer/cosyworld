@@ -172,7 +172,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agent_manager/main.js",
+            "program": "${workspaceFolder}/agent_manager/bot.js",
             "envFile": "${workspaceFolder}/.env"
         },
         {

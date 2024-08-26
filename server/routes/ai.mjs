@@ -20,7 +20,7 @@ router.post('/tasks', async (req, res) => {
     }
 
     const newTask = {
-        model: 'llama3.1',
+        model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
         system_prompt: system_prompt || avatar.personality,
         messages,
         status: 'pending',

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 class OllamaSystem {
     constructor(model) {
-        this.model = model || 'llama3.1';
+        this.model = model || 'mannix/llama3.1-8b-abliterated:tools-q4_0';
         this.conversations = {};
     }
 

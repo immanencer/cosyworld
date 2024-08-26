@@ -5,7 +5,7 @@ import process from 'process';
 class OllamaService {
   static #modelCache = new Set();
 
-  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3.1') {
+  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'mannix/llama3.1-8b-abliterated:tools-q4_0') {
     this.model = model;
   }
 

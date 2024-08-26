@@ -18,7 +18,7 @@ export const getMessages = async (since, location, limit = 100) => {
     if (location) query.channelId = location;
 
     const options = {
-      sort: { createdAt: -1 },
+      sort: { createdAt: 1 },
       limit: Math.min(Math.max(limit, 1), 1000) // Ensure limit is between 1 and 1000
     };
 
@@ -34,7 +34,7 @@ export const getMessages = async (since, location, limit = 100) => {
       .find(query, options)
       .toArray();
 
-    return messages.reverse();
+    return messages;
   } catch (error) {
     console.error('Error in getMessages:', error);
     throw new Error('Failed to retrieve messages');
