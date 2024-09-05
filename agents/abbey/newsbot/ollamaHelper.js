@@ -11,7 +11,7 @@ export async function generateSummary(content) {
         if (!created) {
             await ollama.create({
                 model: 'newsbot',
-                modelfile: `FROM mannix/llama3.1-8b-abliterated:tools-q4_0\nSYSTEM "You are an objective summarizer. You extract articles into clean, objective, concise, and accurate markdown."`,
+                modelfile: `FROM llama3.1\nSYSTEM "You are an objective summarizer. You extract articles into clean, objective, concise, and accurate markdown."`,
             });
         }
         

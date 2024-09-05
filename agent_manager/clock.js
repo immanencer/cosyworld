@@ -42,27 +42,22 @@ async function clock(bot) {
     }
 }
 
-function getRandomChannel(channels, excludeChannelName) {
-    const availableChannels = channels.filter(channel => channel.name !== excludeChannelName);
-    if (availableChannels.size > 0) {
-        const randomChannel = availableChannels.random();
-        console.log(`🎯 **Random Channel Chosen**: ${randomChannel.name}`);
-        return randomChannel;
-    }
-    console.log(`⚠️ **No Channels Available**: Unable to find a different channel.`);
-    return null;
-}
-
 async function getTargetChannel(bot, avatar) {
     const channels = await bot.client.guilds.cache.get(bot.guildId).channels.fetch();
-    const sortedChannels = channels.filter(T => T.isTextBased()).sort((a, b) => {
-        const lastInteractedA = bot.memoryManager.memoryCache[avatar.name]?.lastInteractedInChannel?.[a.id] || 0;
-        const lastInteractedB = bot.memoryManager.memoryCache[avatar.name]?.lastInteractedInChannel?.[b.id] || 0;
-        return lastInteractedA - lastInteractedB;  // Prioritize channels with less recent activity
-    });
+    const recentChannels = bot.memoryManager.memoryCache[avatar.name]?.recentChannels || [];
 
-    return sortedChannels.first();  // Choose the channel with the least recent activity
+    // Filter out channels that avatar has visited recently
+    const availableChannels = channels.filter(channel => !recentChannels.includes(channel.id) && channel.isTextBased());
+
+    if (availableChannels.length === 0) {
+        return channels.random();  // If no new channels are available, pick a random one
+    }
+
+    // Prioritize channels the avatar hasn't visited recently
+    const targetChannel = availableChannels.first();
+    return targetChannel;
 }
+
 
 async function promptAvatarToInteract(bot, avatar, channel) {
     try {

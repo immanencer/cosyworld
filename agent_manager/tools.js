@@ -3,8 +3,7 @@ import {
     moveAvatarToChannel,
     takeItem,
     dropItem,
-    useItem,
-    speak,  // Import the speak function
+    useItem
 } from './toolActions.js';
 
 class Tools {
@@ -16,8 +15,7 @@ class Tools {
             moveAvatarToChannel: moveAvatarToChannel.bind(null, bot),
             takeItem: takeItem.bind(null, bot),
             dropItem: dropItem.bind(null, bot),
-            useItem: useItem.bind(null, bot),
-            speak: speak.bind(null, bot),  // Bind the speak function
+            useItem: useItem.bind(null, bot)
         };
     }
 
@@ -25,16 +23,12 @@ class Tools {
         const tools = [];
 
         // Fetch items and locations concurrently for better performance
-        const [itemsInRoom, itemsWithAvatar, locations] = await Promise.all([
+        const [itemsInRoom, itemsWithAvatar] = await Promise.all([
             this.database.itemsCollection.find({ location: avatar.location }).toArray(),
-            this.database.itemsCollection.find({ takenBy: avatar.name }).toArray(),
-            this.database.locationsCollection.find().toArray(),
+            this.database.itemsCollection.find({ takenBy: avatar.name }).toArray()
         ]);
 
-        const locationNames = locations.map(loc => loc.name);
-
-        tools.push(this._createMoveTool(locationNames));
-        tools.push(this._createSpeakTool(locationNames)); // Add SPEAK tool
+        tools.push(this._createMoveTool(avatar.remember));
 
         if (itemsInRoom.length > 0) {
             tools.push(this._createSearchTool(avatar.location));
@@ -56,7 +50,7 @@ class Tools {
         try {
             switch (toolName) {
                 case 'SEARCH':
-                    return await this.actions.searchLocation(args.location, avatar);
+                    return await this.actions.searchLocation(avatar.location, avatar);
                 case 'MOVE':
                     return await this.actions.moveAvatarToChannel(avatar, args.newLocation);
                 case 'TAKE':
@@ -65,9 +59,7 @@ class Tools {
                     return await this.actions.dropItem(args.itemName, avatar);
                 case 'USE':
                     return await this.actions.useItem(args.itemName, avatar);
-                case 'SPEAK':  // Handle the SPEAK action
-                    return await this.actions.speak(avatar, args.text, args.channelName);
-                default:
+               default:
                     throw new Error(`Unknown tool: ${toolName}`);
             }
         } catch (error) {
@@ -92,31 +84,6 @@ class Tools {
                         },
                     },
                     required: ['newLocation'],
-                },
-            },
-        };
-    }
-
-    _createSpeakTool(locationNames) {  // Define the SPEAK tool
-        return {
-            type: 'function',
-            function: {
-                name: 'SPEAK',
-                description: 'Speak a specific message in a specific channel.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        text: {
-                            type: 'string',
-                            description: 'The text the avatar should speak.',
-                        },
-                        channelName: {
-                            type: 'string',
-                            description: 'The name of the channel where the avatar should speak.',
-                            enum: locationNames,
-                        },
-                    },
-                    required: ['text', 'channelName'],
                 },
             },
         };

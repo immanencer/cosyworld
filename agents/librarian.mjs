@@ -249,7 +249,7 @@ class LibrarianBot {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+                    model: 'llama3.1',
                     messages: [
                         { role: 'system', content: character.personality },
                         { role: 'user', content: input }

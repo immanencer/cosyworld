@@ -86,7 +86,7 @@ class DiscordAiBot extends DiscordBot {
     }
 
     async initializeMemory(memories, options = { slice: 88, instructions: '' }) {
-        const memory = memories || (await this.loadMemory()) || [];
+        const memory = memories || (await this.loadMemory()).split('\n') || [];
         await this.aiServiceManager.chat({
             role: 'assistant',
             content: `This is what I remember: \n\n    

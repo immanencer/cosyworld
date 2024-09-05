@@ -7,7 +7,7 @@ import { formatToolResponse } from './formatToolResponse.mjs';
 import { itemHandler } from './itemHandler.js';
 
 const COLLECTION_NAME = 'tasks';
-const DEFAULT_MODEL = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
+const DEFAULT_MODEL = 'llama3.1';
 const POLL_INTERVAL = 1000; // 1 second
 
 class TaskProcessor {

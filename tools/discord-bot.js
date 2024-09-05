@@ -18,6 +18,14 @@ class DiscordBot {
     };
     constructor(clientOptions = {}, guild) {
 
+        this.avatar = {
+            name: 'Ratichat',
+            location: 'haunted-mansion',
+            listen: ['haunted-mansion'],
+            remember: ['haunted-mansion']
+        };
+        this.avatars = [];
+        this.avatars_moved = null;
         this.guild = guild;
         const defaultIntents = [
             GatewayIntentBits.Guilds,
@@ -132,6 +140,7 @@ class DiscordBot {
                 await this.handleMessage(message);
             } catch (error) {
                 console.error(`🎮 ❌ Error handling message: ${error}`);
+                throw error;
             }
         });
 
@@ -438,7 +447,7 @@ class DiscordBot {
     }
 
     authors = {};
-    async loadMemory(channels) {
+    async loadMemory(channels, raw = false) {
         this.avatar.remember = this.avatar.remember || [this.avatar.location];
 
         // get the memory for all subscribed channels
@@ -456,16 +465,23 @@ class DiscordBot {
                 } else {
                     author = this.authors[message.authorId] || { username: 'Unknown' };
                 }
-                memory.push(`[${message.createdTimestamp}] ${JSON.stringify({
-                    in: message.channel.name,
-                    from: message.author.displayName || message.author.globalName,
-                    message: message.content
-                })}`);
+                const mem = {
+                    time: message.createdTimestamp,
+                    channel: message.channel.name,
+                    author: author.username,
+                    content: message.content
+                }
+                memory.push(mem);
             }
         }
-        memory.sort()
 
-        return memory;
+        if (raw) {
+            return memory;
+        }
+
+        return memory.map(T =>
+            `${T.author}: ${T.content}`
+        ).join('\n');;
     }
 }
 

@@ -1,7 +1,4 @@
-import { getLocations } from '../agent_manager/locationHandler.js';
-import { updateAvatarLocation } from '../agent_manager/avatarHandler.js';
 import AI from './ai.mjs';
-import { handleDiscordInteraction } from '../agent_manager/discordHandler.js';
 import { db } from '../database/index.js';
 import { fuzzyMatch } from '../tools/fuzzymatch.js';
 

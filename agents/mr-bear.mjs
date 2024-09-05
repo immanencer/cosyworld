@@ -148,7 +148,7 @@ class BearBot {
     ];
 
     const options = {
-      model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+      model: 'llama3.1',
       messages: messages,
       stream: false
     };

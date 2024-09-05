@@ -73,6 +73,7 @@ export async function moveAvatarToChannel(bot, avatar, newChannelName) {
         await bot.database.avatarsCollection.updateOne({ name: avatar.name }, { $set: { location: newChannelName } });
 
         console.log(`🚶‍♂️ **${avatar.name}** successfully moved to ${newChannelName}.`);
+        return avatar;
     } catch (error) {
         console.error(`🚨 **Error in moveAvatarToChannel**: ${error.message}`);
     }
@@ -109,7 +110,7 @@ export async function decideIfShouldRespond(bot, avatar, message) {
         `;
 
         const response = await bot.ollama.chat({
-            model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+            model: 'llama3.1',
             messages: [
                 { role: 'system', content: `You are ${avatar.name} deciding whether to respond.` },
                 { role: 'user', content: prompt },

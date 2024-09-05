@@ -39,7 +39,7 @@ class Whisper extends DiscordBot {
         const history = (await this.channels.getChannelOrThreadHistory(this.avatar.location)).join('\n');
         console.log(`${this.avatar.emoji || '⚠️'} ${this.avatar.name} heard: `, history);
 
-        const memory = await ai.currentService.raw_chat({model: 'mannix/llama3.1-8b-abliterated:tools-q4_0', messages: [
+        const memory = await ai.currentService.raw_chat({model: 'llama3.1', messages: [
             { role, content },
             {
                 role: 'user', content: `You are ${this.avatar.name} memory.
@@ -120,7 +120,7 @@ class Whisper extends DiscordBot {
 
         console.log(this.message_cache.join('\n'));
 
-        const respond = await ai.currentService.raw_chat({ model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',messages: [
+        const respond = await ai.currentService.raw_chat({ model: 'llama3.1',messages: [
             { role: 'system', content: `${this.avatar.personality}. You will act as the execurive function.` },
             {
                 role: 'user', content: `Here are the whispers you have heard:

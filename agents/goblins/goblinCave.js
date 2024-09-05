@@ -16,7 +16,7 @@ class GoblinCave {
         this.messageCount = 0;
         this.spawnInterval = 10 * 60 * 1000; // Convert minutes to milliseconds
         this.spawnTimer = null;
-        this.model = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
+        this.model = 'llama3.1';
         this.isInitialized = false;
         this.messageQueue = [];
         this.sharedDreamState = [];

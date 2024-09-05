@@ -30,7 +30,7 @@ class GoblinCave {
             { name: 'Phantom Hobgoblin', emoji: '🧛', avatar: 'https://i.imgur.com/yPbj8x6.png', personality: 'You are a sneaky phantom hobgoblin, always plotting dark tricks and schemes.' }
         ];
 
-        this.model = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
+        this.model = 'llama3.1';
         this.isInitialized = false;
         this.messageQueue = [];
         this.webhookCache = {};
@@ -352,7 +352,7 @@ goblins sing
         try {
             await ollama.create({
                 model: this.avatar.name,
-                modelfile: `FROM mannix/llama3.1-8b-abliterated:tools-q4_0\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {

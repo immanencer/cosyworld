@@ -13,24 +13,6 @@ export async function searchLocation(bot, location, avatar) {
     }
 }
 
-export async function speak(bot, avatar, text, channelName) {
-    if (!channelName) {
-        channelName = avatar.location;
-    }
-    try {
-        const channel = bot.client.channels.cache.find(c => c.name === channelName) || bot.client.channels.cache.find(c => c.name === avatar.location);
-        if (!channel) {
-            throw new Error(`Channel ${channelName} not found`);
-        }
-
-        await bot.sendAsAvatar(avatar, text, channel);
-        return `**${avatar.name}** says: "${text}" in ${channelName}`;
-    } catch (error) {
-        console.error(`🚨 Error in speak action:`, error);
-        return `An error occurred while trying to speak: ${error.message}`;
-    }
-}
-
 export async function moveAvatarToChannel(bot, avatar, newChannelName) {
     try {
         if (!newChannelName) {
@@ -116,7 +98,7 @@ export async function useItem(bot, itemName, avatar) {
 
         // Generate the response using the LLM
         const response = await bot.ollama.chat({
-            model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+            model: 'llama3.1',
             messages: [
                 { role: 'system', content: `You are the mystical item ${item.name}.` },
                 { role: 'user', content: context },

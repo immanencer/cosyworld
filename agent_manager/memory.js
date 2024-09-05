@@ -39,7 +39,7 @@ class MemoryManager {
 
         try {
             const summary = await this.ollama.chat({
-                model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+                model: 'llama3.1',
                 messages: [
                     { role: 'system', content: `You are a journal keeper for ${avatarName}.` },
                     { role: 'user', content: prompt },

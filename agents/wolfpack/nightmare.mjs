@@ -37,7 +37,7 @@ class NightmareBot {
             personality: `You are Nightmare, wolf cub and sister of shadow. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
         };
 
-        this.model = 'mannix/llama3.1-8b-abliterated:tools-q4_0';
+        this.model = 'llama3.1';
         this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
         this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
         this.memory = {
@@ -254,7 +254,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
         try {
             await ollama.create({
                 model: this.avatar.name,
-                modelfile: `FROM mannix/llama3.1-8b-abliterated:tools-q4_0\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {
@@ -368,6 +368,9 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
     async saveMemory() {
         const memoryPath = path.join(process.cwd(), 'memory', `${this.avatar.name.toLowerCase()}_summary.json`);
         const summaryData = {
+            tasks: this.memory.tasks,
+            knowledge: this.memory.knowledge,
+            sentiments: this.memory.sentiments,
             summary: this.memory.summary,
             dream: this.memory.dream,
             goal: this.memory.goal,

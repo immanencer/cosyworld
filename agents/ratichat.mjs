@@ -4,7 +4,6 @@ import { avatarseek } from './avatars.js';
 import ollama from 'ollama'; // Adjust the import path as necessary
 
 const model_settings ={
-    max_gen_len: 256,
     temperature: 1.0,
     top_p: 0.9,
 };
@@ -35,6 +34,41 @@ ratichat.on_login = async function () {
     this.rumble();
 };
 
+ratichat.sendAvatarResponse = async function (avatar, dream = true) {
+    if (!ratichat.avatars[avatar]) {
+        console.lovg('🌳 ⛔ Invalid avatar:', avatar);
+    }
+    const avatar_memory = await this.loadMemory(ratichat.avatars[avatar].remember, true);
+    
+    const avatar_dreams = dream ? await this.generateDream(ratichat.avatars[avatar], avatar_memory) : ratichat.avatar_dreams[avatar];
+
+    const avatar_response = await this.enhancedChat({
+        model: 'llama3.1',
+        messages: [
+            {
+                role: 'system',
+                content: `${ratichat.avatars[avatar].personality}`
+            },
+            {
+                role: 'assistant',
+                content: `${avatar_dreams}`
+            },
+            ... avatar_memory.map(T => {
+                return T.author.includes(avatar)
+                ? ({ role: 'assistant', content: `${T.content}` })
+                : ({ role: 'user', content: `(${T.channel}) ${T.author}: ${T.content}` })
+            }),
+            {
+                role: 'user',
+                content: `${ratichat.avatars[avatar].name}, what do you say or *do*?`
+            }
+        ],
+        characterName: avatar,
+        stream: false
+    });
+    ratichat.sendAsAvatar(ratichat.avatars[avatar], avatar_response.message.content);
+}
+
 ratichat.rumble = async function () {
     if (Math.random() < 0.05) return;
 
@@ -48,7 +82,7 @@ ratichat.rumble = async function () {
 
         const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         const oaken_response = await this.enhancedChat({
-            model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+            model: 'llama3.1',
             messages: [
                 {
                     role: 'system',
@@ -56,7 +90,7 @@ ratichat.rumble = async function () {
                 },
                 {
                     role: 'assistant',
-                    content: `${dream}\n\n...\n\nThe seasons turn slowly beneath my boughs, each leaf a testament to time's passage. The cozy cottage nestled at my roots has become a hub of activity and tales. Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings. WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies. Skull wanders afar but always returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings. Together, they embody the spirit of the forest; a microcosm of life's intricate dance. Here is what I remember: \n\n ${oaken_memory.slice(-88).join('\n')}`
+                    content: `${dream}\n\n...\n\nThe seasons turn slowly beneath my boughs, each leaf a testament to time's passage. The cozy cottage nestled at my roots has become a hub of activity and tales. Rati, with her knack for weaving tales as well as scarves, brings warmth to the chilly evenings. WhiskerWind, ever the silent type, speaks volumes with just a flutter of leaves or the dance of fireflies. Skull wanders afar but always returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings. Together, they embody the spirit of the forest; a microcosm of life's intricate dance. Here is what I remember: \n\n ${oaken_memory}`
                 },
                 {
                     role: 'user',
@@ -70,32 +104,7 @@ ratichat.rumble = async function () {
         ratichat.sendAsAvatar(oak_tree_avatar, oaken_response.message.content);
 
         for (const avatar in ratichat.avatars) {
-            const avatar_memory = await this.loadMemory(ratichat.avatars[avatar].remember);
-            const avatar_dreams = await this.generateDream(ratichat.avatars[avatar], avatar_memory.join('\n'));
-            const avatar_response = await this.enhancedChat({
-                model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `${ratichat.avatars[avatar].personality}`
-                    },
-                    {
-                        role: 'assistant',
-                        content: `${avatar_dreams}`
-                    },
-                    {
-                        role: 'assistant',
-                        content: `${avatar_memory.slice(-8).join('\n')}`
-                    },
-                    {
-                        role: 'user',
-                        content: `${ratichat.avatars[avatar].name}, what do you say or *do*?`
-                    }
-                ],
-                characterName: avatar,
-                stream: false
-            });
-            ratichat.sendAsAvatar(ratichat.avatars[avatar], avatar_response.message.content);
+            this.sendAvatarResponse(avatar);
         }
 
         this.avatar.listen = this.avatar.listen || [];
@@ -110,14 +119,20 @@ ratichat.rumble = async function () {
 
 ratichat.generateDream = async function (avatar, memory = '') {
     const response = await ollama.generate({
-        model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
-        prompt: memory + '\n\n' + avatar.personality,
+        model: 'llama3.1',
+        prompt: memory + '\n\n' + avatar.personality + '\n\n As I slumber in the space between worlds, I dream of ',
         system: avatar?.personality || ratichat.avatar.personality || 'you are an alien intelligence from the future',
         options: model_settings
     });
-    return response.response.slice(0, 2000); // Ensure the dream text is within 2000 characters
+    this.avatar_dreams = this.avatar_dreams || {};
+    this.avatar_dreams[avatar.name] = response.response;
+    console.log('🌳 Dream generated:', response.response);
+    return response.response; 
 };
 ratichat.enhancedChat = async function (options) {
+    if (!options.messages) {
+        throw new Error('🌳 ⛔ No messages provided');
+    }
     const chatOptions = {
         model: options.model,
         messages: options.messages,
@@ -161,32 +176,13 @@ ratichat.handleMessage = async function (message) {
         if (avatar.location !== message.channel.name) {
             continue;
         }
-        const memory = `I remember ${(await this.loadMemory([avatar.location])).slice(-88).join('\n')}`;
-        const avatar_response = await ratichat.enhancedChat({
-            model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
-            messages: [
-                {
-                    role: 'system',
-                    content: `${avatar.personality}`
-                },
-                {
-                    role: 'assistant',
-                    content: memory
-                },
-                {
-                    role: 'user',
-                    content: `You are at (${message.channel.location}). ${message.author.displayName} said "${message.cleanContent}", what do you say or *do*?`,
-                }
-            ],
-            characterName: avatar_name,
-            stream: false
-        });
-        ratichat.sendAsAvatar(avatar, avatar_response.message.content);
+
+        this.sendAvatarResponse(avatar_name);
 
         const moveChance = Math.random();
         if (moveChance < 0.02) {
             const new_location = await ratichat.enhancedChat({
-                model: 'mannix/llama3.1-8b-abliterated:tools-q4_0',
+                model: 'llama3.1',
                 messages: [
                     {
                         role: 'system',
