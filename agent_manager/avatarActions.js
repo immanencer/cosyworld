@@ -90,7 +90,7 @@ export async function getChannelContext(bot, channel, avatarName) {
         const avatarsSpoken = messages.filter(msg => Object.keys(bot.avatarManager.avatarCache).includes(msg.author.username.toLowerCase()))
             .map(msg => msg.author.username);
 
-        const contextSummary = `**Thoughts**:\n${thoughtsLog}\n\n**Recent Messages in this channel**:\n${recentMessages}\n\n**Avatars Spoken this round**: ${avatarsSpoken.join(', ')}`;
+        const contextSummary = `**Thoughts**:\n${thoughtsLog}\n\n**Recent Messages in this channel**:\n${recentMessages}\n\n`;
         console.log(`🔍 **Context Gathered** for ${avatarName}:\n${contextSummary}`);
         return contextSummary;
     } catch (error) {

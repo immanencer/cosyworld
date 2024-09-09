@@ -19,8 +19,14 @@ class Tools {
         };
     }
 
+    movement_cooldowns = {};
     async getToolsForAvatar(avatar) {
         const tools = [];
+        this.movement_cooldowns[avatar.name] = this.movement_cooldowns[avatar.name] || 0;
+
+        if (this.movement_cooldowns[avatar.name] > 0) {
+            this.movement_cooldowns[avatar.name]--;
+        }
 
         // Fetch items and locations concurrently for better performance
         const [itemsInRoom, itemsWithAvatar] = await Promise.all([
@@ -28,7 +34,10 @@ class Tools {
             this.database.itemsCollection.find({ takenBy: avatar.name }).toArray()
         ]);
 
-        tools.push(this._createMoveTool(avatar.remember));
+        if (this.movement_cooldowns[avatar.name] === 0) {
+            tools.push(this._createMoveTool(avatar.remember));
+            this.movement_cooldowns[avatar.name] = 20;
+        }   
 
         if (itemsInRoom.length > 0) {
             tools.push(this._createSearchTool(avatar.location));

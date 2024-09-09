@@ -72,7 +72,7 @@ export async function updateSentiments(memory, avatar) {
 
 export function collectSentiment(memory, data) {
     const emojis = data.content.match(/\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu) || [];
-    if (!memory.sentiments[data.author]) {
+    if (!memory.sentiments[data.author] || !memory.sentiments[data.author].push) {
         memory.sentiments[data.author] = [];
     }
     memory.sentiments[data.author].push(...emojis);

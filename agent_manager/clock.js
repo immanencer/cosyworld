@@ -1,5 +1,5 @@
 export function startClock(bot) {
-    setInterval(() => clock(bot), 600000); // Run the clock every 10 minutes
+    setInterval(() => clock(bot), 15 * 60 * 1000); // Run the clock every 10 minutes
     clock(bot); // Initial call to start the clock immediately
 }
 
@@ -62,7 +62,7 @@ async function getTargetChannel(bot, avatar) {
 async function promptAvatarToInteract(bot, avatar, channel) {
     try {
         const channelContext = await bot.getChannelContext(channel, avatar.name);
-        const response = await bot.generateResponse(avatar, 'What do you do?', channelContext);
+        const response = await bot.generateResponse(avatar, 'Respond to the above context as yourself.', channelContext);
         if (response) {
             await bot.sendAsAvatar(avatar, response, channel);
             console.log(`📢 **Interaction Prompt Sent**: ${avatar.name} responds in ${channel.name}.`);

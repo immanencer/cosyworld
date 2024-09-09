@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import OllamaService from '../ai-services/ollama.js';
+import OllamaService from '../ai-services/ollama.js/index.js';
 import { MongoClient, ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
 

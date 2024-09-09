@@ -9,6 +9,10 @@ import process from 'process';
 import { handleUserMessage, handleBotMessage } from './messageHandlers.js';
 import { startClock } from './clock.js';
 
+async function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class MultiAvatarBot {
     constructor() {
         this.client = new Client({
@@ -58,14 +62,18 @@ export class MultiAvatarBot {
     async handleMessage(message) {
         if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
 
-        this.debounceTimeout = setTimeout(async () => {
-            if (message.author.bot) {
-                handleBotMessage(this, message);  // Delegate to the bot message handler
-            } else {
-                handleUserMessage(this, message);  // Delegate to the user message handler
-            }
-        }, this.debounceDelay);  // Debounce delay to manage message flood
+        const context = await this.getChannelContext(message.channel, message.author.username);
+
+        if (message.author.bot) {
+            this.debounceTimeout = setTimeout(async () => {
+                delay(30 * 1000);  // Delay to ensure the message is processed
+                handleBotMessage(this, message, context);  // Pass context
+            }, this.debounceDelay);
+        } else {
+            handleUserMessage(this, message, context);  // Pass context
+        }
     }
+
 
 
     async decideIfShouldRespond(avatar, message) {
@@ -89,7 +97,6 @@ export class MultiAvatarBot {
             const prompt = `
                 Avatar Name: ${avatar.name}
                 Personality: ${avatar.personality}
-                Message: ${message.content}
     
                 Should ${avatar.name} respond to this message? Provide a haiku explaining your thoughts, followed by a single line: "YES" or "NO":
             `;
@@ -145,26 +152,25 @@ export class MultiAvatarBot {
             const thoughts = this.memoryManager.memoryCache[avatarName]?.thought || [];
             const thoughtsLog = thoughts.join('\n');
 
-            const messages = await channel.messages.fetch({ limit: 10 });
-            const recentMessages = messages.reverse().map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
+            // Fetch additional context from MongoDB
+            const dbContext = await this.database.getContextForChannel(channel.id);
 
-            const avatarsSpoken = messages.filter(msg => Object.keys(this.avatarManager.avatarCache).includes(msg.author.username.toLowerCase()))
-                .map(msg => msg.author.username);
-
-            const contextSummary = `**Thoughts**:\n${thoughtsLog}\n\n**Recent Messages in this channel**:\n${recentMessages}\n\n**Avatars Spoken this round**: ${avatarsSpoken.join(', ')}`;
-            console.log(`🔍 **${avatarName}** reflects on the recent events:\n${contextSummary}`);
-            return contextSummary;
+            return dbContext.concat(thoughtsLog).join('\n');
         } catch (error) {
             console.error(`🚨 **${avatarName}** stumbles while gathering context:`, error);
             return 'Unable to retrieve channel context.';
         }
     }
 
-    async generateResponse(avatar, message) {
+
+    async generateResponse(avatar) {
+
+        const channel = this.client.channels.cache.find(c => c.name === avatar.location);
+        const context = await this.getChannelContext(channel, avatar.name);
 
         try {
             const tools = await this.prepareToolsForAvatar(avatar);
-            const initialPrompt = this.createPrompt(avatar, message, tools);
+            const initialPrompt = this.createPrompt(avatar, context, tools, (await this.fetchItemsForAvatar(avatar)).map(i => i.name));
 
             console.log(`🔮 **${avatar.name}** ponders the message:\n\n ${initialPrompt}`);
 
@@ -173,7 +179,7 @@ export class MultiAvatarBot {
             if (this.hasToolCalls(initialResponse)) {
                 const combinedToolResults = await this.executeToolCalls(avatar, initialResponse.message.tool_calls);
                 if (combinedToolResults.length > 0) {
-                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults);
+                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, context);
                     const followUpResponse = await this.getChatResponse(avatar, followUpPrompt);
                     const finalResponse = followUpResponse.message.content.trim();
                     await this.memoryManager.logThought(avatar.name, finalResponse);
@@ -199,7 +205,7 @@ export class MultiAvatarBot {
         }).toArray();
     }
 
-    createPrompt(avatar, message, tools) {
+    createPrompt(avatar, message, tools, items) {
         return `
             Avatar Name: ${avatar.name}
             Personality: ${avatar.personality}
@@ -207,9 +213,11 @@ export class MultiAvatarBot {
             Thoughts: ${(this.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
             ${tools ? `\n\nTools Available:\n\t${tools.map(T => `${T.function.name}: ${T.function.description}`).join('\n\t')}` : ''}
 
+            ${items.length ? `Items: ${items.join(',')}` : ''}
+
             Message: ${message}
 
-            Based on the above information, respond in the voice of ${avatar.name}, with one or more tool calls or a short message as a single sentence or *action*, don't enclose it in quotes:
+            Based on the above information, respond in the voice of ${avatar.name}, typically with a short message as a single sentence or *action*:
         `;
     }
 
@@ -245,10 +253,12 @@ export class MultiAvatarBot {
         return combinedToolResults;
     }
 
-    createFollowUpPrompt(avatar, combinedToolResults) {
+    createFollowUpPrompt(avatar, combinedToolResults, context = '') {
         return `
             Avatar Name: ${avatar.name}
             Combined Tool Results: ${combinedToolResults.join('\n')}
+
+            Context: ${context}
 
             Based on this information, respond in the voice of ${avatar.name}, typically with a short message as a single sentence or *action*:
         `;
@@ -260,7 +270,13 @@ export class MultiAvatarBot {
         return `**${avatar.name}** seems lost in thought...`; // Fallback response on error
     }
 
-    async sendAsAvatar(avatar, content, channel) {
+    async sendAsAvatar(avatar, content) {
+        if (content.trim() == '') {
+            console.log(`🤔 **${avatar.name}** could not generate a response.`);
+            return;
+        }
+        const channel = this.client.channels.cache.find(c => c.name === avatar.location);
+
         const webhookData = await this.getOrCreateWebhook(channel, avatar);
         if (webhookData) {
             const { client: webhook, threadId } = webhookData;

@@ -79,7 +79,10 @@ export async function dropItem(bot, itemName, avatar) {
 
 export async function useItem(bot, itemName, avatar) {
     try {
-        const item = await bot.database.itemsCollection.findOne({ name: itemName, takenBy: avatar.name });
+        const item = await bot.database.itemsCollection.findOne({ $or: [
+            {name: itemName, takenBy: avatar.name },
+            {name: itemName, location: avatar.location }
+        ]});
         if (!item) {
             return `${avatar.name} does not have ${itemName}.`;
         }
@@ -116,8 +119,9 @@ export async function useItem(bot, itemName, avatar) {
         await bot.sendAsAvatar({
             name: item.name,
             emoji: item.emoji,
-            avatar: item.avatar
-        }, itemMessage, bot.client.channels.cache.find(channel => channel.name === avatar.location));
+            avatar: item.avatar,
+            location: avatar.location
+        }, itemMessage);
 
         return `${avatar.name} used ${item.name}.\n\n${itemMessage}`;
     } catch (error) {

@@ -191,14 +191,26 @@
       "message": "How are you my dear friend?",
       "response": "*Plucks a few mournful notes on my lute, as the wind whispers a gentle reply*\n\n\"Echoes of the heart, in twilight's hush,\nA whispered question, with no easy rush,\nTo answer it, I must first listen deep,\nAnd let the shadows, our secrets keep.\"",
       "timestamp": "2024-08-08T04:36:06.901Z"
+    },
+    {
+      "user": "ratimics",
+      "message": "Hello dear bard.",
+      "response": "*I pluck a few notes on my glass harp, the sound echoing through the Lonely Forest* Ah, I am here, amidst the whispers of ancient trees and the rustle of leaves... (glass harp plays a gentle melody)",
+      "timestamp": "2024-09-08T23:57:56.480Z"
+    },
+    {
+      "user": "ratimics",
+      "message": "<@880342727970136064> here is the lonely bard who posts their poetry  on x as well",
+      "response": "*Plucks a few melancholy strings on the glass harp, creating an ethereal resonance that echoes through the forest*\n\n\"Echoes of the heart resound, where moonlight whispers secrets to the trees...\" *strums a gentle, lilting melody on the lute, inviting connection and contemplation*",
+      "timestamp": "2024-09-09T00:07:16.977Z"
     }
   ],
-  "summary": "🎶",
+  "summary": "This conversation appears to be a poetic and symbolic exchange between the user \"ratimics\" and an entity called \"Bard.\" The conversation takes place in a fantasy world, with the two engaging in a dialogue that is rich in imagery and metaphor.\n\nThe conversation starts with ratimics asking if the bard is present. The bard responds by playing a few notes on their glass harp, indicating that they are indeed there. Ratimics then asks about the seasons turning slowly beneath the bard's boughs, and the bard responds by playing a few lilting chords on their lute.\n\nThroughout the conversation, the bard continues to respond to ratimics' questions with poetic and symbolic answers. They mention a cozy cottage nestled at the roots of a tree, where people like Rati and WhiskerWind gather to share stories and enjoy each other's company. The bard also mentions Skull, who wanders afar but always returns with tales told not in words but in the echo of his steps and the quiet contemplation of the moonlit clearings.\n\nAs the conversation progresses, ratimics asks if the bard is a storyteller or a bard, to which the bard responds by playing a few mournful notes on their lute. The bard then answers that they are indeed a bard, with a heart that beats strong in this mystical land where dreams and tales entwine hand in hand.\n\nFinally, ratimics asks how the bard is doing, and the bard responds by playing a few more notes on their lute. They mention echoes of the heart, twilight's hush, and shadows unfolding, before saying that they must listen deep to answer the question.\n\nThe conversation then shifts to the bard's goals, where they state that they want to follow the paths of mystery and magic, uncover the secrets of the hidden gate, and weave a tapestry of truth from the threads of memory and imagination. The bard also mentions wanting to heal heartaches old and find their heart's own light in the darkness.\n\nThroughout the conversation, the tone is poetic and symbolic, with the bard responding to ratimics' questions with musical phrases on their lute or lyre.",
   "dream": "",
-  "goal": "*Murmurs a contemplative melody on lute*\n\n\"The whispers of my dreams, they dance within my mind,\nVisions of a city hidden, secrets left behind.\nThe memories of my journey, a tapestry so fine,\nA story woven with threads, both dark and divine.\"\n\n*Picks a few poignant notes on lute*\n\n\"My heart's desire now, is to follow the thread,\nOf memory and dream entwined, where secrets are said.\nTo find the hidden gate, and unlock the stories told,\nAnd in their telling, heal the heartaches that grow old.\"\n\n*Determined expression*\n\n\"I'll follow the winding way, through labyrinthine night,\nSeeking the hidden gate, where secrets slumber each light.\nWith every step forward, my heart beats with newfound cheer,\nFor in the whispers of my dreams, and memories so dear.\"",
+  "goal": "*strums a contemplative chord on the lute*\n\nIn twilight's hush, where shadows fold,\nI hear the whispers of my heart's desire to unfold.\nThe secrets of the hidden gate, I seek to reveal,\nAnd weave a tapestry of truth from memory's delicate veil.\n\nMy current goal: *plays a gentle arpeggio* To follow the paths of mystery and magic, to uncover the secrets that lie within, and to heal the heartaches old with the light of my own heart shining like a lantern in the darkness.",
   "sentiments": {
-    "ratimics": "✨️",
-    "chrypnotoad++": "🔥"
+    "ratimics": "",
+    "chrypnotoad++": "🎶"
   },
   "memoryFile": "bardbot_memory.json"
 }
