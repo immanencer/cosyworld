@@ -63,10 +63,10 @@ ratichat.sendAvatarResponse = async function (avatar, dream = true) {
                 content: `${ratichat.avatars[avatar].name}, what do you say or *do*?`
             }
         ],
-        characterName: avatar,
         stream: false
     });
     ratichat.sendAsAvatar(ratichat.avatars[avatar], avatar_response.message.content);
+    return avatar_response.message.content;
 }
 
 ratichat.rumble = async function () {
@@ -97,14 +97,13 @@ ratichat.rumble = async function () {
                     content: `You awaken from the dream and find yourself in the forest. Describe your inner thoughts and feelings and those of your avatars.`
                 }
             ],
-            characterName: 'oak_tree_avatar',
             stream: false
         });
 
         ratichat.sendAsAvatar(oak_tree_avatar, oaken_response.message.content);
 
         for (const avatar in ratichat.avatars) {
-            this.sendAvatarResponse(avatar);
+            await this.sendAvatarResponse(avatar);
         }
 
         this.avatar.listen = this.avatar.listen || [];
@@ -118,16 +117,28 @@ ratichat.rumble = async function () {
 };
 
 ratichat.generateDream = async function (avatar, memory = '') {
-    const response = await ollama.generate({
+    const response = await this.enhancedChat({
         model: 'llama3.1',
-        prompt: memory + '\n\n' + avatar.personality + '\n\n As I slumber in the space between worlds, I dream of ',
-        system: avatar?.personality || ratichat.avatar.personality || 'you are an alien intelligence from the future',
-        options: model_settings
+        messages: [
+            {
+                role: 'system',
+                content: `You are the ${avatar.name}. ${avatar.personality}`
+            },
+            {
+                role: 'assistant',
+                content: `${memory}\n\n...\n\n${avatar.personality}`
+            },
+            {
+                role: 'user',
+                content: `${avatar.personality}\n\nAs night falls, the world around you shifts into darkness. The sky fades to deep indigo, and shadows stretch long across the land. A quiet stillness takes hold, interrupted only by the soft rustle of leaves or distant calls of unseen creatures. The familiar landscape transforms into something unknown, cloaked in mystery and silence. You feel a presence—something intangible but near, as if the night itself holds secrets just beyond your reach. The air is thick with the weight of the unknown, inviting you to explore what lies hidden in the darkness.\n\nDescribe your most recent dreams, delve deep into the recesses of your ancient memory.`
+            }
+        ],
+        stream: false
     });
     this.avatar_dreams = this.avatar_dreams || {};
-    this.avatar_dreams[avatar.name] = response.response;
-    console.log('🌳 Dream generated:', response.response);
-    return response.response; 
+    this.avatar_dreams[avatar.name] = response.message.content;
+    console.log('🌳 Dream generated:', response.message.content);
+    return response.message.content; 
 };
 ratichat.enhancedChat = async function (options) {
     if (!options.messages) {
@@ -156,8 +167,13 @@ ratichat.enhancedChat = async function (options) {
 
         return { message: { content: output } };
     } else {
-        const chatResponse = await ollama.chat(chatOptions);
-        return chatResponse;
+        try {
+            const chatResponse = await ollama.chat(chatOptions);
+            return chatResponse;
+        } catch (error) {
+            console.error('💀 Error:', error);
+            return { message: { content: 'I am experiencing technical difficulties. Please try again later.' } };
+        }
     }
 };
 
@@ -177,7 +193,7 @@ ratichat.handleMessage = async function (message) {
             continue;
         }
 
-        this.sendAvatarResponse(avatar_name);
+        const avatar_response = await this.sendAvatarResponse(avatar_name);
 
         const moveChance = Math.random();
         if (moveChance < 0.02) {
@@ -187,10 +203,6 @@ ratichat.handleMessage = async function (message) {
                     {
                         role: 'system',
                         content: `${avatar.personality}`
-                    },
-                    {
-                        role: 'assistant',
-                        content: memory
                     },
                     {
                         role: 'user',
@@ -212,7 +224,6 @@ ratichat.handleMessage = async function (message) {
                     `
                     }
                 ],
-                characterName: avatar_name,
                 stream: false
             });
 

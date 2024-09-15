@@ -81,14 +81,24 @@ export async function moveAvatarToChannel(bot, avatar, newChannelName) {
 
 export async function getChannelContext(bot, channel, avatarName) {
     try {
+        const avatar = bot.avatarManager.avatarCache[avatarName] || {};
+        if (!avatar) {
+            console.error(`🚨 **Avatar Not Found**: Unable to retrieve context for ${avatarName}.`);
+            return 'Unable to retrieve channel context.';
+        }
         const thoughts = bot.memoryManager.memoryCache[avatarName]?.thought || [];
-        const thoughtsLog = thoughts.join('\n');
+        const thoughtsLog = await bot.ollama.chat({
+            model: 'llama3.1',
+            messages: [
+                { role: 'system', content: `You are ${avatarName}, ${avatar.personality}.` },
+                ...thoughts.map(thought => ({ role: 'assistant', content: thought })),
+                { role: 'user', content: 'Summarize your thoughts and goals in a single sentence or two' },
+            ],
+            stream: false,
+        });
 
         const messages = await channel.messages.fetch({ limit: 10 });
         const recentMessages = messages.reverse().map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
-
-        const avatarsSpoken = messages.filter(msg => Object.keys(bot.avatarManager.avatarCache).includes(msg.author.username.toLowerCase()))
-            .map(msg => msg.author.username);
 
         const contextSummary = `**Thoughts**:\n${thoughtsLog}\n\n**Recent Messages in this channel**:\n${recentMessages}\n\n`;
         console.log(`🔍 **Context Gathered** for ${avatarName}:\n${contextSummary}`);

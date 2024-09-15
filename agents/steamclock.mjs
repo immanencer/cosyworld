@@ -103,8 +103,7 @@ class SteamClockBot {
     async generateMessage() {
         const prompts = [
             'tick and whirr and sputter ominously in a SHORT clocklike fashion. do not speak. do not translate or explain',
-            'toll a single SHORT ominous prophecy of death in latin in a clocklike fashion. do not translate or explain',
-            'incorporate this woodland time into a SHORT cryptic latin phrase: "The moon whispers to the owl". do not translate or explain'
+            'toll a single SHORT ominous prophecy of death in latin in a clocklike fashion. do not translate or explain'
         ];
         const prompt = prompts[Math.floor(Math.random() * prompts.length)];
         return await this.chatWithAI(prompt);

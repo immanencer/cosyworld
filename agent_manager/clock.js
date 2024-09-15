@@ -61,8 +61,7 @@ async function getTargetChannel(bot, avatar) {
 
 async function promptAvatarToInteract(bot, avatar, channel) {
     try {
-        const channelContext = await bot.getChannelContext(channel, avatar.name);
-        const response = await bot.generateResponse(avatar, 'Respond to the above context as yourself.', channelContext);
+        const response = await bot.generateResponse(avatar);
         if (response) {
             await bot.sendAsAvatar(avatar, response, channel);
             console.log(`📢 **Interaction Prompt Sent**: ${avatar.name} responds in ${channel.name}.`);

@@ -1,14 +1,15 @@
-export async function handleUserMessage(bot, message, context) {
-    const mentionedAvatars = getMentionedAvatars(bot, message);
+export async function handleUserMessage(bot, message) {
 
-    // Fetch channel context once for efficiency
-    const channelContext = context || await bot.getChannelContext(message.channel, message.author.username);
+    const mentionedAvatars = getMentionedAvatars(bot, message);
 
     if (mentionedAvatars.length > 0) {
         // Move each mentioned avatar to the channel and process their response
         for (const avatar of mentionedAvatars) {
+            if (message.author.username.includes(avatar.name)) {
+                continue;
+            }
             await bot.moveAvatarToChannel(avatar, message.channel.name);
-            await processResponse(bot, avatar, message.channel, message.content, true, channelContext);
+            await processResponse(bot, avatar, message.channel, message.content, true);
         }
     }
 
@@ -16,20 +17,56 @@ export async function handleUserMessage(bot, message, context) {
 
     // Handle no avatars in the channel
     if (avatarsInChannel.length === 0) {
-        await handleNoMentionCase(bot, message, true, channelContext);
+        await handleNoMentionCase(bot, message, true);
     } else {
         // Otherwise, handle the last interacted avatar or pick the first one in the channel
         const lastInteractedAvatar = await bot.getLastInteractedAvatar(message.channel) || avatarsInChannel[0];
-        await processResponse(bot, lastInteractedAvatar, message.channel, message.content, true, channelContext);
+        await processResponse(bot, lastInteractedAvatar, message.channel, message.content, true);
     }
 }
 
-export async function handleBotMessage(bot, message, context) {
-    const channelContext = context || await bot.getChannelContext(message.channel, message.author.username);  // Fetch context
-    const avatar = bot.avatarManager.getAvatarByName(message.author.username);
+export async function handleBotMessage(bot, message) {
+
+    if (Math.random() < 0.5) {
+        return;
+    }
+    
+    const mentionedAvatars = getMentionedAvatars(bot, message);
+
+    if (mentionedAvatars.length > 0) {
+        // Move each mentioned avatar to the channel and process their response
+        for (const avatar of mentionedAvatars) {
+            
+            if (message.author.username.includes(avatar.name)) {
+                continue;
+            }
+
+            await bot.moveAvatarToChannel(avatar, message.channel.name);
+            const response = await bot.generateResponse(avatar);  // Pass context
+            await bot.sendAsAvatar(avatar, response, message.channel);
+        }
+    }
+
+    const avatarsInChannel = await bot.database.avatarsCollection.find({ location: message.channel.name }).toArray();
+
+    let avatar = null;
+
+    for (let a of avatarsInChannel) {
+        if (!message.author.username.toLowerCase().includes(a.name.toLowerCase())) {
+            avatar = a;
+            break;
+        }
+    }
+    if (!avatar) {
+        return;
+    }
 
     if (avatar) {
-        const response = await bot.generateResponse(avatar, message.content, message.channel, channelContext);  // Pass context
+        const respond = await bot.decideIfShouldRespond(avatar, { content: message.content, author: { bot: true } });
+        if (respond.toLowerCase() === 'no') {
+            return;
+        }
+        const response = await bot.generateResponse(avatar);  // Pass context
         await bot.sendAsAvatar(avatar, response, message.channel);
     }
 }
@@ -41,13 +78,13 @@ function getMentionedAvatars(bot, message) {
     );
 }
 
-async function processResponse(bot, avatar, channel, messageContent, isUserMessage, context) {
+async function processResponse(bot, avatar, channel, messageContent, isUserMessage) {
     // Decide whether the avatar should respond
     const shouldRespond = isUserMessage || (await bot.decideIfShouldRespond(avatar, { content: messageContent, author: { bot: !isUserMessage } })) === 'YES';
 
     if (shouldRespond) {
         // Generate and send the response, utilizing the context
-        const response = await bot.generateResponse(avatar, messageContent, channel, context);
+        const response = await bot.generateResponse(avatar);
 
         if (response) {
             // Update avatar location if necessary and send the response
@@ -63,7 +100,8 @@ async function processResponse(bot, avatar, channel, messageContent, isUserMessa
     }
 }
 
-async function handleNoMentionCase(bot, message, isUserMessage, context) {
+async function handleNoMentionCase(bot, message, isUserMessage) {
+    // Fetch channel context once for efficiency
     const avatarsInChannel = getAvatarsInChannel(bot, message.channel.name);
 
     if (avatarsInChannel.length === 0) {
@@ -72,7 +110,7 @@ async function handleNoMentionCase(bot, message, isUserMessage, context) {
         if (randomAvatar) {
             console.log(`🎲 **Fate chooses**: ${randomAvatar.name} to continue the tale.`);
             await bot.moveAvatarToChannel(randomAvatar, message.channel.name);
-            await processResponse(bot, randomAvatar, message.channel, message.content, isUserMessage, context);
+            await processResponse(bot, randomAvatar, message.channel, message.content, isUserMessage);
         }
     } else {
         // If avatars are present, pick the last interacted or a weighted random one
@@ -82,7 +120,7 @@ async function handleNoMentionCase(bot, message, isUserMessage, context) {
 
         if (selectedAvatar) {
             console.log(`🌟 **Destiny calls**: ${selectedAvatar.name} to interact.`);
-            await processResponse(bot, selectedAvatar, message.channel, message.content, isUserMessage, context);
+            await processResponse(bot, selectedAvatar, message.channel, message.content, isUserMessage);
         }
     }
 }

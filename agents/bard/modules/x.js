@@ -67,8 +67,8 @@ export async function postX(params, accountId = '') {
     const maxRetries = 3;
 
     for (const chunk of tweetChunks) {
-        let attempt = 0;
         let success = false;
+        let attempt = 0;
 
         while (attempt < maxRetries && !success) {
             try {
@@ -100,4 +100,6 @@ export async function postX(params, accountId = '') {
             break; // Stop the loop if the tweet couldn't be posted
         }
     }
+
+    return inReplyToTweetId;
 }

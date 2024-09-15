@@ -36,7 +36,7 @@ class Tools {
 
         if (this.movement_cooldowns[avatar.name] === 0) {
             tools.push(this._createMoveTool(avatar.remember));
-            this.movement_cooldowns[avatar.name] = 20;
+            this.movement_cooldowns[avatar.name] = 3;
         }   
 
         if (itemsInRoom.length > 0) {

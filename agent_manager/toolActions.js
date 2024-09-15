@@ -15,15 +15,18 @@ export async function searchLocation(bot, location, avatar) {
 
 export async function moveAvatarToChannel(bot, avatar, newChannelName) {
     try {
+        if (newChannelName.includes('🚧') || newChannelName.includes('🥩')) {
+            return `${newChannelName} is forbidden.*`;
+        }
         if (!newChannelName) {
             console.error(`🚨 Invalid channel name: ${newChannelName} for avatar ${avatar.name}`);
-            return;
+            return 'Invalid channel name, please specify a valid channel.';
         }
 
         const targetChannel = bot.client.channels.cache.find(channel => channel.name === newChannelName);
         if (!targetChannel) {
             console.error(`🚨 Channel not found: ${newChannelName}`);
-            return;
+            return `${newChannelName} does not exist.`;
         }
 
         if (avatar.location === newChannelName) {
@@ -96,14 +99,15 @@ export async function useItem(bot, itemName, avatar) {
             Holder: ${avatar.name}
             Thoughts: ${(bot.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
             
-            The item "${item.name}" is used by ${avatar.name}. Respond as the item with a short mystical and enigmatic message or *action*, reflecting its nature:
+            You "${item.name}" have been used by ${avatar.name}.
+            Respond as the item with a short message or *action*, reflecting its nature:
         `;
 
         // Generate the response using the LLM
         const response = await bot.ollama.chat({
             model: 'llama3.1',
             messages: [
-                { role: 'system', content: `You are the mystical item ${item.name}.` },
+                { role: 'system', content: `You are ${item.name}, ${item.description || ''}` },
                 { role: 'user', content: context },
             ],
             stream: false,

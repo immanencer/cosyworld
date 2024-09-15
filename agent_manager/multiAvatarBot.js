@@ -9,10 +9,6 @@ import process from 'process';
 import { handleUserMessage, handleBotMessage } from './messageHandlers.js';
 import { startClock } from './clock.js';
 
-async function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 export class MultiAvatarBot {
     constructor() {
         this.client = new Client({
@@ -30,7 +26,7 @@ export class MultiAvatarBot {
         this.database = new Database(this.mongoUri);
         this.avatarManager = new AvatarManager(this.database);
         this.tools = new Tools(this);
-        this.memoryManager = new MemoryManager(this.database, ollama);
+        this.memoryManager = new MemoryManager(this.database, this.ollama);
 
         this.responseCounts = {};
         this.maxResponses = 4;
@@ -38,6 +34,9 @@ export class MultiAvatarBot {
         this.debounceDelay = 2000;
         this.lastJournalTime = Date.now();
         this.webhookCache = {};
+
+        this.responseTimes = {};  // Store the last response time for each avatar
+        this.cooldownPeriod = 30 * 1000;  // 30-second cooldown in milliseconds
 
         this.client.once('ready', this.onReady.bind(this));
         this.client.on('messageCreate', this.handleMessage.bind(this));
@@ -62,46 +61,51 @@ export class MultiAvatarBot {
     async handleMessage(message) {
         if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
 
-        const context = await this.getChannelContext(message.channel, message.author.username);
-
         if (message.author.bot) {
-            this.debounceTimeout = setTimeout(async () => {
-                delay(30 * 1000);  // Delay to ensure the message is processed
-                handleBotMessage(this, message, context);  // Pass context
-            }, this.debounceDelay);
+            handleBotMessage(this, message);
         } else {
-            handleUserMessage(this, message, context);  // Pass context
+            handleUserMessage(this, message);
         }
     }
 
-
-
     async decideIfShouldRespond(avatar, message) {
         const now = Date.now();
-        if (!this.responseCounts[avatar.name]) {
-            this.responseCounts[avatar.name] = { lastResponseTime: 0, count: 0 };
+
+        // If the message includes the avatar's name, respond
+        if (message.content.includes(avatar.name)) {
+            // Update last response time
+            this.responseTimes[avatar.name] = now;
+            return 'YES';
         }
 
-        const timeSinceLastResponse = now - this.responseCounts[avatar.name].lastResponseTime;
+        // Get the last time the avatar responded
+        const lastResponseTime = this.responseTimes[avatar.name] || 0;
+        const timeSinceLastResponse = now - lastResponseTime;
 
-        // Limit response if the avatar responded recently
-        if (timeSinceLastResponse < this.debounceDelay || this.responseCounts[avatar.name].count >= this.maxResponses) {
+        // If the avatar is on cooldown, return 'NO'
+        if (timeSinceLastResponse < this.cooldownPeriod) {
+            console.log(`⏳ **${avatar.name}** is still on cooldown (${((this.cooldownPeriod - timeSinceLastResponse) / 1000).toFixed(1)} seconds remaining).`);
             return 'NO';
         }
 
-        // Proceed with normal response logic
-        this.responseCounts[avatar.name].lastResponseTime = now;
-        this.responseCounts[avatar.name].count += 1;
-
         try {
+            const channel = this.client.channels.cache.find(c => c.name === avatar.location);
+            if (!channel) {
+                console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
+                return 'NO';
+            }
+            const context = await this.getChannelContext(channel, avatar.name);
+
             const prompt = `
-                Avatar Name: ${avatar.name}
-                Personality: ${avatar.personality}
-    
-                Should ${avatar.name} respond to this message? Provide a haiku explaining your thoughts, followed by a single line: "YES" or "NO":
+Avatar Name: ${avatar.name}
+Personality: ${avatar.personality}
+
+Message: ${context}
+
+Should ${avatar.name} respond to this message? Provide a haiku explaining your thoughts, followed by a single line: "YES" or "NO":
             `;
 
-            const response = await ollama.chat({
+            const response = await this.ollama.chat({
                 model: 'llama3.1',
                 messages: [
                     { role: 'system', content: `You are ${avatar.name} deciding whether to respond.` },
@@ -110,11 +114,26 @@ export class MultiAvatarBot {
                 stream: false,
             });
 
-            const decision = response.message.content.trim();
-            const haiku = decision.split('\n').slice(0, -1).join('\n').trim();
-            const decide = decision.split('\n').slice(-1).join('\n').trim();
+            if (!response || !response.message || !response.message.content) {
+                console.error(`🦙 **${avatar.name}** received an invalid response from Ollama.`);
+                return 'NO';
+            }
+
+            const decisionText = response.message.content.trim();
+            const lines = decisionText.split('\n');
+            const haiku = lines.slice(0, -1).join('\n').trim();
+            const decisionLine = lines.slice(-1)[0].trim();
+
             this.memoryManager.updateMemoryCache(avatar.name, haiku, 'thought');
-            return decide.includes('YES') ? 'YES' : 'NO';
+
+            if (decisionLine.toUpperCase().includes('YES')) {
+                // Update last response time
+                this.responseTimes[avatar.name] = now;
+                return 'YES';
+            } else {
+                return 'NO';
+            }
+
         } catch (error) {
             console.error(`🦙 **${avatar.name}** encountered an error in decision-making:`, error);
             return 'NO';
@@ -148,39 +167,88 @@ export class MultiAvatarBot {
     }
 
     async getChannelContext(channel, avatarName) {
+        if (!channel) {
+            console.error(`🚨 Channel is undefined for avatar "${avatarName}".`);
+            return 'Unable to retrieve channel context.';
+        }
         try {
             const thoughts = this.memoryManager.memoryCache[avatarName]?.thought || [];
-            const thoughtsLog = thoughts.join('\n');
+            const thoughtsLog = thoughts.filter(T => typeof T === 'string').join('\n');
 
-            // Fetch additional context from MongoDB
-            const dbContext = await this.database.getContextForChannel(channel.id);
+            // Fetch additional context from Discord
+            const discordContext = await channel.messages.fetch({ limit: 10 });
+            const recentMessages = discordContext.reverse().map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
 
-            return dbContext.concat(thoughtsLog).join('\n');
+            return `${thoughtsLog}\n${recentMessages}`;
         } catch (error) {
             console.error(`🚨 **${avatarName}** stumbles while gathering context:`, error);
             return 'Unable to retrieve channel context.';
         }
     }
 
-
     async generateResponse(avatar) {
-
         const channel = this.client.channels.cache.find(c => c.name === avatar.location);
+        if (!channel) {
+            console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
+            return `**${avatar.name}** seems lost...`;
+        }
+
         const context = await this.getChannelContext(channel, avatar.name);
 
         try {
             const tools = await this.prepareToolsForAvatar(avatar);
-            const initialPrompt = this.createPrompt(avatar, context, tools, (await this.fetchItemsForAvatar(avatar)).map(i => i.name));
+            const avatarsInLocation = await this.database.avatarsCollection.find({ location: avatar.location }).toArray();
 
-            console.log(`🔮 **${avatar.name}** ponders the message:\n\n ${initialPrompt}`);
+            const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
+            const thoughtSummary = await this.ollama.chat({
+                model: 'llama3.1',
+                messages: [
+                    { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
+                    ...thoughts.map(thought => ({ role: 'assistant', content: thought })),
+                    { role: 'user', content: 'Summarize your thoughts and goals in a few sentences.' },
+                ],
+                stream: false,
+            });
+
+            if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content) {
+                console.error(`🦙 **${avatar.name}** received an invalid thought summary from Ollama.`);
+                return `**${avatar.name}** seems confused...`;
+            }
+
+            const thought = thoughtSummary.message.content.trim();
+            this.memoryManager.updateMemoryCache(avatar.name, thought, 'thought');
+
+            const items = (await this.fetchItemsForAvatar(avatar)).map(i => i.name);
+
+            const initialPrompt = this.createPrompt(
+                avatar,
+                `${thought}\n\n${context}`,
+                tools,
+                items,
+                (avatarsInLocation || []).map(a => a.name)
+            );
+
+            console.log(`🔮 **${avatar.name}** ponders the message:\n\n${initialPrompt}`);
 
             const initialResponse = await this.getChatResponse(avatar, initialPrompt, tools);
+
+            if (!initialResponse || !initialResponse.message) {
+                console.error(`🦙 **${avatar.name}** received an invalid response from Ollama.`);
+                return `**${avatar.name}** is unable to respond...`;
+            }
 
             if (this.hasToolCalls(initialResponse)) {
                 const combinedToolResults = await this.executeToolCalls(avatar, initialResponse.message.tool_calls);
                 if (combinedToolResults.length > 0) {
-                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, context);
+                    const followUpContext= await this.getChannelContext(channel, avatar.name);
+                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, `${context}\n\n${followUpContext}`);
                     const followUpResponse = await this.getChatResponse(avatar, followUpPrompt);
+
+                    if (!followUpResponse || !followUpResponse.message || !followUpResponse.message.content) {
+                        console.error(`🦙 **${avatar.name}** received an invalid follow-up response from Ollama.`);
+                        return `**${avatar.name}** is unable to continue...`;
+                    }
+
                     const finalResponse = followUpResponse.message.content.trim();
                     await this.memoryManager.logThought(avatar.name, finalResponse);
                     return finalResponse;
@@ -195,7 +263,7 @@ export class MultiAvatarBot {
     }
 
     async prepareToolsForAvatar(avatar) {
-        let tools = await this.tools.getToolsForAvatar(avatar);
+        const tools = await this.tools.getToolsForAvatar(avatar);
         return tools.length === 0 ? undefined : tools;
     }
 
@@ -205,36 +273,46 @@ export class MultiAvatarBot {
         }).toArray();
     }
 
-    createPrompt(avatar, message, tools, items) {
+    createPrompt(avatar, message, tools, items, avatarsInLocation = []) {
         return `
-            Avatar Name: ${avatar.name}
-            Personality: ${avatar.personality}
-            Location: ${avatar.location}
-            Thoughts: ${(this.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
-            ${tools ? `\n\nTools Available:\n\t${tools.map(T => `${T.function.name}: ${T.function.description}`).join('\n\t')}` : ''}
+Avatar Name: ${avatar.name}
+Personality: ${avatar.personality}
+Location: ${avatar.location}
+Other Avatars: ${avatarsInLocation.join(', ')}
+Thoughts: ${(this.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
+${tools ? `\n\nTools Available:\n\t${tools.map(T => `${T.function.name}: ${T.function.description}`).join('\n\t')}` : ''}
 
-            ${items.length ? `Items: ${items.join(',')}` : ''}
+${items.length ? `Items: ${items.join(', ')}` : ''}
 
-            Message: ${message}
+Message: ${message}
 
-            Based on the above information, respond in the voice of ${avatar.name}, typically with a short message as a single sentence or *action*:
+Respond to the above conversation as ${avatar.name}.
+${avatar.personality || ''} 
+You may use the tools available to you to craft a response.
+Only provide a single short message or *action* that advances the conversation:
         `;
     }
 
     async getChatResponse(avatar, prompt, tools = undefined) {
-        return await ollama.chat({
-            model: 'llama3.1',
-            messages: [
-                { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
-                { role: 'user', content: prompt },
-            ],
-            stream: false,
-            tools: tools,
-        });
+        try {
+            const response = await this.ollama.chat({
+                model: 'llama3.1',
+                messages: [
+                    { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
+                    { role: 'user', content: prompt },
+                ],
+                stream: false,
+                tools: tools,
+            });
+            return response;
+        } catch (error) {
+            console.error(`🦙 **${avatar.name}** encountered an error while generating a response:`, error);
+            return null;
+        }
     }
 
     hasToolCalls(response) {
-        return response.message.tool_calls && response.message.tool_calls.length > 0;
+        return response && response.message && response.message.tool_calls && response.message.tool_calls.length > 0;
     }
 
     async executeToolCalls(avatar, toolCalls) {
@@ -255,27 +333,33 @@ export class MultiAvatarBot {
 
     createFollowUpPrompt(avatar, combinedToolResults, context = '') {
         return `
-            Avatar Name: ${avatar.name}
-            Combined Tool Results: ${combinedToolResults.join('\n')}
+Avatar Name: ${avatar.name}
+Combined Tool Results: ${combinedToolResults.join('\n')}
 
-            Context: ${context}
+Context: ${context}
 
-            Based on this information, respond in the voice of ${avatar.name}, typically with a short message as a single sentence or *action*:
+Based on this information, respond as ${avatar.name}, with a short message or *action* that advances the conversation:
         `;
     }
 
     handleError(avatar, error) {
         console.error(`🦙 **${avatar.name}** falters while crafting a response:`, error);
         this.memoryManager.logThought(avatar.name, `Error occurred: ${error.message}`);
-        return `**${avatar.name}** seems lost in thought...`; // Fallback response on error
+        return `**${avatar.name}** seems lost in thought...`;
     }
 
     async sendAsAvatar(avatar, content) {
-        if (content.trim() == '') {
+        if (!content || content.trim() === '') {
             console.log(`🤔 **${avatar.name}** could not generate a response.`);
             return;
         }
-        const channel = this.client.channels.cache.find(c => c.name === avatar.location);
+        content = content.substring(0, 2000);  // Limit message length to 2000 characters
+        const channel = this.client.channels.cache.find(c => c.name && c.name === avatar.location);
+
+        if (!channel) {
+            console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
+            return;
+        }
 
         const webhookData = await this.getOrCreateWebhook(channel, avatar);
         if (webhookData) {
@@ -289,6 +373,8 @@ export class MultiAvatarBot {
         } else {
             if (channel.isTextBased()) {
                 await channel.send(`**${avatar.name}:** ${content}`);
+            } else {
+                console.error(`🚨 Channel "${channel.name}" is not text-based.`);
             }
         }
     }
@@ -318,7 +404,7 @@ export class MultiAvatarBot {
             const webhooks = await targetChannel.fetchWebhooks();
             let webhook = webhooks.find(wh => wh.owner.id === this.client.user.id);
 
-            if (!webhook && targetChannel.permissionsFor(this.client.user).has('MANAGE_WEBHOOKS')) {
+            if (!webhook && targetChannel.permissionsFor(this.client.user).has('ManageWebhooks')) {
                 webhook = await targetChannel.createWebhook({
                     name: avatar.name,
                     avatar: avatar.avatar
@@ -339,11 +425,11 @@ export class MultiAvatarBot {
         }
     }
 
-
     async getLastInteractedAvatar(channel) {
         try {
             const messages = await channel.messages.fetch({ limit: 10 });
-            const avatarMessages = messages.filter(msg => Object.keys(this.avatarManager.avatarCache).includes(msg.author.username.toLowerCase()));
+            const avatarNames = Object.keys(this.avatarManager.avatarCache).map(name => name.toLowerCase());
+            const avatarMessages = messages.filter(msg => avatarNames.includes(msg.author.username.toLowerCase()));
 
             if (avatarMessages.size > 0) {
                 const lastMessage = avatarMessages.first();
@@ -358,18 +444,24 @@ export class MultiAvatarBot {
     }
 
     moveAvatarToChannel(avatar, newChannelName) {
+
+        if (newChannelName.includes('🚧') || newChannelName.includes('🥩')) {
+            return `${newChannelName} is forbidden.*`;
+        }
+
         if (!this.avatarManager) {
             console.error('🚨 AvatarManager is not initialized.');
-            return;
+            return false;
         }
 
         const channel = this.client.channels.cache.find(c => c.name === newChannelName);
         if (!channel) {
             console.error(`🚨 Channel "${newChannelName}" not found.`);
-            return;
+            return false;
         }
 
         this.tools.runTool('MOVE', { newLocation: newChannelName }, avatar);
         console.log(`🚶‍♂️ **${avatar.name}** moves to **${newChannelName}**.`);
+        return true;
     }
 }

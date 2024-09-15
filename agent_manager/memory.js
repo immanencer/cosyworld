@@ -12,6 +12,9 @@ class MemoryManager {
             this.memoryCache[avatarName] = { conversation: [], thought: [] };
         }
 
+        if (typeof message !== 'string') {
+            throw new Error('Message must be a string.');
+        }
         this.memoryCache[avatarName][memoryType].push(message);
 
         if (this.memoryCache[avatarName][memoryType].length >= this.memoryThreshold) {
@@ -20,6 +23,7 @@ class MemoryManager {
     }
 
     async summarizeMemory(avatarName, memoryType) {
+        const avatar = await this.database.avatarsCollection.findOne({ name: avatarName });
         const currentTime = Date.now();
         const oneHour = 60 * 60 * 1000;
 
@@ -28,7 +32,7 @@ class MemoryManager {
             return;  // Skip journaling if it's been less than an hour
         }
 
-        const messages = this.memoryCache[avatarName][memoryType].join('\n');
+        const messages = (this.memoryCache[avatarName][memoryType]).slice(-88).join('\n');
 
         const prompt = `
             Avatar Name: ${avatarName}
@@ -41,7 +45,7 @@ class MemoryManager {
             const summary = await this.ollama.chat({
                 model: 'llama3.1',
                 messages: [
-                    { role: 'system', content: `You are a journal keeper for ${avatarName}.` },
+                    { role: 'system', content: `You are a journal keeper for ${avatarName}. ${avatar.personality || ''}` },
                     { role: 'user', content: prompt },
                 ],
                 stream: false,
@@ -65,6 +69,9 @@ class MemoryManager {
     }
 
     async logThought(avatarName, thought) {
+        if (typeof thought !== 'string') {
+            throw new Error('Thought must be a string.');
+        }
         if (thought.trim() === '') return;
 
         if (!this.memoryCache[avatarName]) {
@@ -72,6 +79,10 @@ class MemoryManager {
         }
 
         this.memoryCache[avatarName].thought.push(thought);
+
+        if (this.memoryCache[avatarName].thought.length >= this.memoryThreshold) {
+            await this.summarizeMemory(avatarName, 'thought');
+        }
 
         try {
             await this.database.thoughtsCollection.insertOne({ avatarName, thought });

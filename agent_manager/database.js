@@ -28,7 +28,7 @@ class Database {
             // Query the messages collection for recent messages from a specific channel
             const recentMessages = await this.messagesCollection
                 .find({ channelId })
-                .sort({ createdAt: -1 }) // Sort by createdAt to get the most recent messages
+                .sort({ createdAt: 1 }) // Sort by createdAt to get the most recent messages
                 .limit(limit)
                 .toArray();
 

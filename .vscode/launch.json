@@ -7,6 +7,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "👻 ghost",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/ghost.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Swarm",
             "skipFiles": [
                 "<node_internals>/**"
