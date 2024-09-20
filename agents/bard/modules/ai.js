@@ -28,7 +28,7 @@ export async function chatWithAI(message, avatar, memory) {
               model: "nomic-embed-text"
             },
             messages: [
-                { role: 'system', content: avatar.personality },
+                { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}` },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },
                 { role: 'user', content: message }
             ],
@@ -37,6 +37,6 @@ export async function chatWithAI(message, avatar, memory) {
         return response.message.content;
     } catch (error) {
         console.error('🦙 AI chat error:', error);
-        return '🎶';
+        throw error;
     }
 }

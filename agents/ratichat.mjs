@@ -34,7 +34,7 @@ ratichat.on_login = async function () {
     this.rumble();
 };
 
-ratichat.sendAvatarResponse = async function (avatar, dream = true) {
+ratichat.sendAvatarResponse = async function (avatar, dream = false) {
     if (!ratichat.avatars[avatar]) {
         console.lovg('🌳 ⛔ Invalid avatar:', avatar);
     }
@@ -172,6 +172,7 @@ ratichat.enhancedChat = async function (options) {
             return chatResponse;
         } catch (error) {
             console.error('💀 Error:', error);
+            throw error;
             return { message: { content: 'I am experiencing technical difficulties. Please try again later.' } };
         }
     }

@@ -5,8 +5,18 @@ import crypto from 'crypto';
 import chunkText from '../tools/chunk-text.js';
 import process from 'process';
 
+/**
+ * Escapes special characters in a string for use in a regular expression.
+ * @param {string} string - The string to escape.
+ * @returns {string} - The escaped string.
+ */
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 const db = {
     avatars: mongo.collection('avatars'),
+
     locations: mongo.collection('locations'),
     books: mongo.collection('books'),
     summaries: mongo.collection('summaries'),
@@ -27,12 +37,6 @@ class LibrarianBot {
         this._librarian = null;
         this._scribeAsher = null;
         this.setupEventListeners();
-        initializeDiscordClient().then(() => {
-            console.log('LibrarianBot is ready');
-        }).catch(error => {
-            console.error('Failed to initialize Discord client:', error);
-            throw error;
-        });
     }
 
     setupEventListeners() {
@@ -206,8 +210,8 @@ class LibrarianBot {
         const summaries = [];
 
         for (let i = 0; i < chunks.length; i++) {
-            const chunkPrompt = 
-            `You are currently summarizing ${book.headerInfo.title}, by ${book.headerInfo.author}.
+            const chunkPrompt =
+                `You are currently summarizing ${book.headerInfo.title}, by ${book.headerInfo.author}.
 
             Here is the last section you summarized:
 
@@ -263,12 +267,13 @@ class LibrarianBot {
             }
 
             const data = await response.json();
-            return data.message.content;
+            return data.message.content.trim();
         } catch (error) {
             console.error('Error generating response:', error);
             return "I apologize, but I'm having trouble formulating a response right now.";
         }
     }
+
 
     async saveSummaryToDatabase(hash, summary) {
         const summaryDocument = {
@@ -287,18 +292,48 @@ class LibrarianBot {
         }, bookInfoMessage);
     }
 
-    async searchMessages(query) {
-        const messages = await db.messages.find({
-            content: { $regex: query, $options: 'i' }
-        }).toArray();
+    /**
+     * Searches messages based on a query string using the $in operator.
+     * @param {string} query - The query string to search for.
+     * @param {number} limit - The maximum number of messages to retrieve.
+     * @returns {Promise<Array>} - An array of relevant messages.
+     */
+    async searchMessages(query, limit = 100) {
+        // Extract topics or characters from the query using Ollama
+        const extractionPrompt = `From the following instruction, extract key topics or characters for searching messages:\n\n${query}`;
+        const extraction = await this.generateResponse(this._scribeAsher, extractionPrompt);
 
-        const trimmedMessages = messages.map(msg => ({
-            author: msg.author,
-            content: msg.content.substring(0, 200)
-        }));
+        // Split the extracted topics or characters into an array
+        const keywords = extraction.split(',').map(keyword => keyword.trim()).filter(Boolean).slice(0, 5);
 
-        return this.summarizeContext(trimmedMessages);
+        if (keywords.length === 0) {
+            throw new Error('No keywords extracted from the query');
+        }
+
+        // Debug: Log the keywords
+        console.log(`Searching for keywords: ${keywords.join(', ')}`);
+
+        // Build MongoDB query using $in and case-insensitive search with $regex
+        // Each keyword is used in its own regex to ensure case-insensitive matching
+        const regexes = keywords.map(k => new RegExp(`\\b${escapeRegex(k)}\\b`, 'i'));
+
+        const mongoQuery = {
+            $or: regexes.map(regex => ({ content: { $regex: regex } }))
+        };
+
+        try {
+            const messages = await db.messages.find(mongoQuery)
+                .limit(limit)
+                .toArray();
+
+            return messages;
+        } catch (error) {
+            console.error('Error executing searchMessages:', error);
+            throw error;
+        }
     }
+
+
 
     async summarizeContext(messages) {
         const messageContent = messages.map(msg => `${msg.author}: ${msg.content}`).join('\n\n');
@@ -351,33 +386,64 @@ class LibrarianBot {
         if (count === 0) {
             throw new Error('No messages found in the database');
         }
-    
+
         const randomSkip = Math.max(0, Math.floor(Math.random() * count) - 100);
-    
-        const messages = await db.messages.find()
+        const initialMessages = await db.messages.find()
             .skip(randomSkip)
             .limit(100)
             .toArray();
-    
-        if (messages.length === 0) {
+
+        if (initialMessages.length === 0) {
             throw new Error('No messages found in the selected time period');
         }
-    
-        const messageContents = messages.map(msg => msg.content).join('\n\n');
-    
+
+        // Step 2: Analyze Initial Messages to Identify Key Topics or Characters
+        const analysisPrompt = `Analyze the following messages and identify the most significant topics or characters that can be used to create a focused and engaging story. List them separated by commas.\n\n${initialMessages.map(msg => msg.content).join('\n\n')}`;
+        const analysis = await this.generateResponse(this._scribeAsher, analysisPrompt);
+
+        // Extract and limit keywords
+        const keywords = analysis.split(',').map(keyword => keyword.trim()).filter(Boolean).slice(0, 5);
+
+        if (keywords.length === 0) {
+            throw new Error('No keywords extracted from the analysis');
+        }
+
+        // Step 3: Build a Refined Query Based on the Analysis
+        const refinedQuery = `Find messages that are related to the following topics or characters: ${keywords.join(', ')}. These messages should help in creating a focused and coherent story.`;
+
+        const relevantMessages = await this.searchMessages(refinedQuery, 100);
+
+        if (relevantMessages.length === 0) {
+            throw new Error('No relevant messages found based on the refined query');
+        }
+
+        const messageContents = relevantMessages.map(msg => msg.content).join('\n\n');
+
+        // Step 4: Generate Story Outline, Draft, and Polished Story
         const outlinePrompt = `Based on the following messages, create an outline for a new story:\n\n${messageContents}`;
         const outline = await this.generateResponse(this._scribeAsher, outlinePrompt);
-    
+
         const draftPrompt = `Using the following outline, write a draft of the story:\n\n${outline}`;
         const draft = await this.generateResponse(this._scribeAsher, draftPrompt);
-    
+
         const polishPrompt = `Here is a draft of the story. Polish it to make it more engaging and coherent, and finalize it for publishing. Your output will be published directly so present ONLY the finished document:\n\n${draft}`;
         const polishedStory = await this.generateResponse(this._scribeAsher, polishPrompt);
-    
+
         return polishedStory;
     }
-     
+
+
+
+    start() {
+        initializeDiscordClient().then(() => {
+            console.log('LibrarianBot is ready');
+        }).catch(error => {
+            console.error('Failed to initialize Discord client:', error);
+            throw error;
+        });
+    }
 }
 
 // Run the bot
 const bot = new LibrarianBot();
+bot.start();

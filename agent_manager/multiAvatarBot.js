@@ -345,6 +345,7 @@ Based on this information, respond as ${avatar.name}, with a short message or *a
     handleError(avatar, error) {
         console.error(`🦙 **${avatar.name}** falters while crafting a response:`, error);
         this.memoryManager.logThought(avatar.name, `Error occurred: ${error.message}`);
+        throw error;
         return `**${avatar.name}** seems lost in thought...`;
     }
 

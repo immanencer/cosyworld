@@ -1,6 +1,5 @@
 export function startClock(bot) {
     setInterval(() => clock(bot), 15 * 60 * 1000); // Run the clock every 10 minutes
-    clock(bot); // Initial call to start the clock immediately
 }
 
 async function clock(bot) {
@@ -47,10 +46,10 @@ async function getTargetChannel(bot, avatar) {
     const recentChannels = bot.memoryManager.memoryCache[avatar.name]?.recentChannels || [];
 
     // Filter out channels that avatar has visited recently
-    const availableChannels = channels.filter(channel => !recentChannels.includes(channel.id) && channel.isTextBased());
+    const availableChannels = channels.filter(channel => !channel.name.includes('🚧') && !recentChannels.includes(channel.id) && channel.isTextBased());
 
     if (availableChannels.length === 0) {
-        return channels.random();  // If no new channels are available, pick a random one
+        return channels.filter(channel => !channel.name.includes('🚧')).random();  // If no new channels are available, pick a random one
     }
 
     // Prioritize channels the avatar hasn't visited recently

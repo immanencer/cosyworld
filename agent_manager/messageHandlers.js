@@ -27,7 +27,7 @@ export async function handleUserMessage(bot, message) {
 
 export async function handleBotMessage(bot, message) {
 
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.8) {
         return;
     }
     

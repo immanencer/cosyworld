@@ -3,13 +3,15 @@ import { postX } from './x.js';
 
 export async function generateSonnets(memory, avatar) {
     const sonnetPrompt = `
-As the Lonely Bard, compose a sonnet based on your recent memories, dreams, and reflections.
+compose a poem based on your recent memories, dreams, and reflections.
 Use the following memory content as inspiration:
-Memory Summary: ${memory.summary}
+
 Recent Dream: ${memory.dream}
 Current Goal: ${memory.goal}
+Memory Summary: ${memory.summary}
 
-Compose a sonnet in 14 lines, structured with three quatrains and a final couplet.
+
+Compose a short poem as the Lonely Bard, provide only the poem without comment.
     `;
 
     try {

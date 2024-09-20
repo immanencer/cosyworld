@@ -10,6 +10,7 @@ class GoblinCave {
         this.loadAvatars();
         this.discordSystem = new DiscordSystem(this.onReady.bind(this), this.handleMessage.bind(this));
         this.ollamaSystem = new OllamaSystem(this.model);
+        this.goblinInteractions = new Map(); // Initialize interaction tracker
     }
 
     initializeProperties() {
@@ -49,7 +50,7 @@ class GoblinCave {
         this.startGoblinSpawning();
         await this.announceCaveActivation();  // Move this here to ensure it's only called once
     }
-    
+
     async initializeAI() {
         await this.ollamaSystem.initializeAI(this.systemAvatar.personality);
     }
@@ -70,7 +71,7 @@ class GoblinCave {
     handleMessage(message) {
         if (this.isInitialized) {
             this.onMessage(message);
-    
+
             // Check if the message is in the goblin-cave channel
             if (message.channel.name === 'goblin-cave') {
                 this.randomGoblinReply(message);
@@ -84,44 +85,114 @@ class GoblinCave {
             this.messageQueue.push(message);
         }
     }
-    
+
+    /**
+ * Checks if a username corresponds to a goblin.
+ * @param {string} username - The username to check.
+ * @returns {boolean} - True if the user is a goblin, false otherwise.
+ */
+    isGoblin(username) {
+        return this.avatars.some(avatar => avatar.name.toLowerCase() === username.toLowerCase());
+    }
+
+    /**
+     * Retrieves the current interaction count between two goblins.
+     * @param {string} responderName - The name of the goblin replying.
+     * @param {string} authorName - The name of the goblin who sent the message.
+     * @returns {number} - The current interaction count.
+     */
+    getInteractionCount(responderName, authorName) {
+        const key = `${responderName}-${authorName}`;
+        return this.goblinInteractions.get(key) || 0;
+    }
+
+    /**
+     * Increments the interaction count between two goblins.
+     * @param {string} responderName - The name of the goblin replying.
+     * @param {string} authorName - The name of the goblin who sent the message.
+     */
+    incrementInteraction(responderName, authorName) {
+        const key = `${responderName}-${authorName}`;
+        const currentCount = this.goblinInteractions.get(key) || 0;
+        this.goblinInteractions.set(key, currentCount + 1);
+    }
+
+    /**
+     * Optionally, reset interaction counts after a certain period.
+     * (Implementation depends on desired behavior)
+     */
+    resetInteractionCount(responderName, authorName) {
+        const key = `${responderName}-${authorName}`;
+        this.goblinInteractions.delete(key);
+    }
+
+
+    /**
+     * Handles random goblin replies to messages.
+     * @param {Message} message - The Discord message object.
+     */
     async randomGoblinReply(message) {
         const goblins = await this.goblinSystem.getActiveGoblins();
-    
+
         if (goblins.length > 0) {
             const randomGoblin = goblins[Math.floor(Math.random() * goblins.length)];
-            
+
             // Fetch recent messages from the channel for context
             const recentMessages = await message.channel.messages.fetch({ limit: 5 });
             const channelContext = recentMessages.map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
-    
+
             // Create a prompt to decide whether the goblin should reply
             const decisionPrompt = `
-            Recent messages in this channel:\n${channelContext}
-            
-            A goblin named ${randomGoblin.name}, known for being ${randomGoblin.personality.toLowerCase()}, is considering replying to the following message:
-            
-            "${message.author.username}: ${message.content}"
-            
-            Should the goblin reply? Respond with "yes" or "no" and provide a brief reasoning.
-            `;
-    
+Recent messages in this channel:
+${channelContext}
+
+A goblin named ${randomGoblin.name}, known for being ${randomGoblin.personality.toLowerCase()}, is considering replying to the following message:
+
+"${message.author.username}: ${message.content}"
+
+Should the goblin reply? Respond with "yes" or "no" and provide a brief reasoning.
+`;
+
             // Ask the LLM to decide
             const decision = await this.ollamaSystem.chatWithAI(this.systemAvatar, decisionPrompt);
 
             console.log(decision);
-    
-            if (decision.trim().toLowerCase().includes("yes")) {
-                const goblinResponse = await this.getGoblinAction(randomGoblin, message.channel, decision);
+
+            if (decision.trim().toLowerCase().startsWith("yes")) {
+                // Check if the message author is another goblin
+                if (this.isGoblin(message.author.username)) {
+                    const authorGoblin = goblins.find(g => g.name.toLowerCase() === message.author.username.toLowerCase());
+
+                    if (authorGoblin) {
+                        const currentCount = this.getInteractionCount(randomGoblin.name, authorGoblin.name);
+
+                        if (currentCount >= 3) {
+                            await this.log(`👻 ${randomGoblin.name} has already replied to ${authorGoblin.name} three times. Skipping reply.`);
+                            return; // Skip replying
+                        }
+
+                        // Allow reply and increment interaction count
+                        const goblinResponse = await this.getGoblinAction(randomGoblin);
+                        await this.discordSystem.sendAsAvatar(goblinResponse, message.channel, randomGoblin);
+                        this.incrementInteraction(randomGoblin.name, authorGoblin.name);
+                        await this.goblinSystem.updateMemories(randomGoblin, `Interacted with ${authorGoblin.name}.`);
+                        await this.log(`👻 ${randomGoblin.name} replied to ${authorGoblin.name}. Interaction count: ${currentCount + 1}`);
+                        return;
+                    }
+                }
+
+                // If the author is not a goblin, proceed normally
+                const goblinResponse = await this.getGoblinAction(randomGoblin);
                 await this.discordSystem.sendAsAvatar(goblinResponse, message.channel, randomGoblin);
+                await this.goblinSystem.updateMemories(randomGoblin, `Interacted with ${message.author.username}.`);
+                await this.log(`👻 ${randomGoblin.name} replied to ${message.author.username}.`);
             } else {
-                console.log(`👻 Goblin ${randomGoblin.name} decided not to reply: ${decision.trim()}`);
+                await this.log(`👻 Goblin ${randomGoblin.name} decided not to reply: ${decision.trim()}`);
             }
         }
     }
-    
-    
-    
+
+    log = (message) => console.log(message);
 
     async processQueuedMessages() {
         console.log(`👻 Processing ${this.messageQueue.length} queued messages`);
@@ -192,53 +263,33 @@ class GoblinCave {
     }
 
     async executeGoblinAction(goblin, message) {
-        const action = await this.getGoblinAction(goblin, message.channel);
+        const action = await this.getGoblinAction(goblin);
         await this.discordSystem.sendAsAvatar(action, message.channel, goblin);
         await this.goblinSystem.resetMessageCount(goblin);
         await this.goblinSystem.updateMemories(goblin, `Interacted with ${message.author.username}.`);
     }
 
-    async getGoblinAction(goblin, currentChannel, decision = '') {
-        const actions = [
-            '*whispers dark secrets*',
-            '*vanishes into the shadows*',
-            '*causes a minor disturbance*',
-            '*laughs eerily*',
-            '*sneaks around silently*',
-            '*plays a mischievous trick*',
-            '*haunts the area with ghostly presence*',
-            '*glares menacingly*',
-            '*creates a creepy noise*',
-            '*flickers in and out of existence*'
+    /**
+     * Requests a unique, short, spooky action or eerie statement from the goblin's AI.
+     * @param {Object} goblin - The goblin object.
+     * @returns {Promise<string>} - The goblin's action.
+     */
+    async getGoblinAction(goblin) {
+        const promptVariations = [
+            `Respond with a UNIQUE, SHORT, and SPOOKY action or eerie statement. Avoid using the same phrases or themes as previous responses.`,
+            `Provide a SINGLE, BRIEF, and CREPEY action or creepy remark. Ensure it's different from past responses.`,
+            `Craft a DISTINCT, CONCISE, and SPOOKY action or unsettling statement. Do not repeat previous phrases.`,
+            `Generate a UNIQUE, SHORT, and EERIE action or creepy comment. Vary your language from past messages.`
         ];
-    
-        // Fetch recent messages from the goblin cave channel
-        const goblinCaveChannel = this.discordSystem.channels.get('goblin-cave');
-        const goblinCaveMessages = await goblinCaveChannel.messages.fetch({ limit: 5 });
-        const goblinCaveContext = goblinCaveMessages.map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
-    
-        // Fetch recent messages from the current channel
-        const recentMessages = await currentChannel.messages.fetch({ limit: 5 });
-        const channelContext = recentMessages.map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
-    
-        // Create the prompt including the context from both channels
-        const actionPrompt = `
-            ${decision}
-            Recent messages in the goblin cave:\n${goblinCaveContext}
-            Recent messages in this channel:\n${channelContext}
-    
-            ${goblin.personality} What would ${goblin.name}, the ${goblin.personality.toLowerCase()}, do next? Say something SHORT and spooky, or perform a mischievous *action*.
-        `;
-    
-        try {
-            const response = await this.ollamaSystem.chatWithAI(this.systemAvatar, actionPrompt);
-            return response || actions[Math.floor(Math.random() * actions.length)];
-        } catch (error) {
-            console.error('👻 Failed to generate goblin action:', error);
-            return actions[Math.floor(Math.random() * actions.length)];
-        }
+        const randomPrompt = promptVariations[Math.floor(Math.random() * promptVariations.length)];
+
+        const response = await this.ollamaSystem.chatWithAvatar(
+            goblin,
+            randomPrompt
+        );
+        return response.trim();
     }
-    
+
 
     async findOtherGoblin(goblin) {
         return await this.goblinSystem.getGoblinById({
@@ -479,27 +530,27 @@ goblins sing
         if (goblinCaveChannel) {
             // Fetch recent messages from the goblin-cave channel
             const messages = await goblinCaveChannel.messages.fetch({ limit: 10 });
-            const recentMessages = messages.map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
-    
+            const recentMessages = messages.reverse().map(msg => `${msg.author.username}: ${msg.content}`).join('\n');
+
             // Send the "Hraa'khor" message to the LLM to generate a response, including recent context
             const cavePrompt = `Recent conversations in the goblin cave:\n${recentMessages}\n\nHraa'khor, indeed! The void stirs, and with it my goblins. Respond as the voice of the cave.`;
             const caveResponse = await this.ollamaSystem.chatWithAI(this.systemAvatar, cavePrompt);
-            
+
             // Send the generated message as the cave
             await this.discordSystem.sendAsAvatar(caveResponse, goblinCaveChannel, this.systemAvatar);
-    
+
             // Have a couple of goblins reply on startup
             const goblins = await this.goblinSystem.getActiveGoblins();
             for (let i = 0; i < Math.min(2, goblins.length); i++) {
-                const goblinResponse = await this.getGoblinAction(goblins[i], goblinCaveChannel);
+                const goblinResponse = await this.getGoblinAction(goblins[i]);
                 await this.discordSystem.sendAsAvatar(goblinResponse, goblinCaveChannel, goblins[i]);
             }
         } else {
             console.error('👻 Goblin Cave channel not found!');
         }
     }
-    
-    
+
+
     async login() {
         await this.discordSystem.login();
     }
