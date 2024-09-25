@@ -32,7 +32,6 @@ async function connectToDatabase() {
 }
 
 let avatars = [];
-const ollamaClients = {}; // Object to store Ollama model instances
 const channelMap = {};
 
 async function loadAvatars() {
@@ -49,8 +48,6 @@ async function loadAvatars() {
     }
 
     avatars.forEach(avatar => {
-        // No need to initialize a client object per avatar with ollama.js; we call it directly per chat request.
-
         // Create personal channel for each avatar
         channelMap[avatar.name] = [avatar.name];
 
@@ -69,6 +66,20 @@ app.get('/avatars', (req, res) => {
 app.get('/channels', (req, res) => {
     res.json(Object.keys(channelMap));
 });
+
+async function getMessageHistory(channel, limit = 10) {
+    // Fetch the most recent `limit` messages from the channel
+    try {
+        return await db.collection('messages')
+            .find({ channel })
+            .sort({ timestamp: -1 }) // Get recent messages first
+            .limit(limit)
+            .toArray();
+    } catch (error) {
+        console.error('Error fetching message history:', error);
+        return [];
+    }
+}
 
 app.post('/chat/:channel', async (req, res) => {
     const { channel } = req.params;
@@ -93,10 +104,26 @@ app.post('/chat/:channel', async (req, res) => {
             for (const avatarName of avatarsInChannel) {
                 let fullResponse = '';
 
+                // Fetch the avatar's personality for the system prompt
+                const avatar = avatars.find(a => a.name === avatarName);
+
+                // Get message history for the channel
+                const messageHistory = await getMessageHistory(channel);
+                const chatHistory = messageHistory.map(msg => ({
+                    role: msg.avatar === userAvatar ? 'user' : 'assistant',
+                    content: msg.content
+                }));
+
+                // Add the current message from the user
+                chatHistory.push({ role: 'user', content: message });
+
                 // Use Ollama directly, streaming responses
                 const chatStream = await ollama.chat({
                     model: 'llama3.1',
-                    messages: [{ role: 'user', content: message }],
+                    messages: [
+                        { role: 'system', content: avatar.personality }, // Set the system prompt to the avatar's personality
+                        ...chatHistory // Include the message history and current message
+                    ],
                     stream: true // Enabling streaming for chat response
                 });
 
