@@ -2,9 +2,10 @@ import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import OllamaService from '../ai-services/ollama.js/index.js';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import ollama from 'ollama'; // Importing ollama directly
+import process from 'process';
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ async function connectToDatabase() {
 }
 
 let avatars = [];
-const ollamaServices = {};
+const ollamaClients = {}; // Object to store Ollama model instances
 const channelMap = {};
 
 async function loadAvatars() {
@@ -42,20 +43,17 @@ async function loadAvatars() {
     }
 
     if (avatars.length === 0) {
-        console.log('Loading avatars from file')
+        console.log('Loading avatars from file');
         const data = await fs.readFile(path.join(__dirname, 'avatars.json'), 'utf8');
         avatars = JSON.parse(data);
     }
 
     avatars.forEach(avatar => {
-        ollamaServices[avatar.name] = new OllamaService({
-            model: 'llama3.1',
-            systemPrompt: avatar.personality
-        });
-        
+        // No need to initialize a client object per avatar with ollama.js; we call it directly per chat request.
+
         // Create personal channel for each avatar
         channelMap[avatar.name] = [avatar.name];
-        
+
         // Add avatar to location channel
         if (!channelMap[avatar.location]) {
             channelMap[avatar.location] = [];
@@ -94,19 +92,25 @@ app.post('/chat/:channel', async (req, res) => {
             const avatarsInChannel = channelMap[channel];
             for (const avatarName of avatarsInChannel) {
                 let fullResponse = '';
-                const chatStream = ollamaServices[avatarName].chat({ role: 'user', content: message });
-                
-                for await (const event of chatStream) {
-                    if (event && event.message && event.message.content) {
-                        fullResponse += event.message.content;
+
+                // Use Ollama directly, streaming responses
+                const chatStream = await ollama.chat({
+                    model: 'llama3.1',
+                    messages: [{ role: 'user', content: message }],
+                    stream: true // Enabling streaming for chat response
+                });
+
+                for await (const part of chatStream) {
+                    if (part && part.message && part.message.content) {
+                        fullResponse += part.message.content;
                         const response = JSON.stringify({
                             avatar: avatarName,
-                            content: event.message.content
+                            content: part.message.content
                         }) + '\n';
                         res.write(response);
                     }
                 }
-                
+
                 // Save complete AI response to MongoDB
                 await db.collection('messages').insertOne({
                     channel,
@@ -144,13 +148,9 @@ app.post('/create-avatar', async (req, res) => {
         const newAvatar = req.body;
         const result = await db.collection('avatars').insertOne(newAvatar);
         newAvatar._id = result.insertedId;
-        
+
         // Update local data structures
         avatars.push(newAvatar);
-        ollamaServices[newAvatar.name] = new OllamaService({
-            model: 'llama3.1',
-            systemPrompt: newAvatar.personality
-        });
         channelMap[newAvatar.name] = [newAvatar.name];
         if (!channelMap[newAvatar.location]) {
             channelMap[newAvatar.location] = [];
@@ -167,7 +167,7 @@ app.post('/create-avatar', async (req, res) => {
 async function startServer() {
     await connectToDatabase();
     await loadAvatars();
-    
+
     app.listen(port, () => {
         console.log(`Avatar Chat app listening at http://localhost:${port}`);
     });
