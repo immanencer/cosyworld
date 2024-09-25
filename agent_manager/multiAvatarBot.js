@@ -195,6 +195,15 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
         const context = await this.getChannelContext(channel, avatar.name);
 
+        const options =  {
+            temperature: 0.85, // Slightly lower for coherent but still creative summaries
+            top_p: 0.85, // Nucleus sampling to balance creativity and coherence
+            top_k: 50,   // Allow diversity in token selection
+            frequency_penalty: 0.2, // Discourage repeated thoughts
+            presence_penalty: 0.4,  // Encourage introducing new ideas
+            stop: ["\n"],    // Stop at the first new line for a clean response  
+        };
+
         try {
             const tools = await this.prepareToolsForAvatar(avatar);
             const avatarsInLocation = await this.database.avatarsCollection.find({ location: avatar.location }).toArray();
@@ -202,6 +211,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
             const thoughtSummary = await this.ollama.chat({
                 model: 'llama3.1',
+                options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
                     ...thoughts.map(thought => ({ role: 'assistant', content: thought })),
@@ -294,9 +304,18 @@ Only provide a single short message or *action* that advances the conversation:
     }
 
     async getChatResponse(avatar, prompt, tools = undefined) {
+        const options =  {
+            temperature: 0.85, // Slightly lower for coherent but still creative summaries
+            top_p: 0.85, // Nucleus sampling to balance creativity and coherence
+            top_k: 50,   // Allow diversity in token selection
+            frequency_penalty: 0.2, // Discourage repeated thoughts
+            presence_penalty: 0.4,  // Encourage introducing new ideas
+            stop: ["\n"],    // Stop at the first new line for a clean response  
+        };
         try {
             const response = await this.ollama.chat({
                 model: 'llama3.1',
+                options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
                     { role: 'user', content: prompt },
