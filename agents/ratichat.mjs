@@ -43,7 +43,7 @@ ratichat.sendAvatarResponse = async function (avatar, dream = false) {
     const avatar_dreams = dream ? await this.generateDream(ratichat.avatars[avatar], avatar_memory) : ratichat.avatar_dreams[avatar];
 
     const avatar_response = await this.enhancedChat({
-        model: 'llama3.1',
+        model: 'llama3.2',
         messages: [
             {
                 role: 'system',
@@ -82,7 +82,7 @@ ratichat.rumble = async function () {
 
         const oaken_memory = await this.loadMemory(oak_tree_avatar.remember);
         const oaken_response = await this.enhancedChat({
-            model: 'llama3.1',
+            model: 'llama3.2',
             messages: [
                 {
                     role: 'system',
@@ -118,7 +118,7 @@ ratichat.rumble = async function () {
 
 ratichat.generateDream = async function (avatar, memory = '') {
     const response = await this.enhancedChat({
-        model: 'llama3.1',
+        model: 'llama3.2',
         messages: [
             {
                 role: 'system',
@@ -199,7 +199,7 @@ ratichat.handleMessage = async function (message) {
         const moveChance = Math.random();
         if (moveChance < 0.02) {
             const new_location = await ratichat.enhancedChat({
-                model: 'llama3.1',
+                model: 'llama3.2',
                 messages: [
                     {
                         role: 'system',

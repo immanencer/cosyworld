@@ -431,7 +431,7 @@ class LibrarianBot {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3.1',
+                    model: 'llama3.2',
                     messages: [
                         { role: 'system', content: character.personality },
                         { role: 'user', content: input }

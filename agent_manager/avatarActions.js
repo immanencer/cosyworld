@@ -88,7 +88,7 @@ export async function getChannelContext(bot, channel, avatarName) {
         }
         const thoughts = bot.memoryManager.memoryCache[avatarName]?.thought || [];
         const thoughtsLog = await bot.ollama.chat({
-            model: 'llama3.1',
+            model: 'llama3.2',
             messages: [
                 { role: 'system', content: `You are ${avatarName}, ${avatar.personality}.` },
                 ...thoughts.map(thought => ({ role: 'assistant', content: thought })),
@@ -120,7 +120,7 @@ export async function decideIfShouldRespond(bot, avatar, message) {
         `;
 
         const response = await bot.ollama.chat({
-            model: 'llama3.1',
+            model: 'llama3.2',
             messages: [
                 { role: 'system', content: `You are ${avatar.name} deciding whether to respond.` },
                 { role: 'user', content: prompt },

@@ -61,7 +61,7 @@ class GoblinCave {
         ];
 
         // AI Model Configuration
-        this.model = 'llama3.1';
+        this.model = 'llama3.2';
         this.isInitialized = false;
         this.messageQueue = [];
         this.webhookCache = {};
@@ -145,7 +145,7 @@ class GoblinCave {
         try {
             await ollama.create({
                 model: this.avatar.name,
-                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM llama3.2\nSYSTEM "${this.avatar.personality}"`,
             });
             await this.log('🦙 AI model initialized');
         } catch (error) {

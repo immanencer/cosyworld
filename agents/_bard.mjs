@@ -20,7 +20,7 @@ class BardBot {
         this.lastProcessed = 0;
         this.messageCache = [];
         this.webhookCache = {};
-        this.model = 'llama3.1';
+        this.model = 'llama3.2';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';
@@ -202,7 +202,7 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
         try {
             await ollama.create({
                 model: 'bard',
-                modelfile: `FROM llama3.1\nSYSTEM "${this.avatar.personality}"`,
+                modelfile: `FROM llama3.2\nSYSTEM "${this.avatar.personality}"`,
             });
             console.log('🦙 AI model initialized');
         } catch (error) {

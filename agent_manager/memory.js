@@ -43,7 +43,7 @@ class MemoryManager {
 
         try {
             const summary = await this.ollama.chat({
-                model: 'llama3.1',
+                model: 'llama3.2',
                 messages: [
                     { role: 'system', content: `You are a journal keeper for ${avatarName}. ${avatar.personality || ''}` },
                     { role: 'user', content: prompt },

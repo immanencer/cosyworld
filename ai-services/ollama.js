@@ -4,7 +4,7 @@ import { generateHash } from '../tools/crypto.js';
 class OllamaService {
     /**
      * @typedef {Object} OllamaConfig
-     * @property {string} [model='llama3.1'] - The base model to use
+     * @property {string} [model='llama3.2'] - The base model to use
      * @property {string} [systemPrompt='You are an AI assistant.'] - The system prompt
      * @property {string} [personality=''] - The personality traits
      */
@@ -21,7 +21,7 @@ class OllamaService {
      * @param {OllamaConfig} config
      */
     constructor(config = {}) {
-        this.model = 'llama3.1';
+        this.model = 'llama3.2';
         this.systemPrompt = config.systemPrompt || "You are an AI assistant.";
         this.modelCache = new Map();
         this.messageHistory = [];
@@ -34,7 +34,7 @@ class OllamaService {
      * @param {OllamaConfig} config
      * @returns {Promise<string|null>} The model hash or null if creation failed
      */
-    async updateConfig({ baseModel = 'llama3.1', systemPrompt = this.systemPrompt }) {
+    async updateConfig({ baseModel = 'llama3.2', systemPrompt = this.systemPrompt }) {
         const modelfile = `FROM ${baseModel}\nSYSTEM "${systemPrompt}"`;
 
         const modelHash = generateHash(modelfile);
