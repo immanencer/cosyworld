@@ -20,7 +20,7 @@ router.post('/tasks', async (req, res) => {
     }
 
     const newTask = {
-        model: 'llama3.2',
+        model: 'llama3.2:1b',
         system_prompt: system_prompt || avatar.personality,
         messages,
         status: 'pending',

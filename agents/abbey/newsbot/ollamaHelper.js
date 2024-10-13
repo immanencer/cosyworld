@@ -5,15 +5,8 @@ import ollama from 'ollama';
  * @param {string} content - The content to summarize.
  * @returns {Promise<string>} - The generated summary.
  */
-let created = false;
 export async function generateSummary(content) {
     try {
-        if (!created) {
-            await ollama.create({
-                model: 'newsbot',
-                modelfile: `FROM llama3.2\nSYSTEM "You are an objective summarizer. You extract articles into clean, objective, concise, and accurate markdown."`,
-            });
-        }
         
         const response = await ollama.chat({
             model: 'newsbot',

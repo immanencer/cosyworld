@@ -61,7 +61,7 @@ class GoblinCave {
         ];
 
         // AI Model Configuration
-        this.model = 'llama3.2';
+        this.model = 'llama3.2:1b';
         this.isInitialized = false;
         this.messageQueue = [];
         this.webhookCache = {};
@@ -143,10 +143,6 @@ class GoblinCave {
      */
     async initializeAI() {
         try {
-            await ollama.create({
-                model: this.avatar.name,
-                modelfile: `FROM llama3.2\nSYSTEM "${this.avatar.personality}"`,
-            });
             await this.log('🦙 AI model initialized');
         } catch (error) {
             await this.log(`🦙 Failed to initialize AI model: ${error}`);

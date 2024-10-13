@@ -6,7 +6,7 @@ import { getTimeOfDayEmoji } from '../tools/time-of-day-emoji.js';
 import AIServiceManager from '../ai-services/ai-service-manager.mjs';
 const ai = new AIServiceManager();
 await ai.useService('ollama');
-await ai.updateConfig({
+ai.updateConfig({
     system_prompt: `
     As a spectral guardian of the haunted mansion, you embody the essence of the manor's eerie past. Your existence is woven into the fabric of each room, each shadowed corner, and every whisper of the wind through the broken windows.
 
@@ -48,8 +48,8 @@ async function sendCreeperMessage() {
 
     const mansion_rooms = (await ghost.channelManager.getThreadsForChannel('haunted-mansion')).map(thread => `${thread.name}`);
     const mansion_map = await getMansionMap();
-    const output = await ai.raw_chat({
-        model: 'llama3.2', messages:[
+    const output = await ai.currentService.ollama.chat({
+        model: 'llama3.2:1b', messages:[
             { role: 'system', content: `You are  the haunted mansion!` },
             {
                 role: 'user', content: `Here are the rooms you know of in the mansion:

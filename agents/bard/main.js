@@ -8,7 +8,7 @@ class BardBot {
         this.debounceTime = 5000;
         this.lastProcessed = 0;
         this.messageCache = [];
-        this.model = 'llama3.2';
+        this.model = 'llama3.2:1b';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';

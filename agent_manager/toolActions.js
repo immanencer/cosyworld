@@ -15,6 +15,10 @@ export async function searchLocation(bot, location, avatar) {
 
 export async function moveAvatarToChannel(bot, avatar, newChannelName) {
     try {
+        if (!newChannelName) {
+            console.warn('no new channel name provided');
+            return;
+        }
         if (newChannelName.includes('🚧') || newChannelName.includes('🥩')) {
             return `${newChannelName} is forbidden.*`;
         }
@@ -105,7 +109,7 @@ export async function useItem(bot, itemName, avatar) {
 
         // Generate the response using the LLM
         const response = await bot.ollama.chat({
-            model: 'llama3.2',
+            model: 'llama3.2:1b',
             messages: [
                 { role: 'system', content: `You are ${item.name}, ${item.description || ''}` },
                 { role: 'user', content: context },

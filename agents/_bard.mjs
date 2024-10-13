@@ -20,7 +20,7 @@ class BardBot {
         this.lastProcessed = 0;
         this.messageCache = [];
         this.webhookCache = {};
-        this.model = 'llama3.2';
+        this.model = 'llama3.2:1b';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';
@@ -200,10 +200,6 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
 
     async initializeAI() {
         try {
-            await ollama.create({
-                model: 'bard',
-                modelfile: `FROM llama3.2\nSYSTEM "${this.avatar.personality}"`,
-            });
             console.log('🦙 AI model initialized');
         } catch (error) {
             console.error('🦙 Failed to initialize AI model:', error);

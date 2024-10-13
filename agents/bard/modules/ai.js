@@ -3,16 +3,13 @@ import crypto from 'crypto';
 
 const cache = new Map();
 
-export async function initializeAI(base_model = 'llama3.2', avatar) {
+export async function initializeAI(base_model = 'llama3.2:1b', avatar) {
     if (cache.has(avatar.name)) {
         console.log('🦙 AI model already initialized');
         return
     }
     try {
-        const modelfile = `FROM ${base_model}\nSYSTEM "You are ${avatar.name}. ${avatar.personality}"`;
-        const model = crypto.createHash('md5').update(modelfile).digest('hex');
-        await ollama.create({ model, modelfile });
-        cache.set(avatar.name, model);
+        cache.set(avatar.name, base_model);
         console.log('🦙 AI model initialized');
     } catch (error) {
         console.error('🦙 Failed to initialize AI model:', error);

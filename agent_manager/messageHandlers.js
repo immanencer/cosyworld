@@ -1,3 +1,5 @@
+import { set } from "mongoose";
+
 export async function handleUserMessage(bot, message) {
 
     const mentionedAvatars = getMentionedAvatars(bot, message);
@@ -26,10 +28,6 @@ export async function handleUserMessage(bot, message) {
 }
 
 export async function handleBotMessage(bot, message) {
-
-    if (Math.random() < 0.8) {
-        return;
-    }
     
     const mentionedAvatars = getMentionedAvatars(bot, message);
 
@@ -84,17 +82,26 @@ async function processResponse(bot, avatar, channel, messageContent, isUserMessa
 
     if (shouldRespond) {
         // Generate and send the response, utilizing the context
-        const response = await bot.generateResponse(avatar);
+        let response = await bot.generateResponse(avatar);
 
-        if (response) {
+        let backoff = 1000;
+        let retries = 0;
+        while(!response) {
+            console.log(`🤔 **${avatar.name}** could not generate a response, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+            response = await bot.generateResponse(avatar);
+            backoff *= 2;
+
+            if (retries++ > 5) {
+                return console.log(`🤔 **${avatar.name}** could not generate a response.`);
+            }
+        }
+
             // Update avatar location if necessary and send the response
             avatar = await bot.database.avatarsCollection.findOne({ name: avatar.name });
             channel = bot.client.channels.cache.find(channel => channel.name === avatar.location);
             await bot.sendAsAvatar(avatar, response, channel);
             console.log(`💬 **${avatar.name}** responds: "${response}"`);
-        } else {
-            console.log(`🤔 **${avatar.name}** could not generate a response.`);
-        }
     } else {
         console.log(`🚫 **${avatar.name}** decides to remain silent.`);
     }

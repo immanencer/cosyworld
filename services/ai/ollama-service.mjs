@@ -5,7 +5,7 @@ import process from 'process';
 class OllamaService {
   static #modelCache = new Set();
 
-  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3.2') {
+  constructor(model = process.env.DEFAULT_OLLAMA_MODEL || 'llama3.2:1b') {
     this.model = model;
   }
 

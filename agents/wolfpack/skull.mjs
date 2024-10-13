@@ -11,7 +11,7 @@ const CONFIG = {
     avatar: "https://i.imgur.com/OxroRtv.png",
     defaultLocation: '🐺 wolf den',
     personality: "You are a lone wolf named Skull. You communicate through instinctual actions—growls, whimpers, and movements. You think in terms of scents, sounds, and feelings, not words.",
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     maxConversations: 100,
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,
@@ -277,10 +277,6 @@ class SkullBot {
 
     async initializeAI() {
         try {
-            await ollama.create({
-                model: "skullx",
-                modelfile: `FROM ${CONFIG.model}\nSYSTEM "${CONFIG.personality}"`,
-            });
             this.log('AI model initialized');
         } catch (error) {
             this.handleError('Failed to initialize AI model', error);

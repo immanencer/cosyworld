@@ -15,7 +15,7 @@ class DiscordAiBot extends DiscordBot {
 
     async initialize() {
         await this.aiServiceManager.useService(this.service);
-        this.avatar.model = xorFoldHash(await this.aiServiceManager.updateConfig({ system_prompt: this.system_prompt }));
+        this.avatar.model = xorFoldHash(this.aiServiceManager.updateConfig('llama3.2:1b', this.system_prompt || undefined));
         console.log('🎮 🤖 Discord AI Bot Initialized:', this.service);
     }
 

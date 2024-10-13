@@ -1,13 +1,13 @@
 import OllamaService from './ai/ollama-service.mjs';
 
 class AI {
-    constructor(model = 'llama3.2') {
+    constructor(model = 'llama3.2:1b') {
         this.model = model.replace('ollama/', '');
         this.initializeService();
     }
 
     initializeService() {
-        const supportedModels = ['llama3.2', 'moondream'];
+        const supportedModels = ['llama3.2:1b', 'moondream'];
         
         if (!supportedModels.includes(this.model)) {
             throw new Error(`Unsupported model: ${this.model}. Supported models are: ${supportedModels.join(', ')}`);

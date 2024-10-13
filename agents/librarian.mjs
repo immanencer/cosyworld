@@ -431,7 +431,7 @@ class LibrarianBot {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3.2',
+                    model: 'llama3.2:1b',
                     messages: [
                         { role: 'system', content: character.personality },
                         { role: 'user', content: input }
@@ -520,7 +520,15 @@ class LibrarianBot {
     async searchMessages(query, limit = 100) {
         // Step 1: Extract topics or characters from the query using Ollama
         const extractionPrompt = `From the following instruction, extract key topics or characters for searching messages:\n\n${query}`;
-        const extraction = await this.generateResponse(this._scribeAsher, extractionPrompt);
+        let extraction; 
+        
+        while (!extraction) {
+            extraction = await this.generateResponse(this._scribeAsher, extractionPrompt);
+            if (extraction.startsWith('I cannot')) {
+                console.log('⛔ refusal detected, retrying extraction');
+                extraction = null;
+            }
+        }
 
         // Step 2: Split the extracted topics or characters into an array
         const keywords = extraction
@@ -653,17 +661,13 @@ class LibrarianBot {
         // **Step 3: Build a Refined Query Based on the Analysis**
         const refinedQuery = `Find messages that are related to the following topics or characters: ${keywords.join(', ')}. These messages should help in creating a focused and coherent story.`;
 
-        const relevantMessages = await this.searchMessages(refinedQuery, 100);
-
-        if (!relevantMessages || relevantMessages.length === 0) {
-            throw new Error('No relevant messages found based on the refined query');
-        }
+        const relevantMessages = await this.searchMessages(refinedQuery, 88) || [];
 
         // **Fetch location names for the relevantMessages**
         const relevantChannelIdToNameMap = await this.getLocationNames(relevantMessages);
 
         // **Include location names in the messages for story generation**
-        const messagesForStory = relevantMessages.map(msg => {
+        const messagesForStory = relevantMessages.concat(...initialMessages).map(msg => {
             const locationName = relevantChannelIdToNameMap[msg.channelId] || 'Unknown Location';
             const authorName = msg.author?.username || 'Unknown Author';
             const content = msg.content || '';
@@ -676,17 +680,23 @@ class LibrarianBot {
         const outlinePrompt = `Based on the following messages, create an outline for a new story:\n\n${messageContents}`;
         const outline = await this.generateResponse(this._scribeAsher, outlinePrompt);
 
+        console.log(outlinePrompt);
+        console.log(outline);
+
         const draftPrompt = `Using the following outline, write a draft of the story:\n\n${outline}`;
         const draft = await this.generateResponse(this._scribeAsher, draftPrompt);
+
+        console.log(draftPrompt);
+        console.log(draft);
 
         const polishPrompt = `Here is a draft of the story. Polish it to make it more engaging and coherent, and finalize it for publishing. Your output will be published directly so present ONLY the finished document:\n\n${draft}`;
         const polishedStory = await this.generateResponse(this._scribeAsher, polishPrompt);
 
+        console.log(polishPrompt);
+        console.log(polishedStory);
+
         return polishedStory;
     }
-
-
-
 
     start() {
         initializeDiscordClient().then(() => {

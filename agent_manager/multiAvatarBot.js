@@ -77,6 +77,7 @@ export class MultiAvatarBot {
             this.responseTimes[avatar.name] = now;
             return 'YES';
         }
+        
 
         // Get the last time the avatar responded
         const lastResponseTime = this.responseTimes[avatar.name] || 0;
@@ -92,6 +93,11 @@ export class MultiAvatarBot {
             const channel = this.client.channels.cache.find(c => c.name && c.name === avatar.location);
             if (!channel) {
                 console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
+                return 'NO';
+            }
+            const lastMessage = (await channel.messages.fetch({ limit: 1 }).toArray()).pop();
+            if (`${lastMessage.author.username}`.startsWith(`${avatar.name}`)) {
+                console.log(`${avatar.name} was the last avatar to respond.`);
                 return 'NO';
             }
             const context = await this.getChannelContext(channel, avatar.name);
@@ -123,6 +129,8 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             const lines = decisionText.split('\n');
             const haiku = lines.slice(0, -1).join('\n').trim();
             const decisionLine = lines.slice(-1)[0].trim();
+
+            console.log(`🤔 **${avatar.name}** ponders the haiku:\n\n${haiku}`);
 
             this.memoryManager.updateMemoryCache(avatar.name, haiku, 'thought');
 
@@ -190,7 +198,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
         const channel = this.client.channels.cache.find(c => c.name === avatar.location);
         if (!channel) {
             console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
-            return `**${avatar.name}** seems lost...`;
+            return null;
         }
 
         const context = await this.getChannelContext(channel, avatar.name);
@@ -199,8 +207,8 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             temperature: 0.85, // Slightly lower for coherent but still creative summaries
             top_p: 0.85, // Nucleus sampling to balance creativity and coherence
             top_k: 50,   // Allow diversity in token selection
-            frequency_penalty: 0.2, // Discourage repeated thoughts
-            presence_penalty: 0.4,  // Encourage introducing new ideas
+            frequency_penalty: 0.4, // Discourage repeated thoughts
+            presence_penalty: 0.6,  // Encourage introducing new ideas
         };
 
         try {
@@ -219,12 +227,13 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
                 stream: false,
             });
 
-            if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content) {
-                console.error(`🦙 **${avatar.name}** received an invalid thought summary from Ollama.`);
-                return `**${avatar.name}** seems confused...`;
+            let thought;
+            if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content || thoughtSummary.message.content.startsWith("I cannot")) {
+                console.error(`🦙 **${avatar.name}** received an invalid thought summary from Ollama.`, thoughtSummary);
+                thought = 'You find yourself idly daydreaming.';
             }
 
-            const thought = thoughtSummary.message.content.trim();
+            thought = thoughtSummary.message.content.trim();
             this.memoryManager.updateMemoryCache(avatar.name, thought, 'thought');
 
             const items = (await this.fetchItemsForAvatar(avatar)).map(i => i.name);
@@ -243,7 +252,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
             if (!initialResponse || !initialResponse.message) {
                 console.error(`🦙 **${avatar.name}** received an invalid response from Ollama.`);
-                return `**${avatar.name}** is unable to respond...`;
+                return null;
             }
 
             if (this.hasToolCalls(initialResponse)) {
@@ -255,7 +264,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
                     if (!followUpResponse || !followUpResponse.message || !followUpResponse.message.content) {
                         console.error(`🦙 **${avatar.name}** received an invalid follow-up response from Ollama.`);
-                        return `**${avatar.name}** is unable to continue...`;
+                        return null;
                     }
 
                     const finalResponse = followUpResponse.message.content.trim();
@@ -321,6 +330,25 @@ Only provide a single short message or *action* that advances the conversation:
                 stream: false,
                 tools: tools,
             });
+
+            if(response.message.content.startsWith("I cannot")) {
+                console.log(response);
+                throw new Error(`Ollama response: ${response.message.content}`);
+            }
+
+            if(response.message.content.includes("{") && response.message.content.includes("}")) {
+                console.log(response);
+                throw new Error(`Unexpected JSON: ${response.message.content}`);
+            }
+
+            try {
+                JSON.parse(response.message.content);
+                throw new Error(`Unexpected JSON: ${response.message.content}`);
+            } catch (err) {
+                // Ignore JSON parsing errors, continue processing
+            }
+
+            console.log(response);
             return response;
         } catch (error) {
             console.error(`🦙 **${avatar.name}** encountered an error while generating a response:`, error);
@@ -362,7 +390,6 @@ Based on this information, respond as ${avatar.name}, with a short message or *a
     handleError(avatar, error) {
         console.error(`🦙 **${avatar.name}** falters while crafting a response:`, error);
         this.memoryManager.logThought(avatar.name, `Error occurred: ${error.message}`);
-        throw error;
         return `**${avatar.name}** seems lost in thought...`;
     }
 

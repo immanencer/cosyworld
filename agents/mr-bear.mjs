@@ -148,7 +148,7 @@ class BearBot {
     ];
 
     const options = {
-      model: 'llama3.2',
+      model: 'llama3.2:1b',
       messages: messages,
       stream: false
     };

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 class OllamaSystem {
     constructor(model) {
-        this.model = model || 'llama3.2';
+        this.model = model || 'llama3.2:1b';
         this.conversations = {};
     }
 
@@ -11,10 +11,6 @@ class OllamaSystem {
         try {
             const modelfile = `FROM ${this.model}\nSYSTEM "${personality}"`;
             const modelhash = crypto.createHash('sha256').update(modelfile).digest('hex');
-            await ollama.create({
-                model: modelhash,
-                modelfile: `FROM ${this.model}\nSYSTEM "${personality}"`,
-            });
             this.model = modelhash;
             console.log('🦙 AI model initialized');
         } catch (error) {
@@ -32,7 +28,7 @@ class OllamaSystem {
         
         try {
             const response = await ollama.chat({
-                model: this.model,
+                model: 'llama3.2:1b',
                 embedding: {
                   api: "ollama",
                   model: "nomic-embed-text"

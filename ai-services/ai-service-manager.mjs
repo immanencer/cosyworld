@@ -41,14 +41,14 @@ class AIServiceManager {
         this.services[serviceName] = new module.default();
     }
 
-    async updateConfig(config) {
+    updateConfig(config) {
         if (!this.currentService) {
             throw new Error('No service selected');
         }
         if (!this.currentService.updateConfig) {
             throw new Error('Service does not support updating config');
         }
-        return await this.currentService.updateConfig(config);
+        return this.currentService.updateConfig(config);
     }
 
     async useService(serviceName) {

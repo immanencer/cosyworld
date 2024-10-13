@@ -4,7 +4,7 @@ import { generateHash } from '../tools/crypto.js';
 class OllamaService {
     /**
      * @typedef {Object} OllamaConfig
-     * @property {string} [model='llama3.2'] - The base model to use
+     * @property {string} [model='llama3.2:1b'] - The base model to use
      * @property {string} [systemPrompt='You are an AI assistant.'] - The system prompt
      * @property {string} [personality=''] - The personality traits
      */
@@ -21,7 +21,7 @@ class OllamaService {
      * @param {OllamaConfig} config
      */
     constructor(config = {}) {
-        this.model = 'llama3.2';
+        this.model = 'llama3.2:1b';
         this.systemPrompt = config.systemPrompt || "You are an AI assistant.";
         this.modelCache = new Map();
         this.messageHistory = [];
@@ -34,24 +34,10 @@ class OllamaService {
      * @param {OllamaConfig} config
      * @returns {Promise<string|null>} The model hash or null if creation failed
      */
-    async updateConfig({ baseModel = 'llama3.2', systemPrompt = this.systemPrompt }) {
-        const modelfile = `FROM ${baseModel}\nSYSTEM "${systemPrompt}"`;
-
-        const modelHash = generateHash(modelfile);
-        this.model = modelHash;
-
-        if (!this.modelCache.has(modelHash)) {
-            try {
-                await ollama.create({ model: modelHash, modelfile });
-                this.modelCache.set(modelHash, true);
-                console.debug('🦙 Model created successfully:', modelHash);
-            } catch (error) {
-                console.error('🦙 Failed to create model:', error.message);
-                return null;
-            }
-        }
-
-        return modelHash;
+    async updateConfig(baseModel = 'llama3.2:1b', systemPrompt = this.systemPrompt) {
+        this.model = baseModel;
+        this.systemPrompt = systemPrompt;
+        return baseModel;
     }
 
     /**

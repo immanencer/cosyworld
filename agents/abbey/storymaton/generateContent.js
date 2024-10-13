@@ -1,6 +1,6 @@
 import ollama from 'ollama';
 
-const MODEL = 'llama3.2';
+const MODEL = 'llama3.2:1b';
 
 export async function generateContent(prompt, options = {}) {
   const response = await ollama.generate({ model: MODEL, prompt, options });

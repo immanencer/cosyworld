@@ -82,10 +82,6 @@ class SteamClockBot {
     async initializeAI() {
         for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
             try {
-                await ollama.create({
-                    model: this.model,
-                    modelfile: `FROM llama2\nSYSTEM "${this.avatar.personality}"`,
-                });
                 this.logger.info('AI model initialized successfully');
                 return;
             } catch (error) {
