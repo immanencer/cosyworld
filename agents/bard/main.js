@@ -1,14 +1,15 @@
 import { DiscordHandler } from './modules/discordHandler.js';
 import { initializeAI, chatWithAI } from './modules/ai.js';
-import { loadMemory, saveMemory, summarizeMemory, reflectAndUpdateGoal, updateSentiments, collectSentiment, updateMemory } from './modules/memory.js';
+import { loadMemory, saveMemory, summarizeMemory, reflectAndUpdateGoal, updateSentiments, collectSentiment, updateMemory, dream } from './modules/memory.js';
 import { broadcast } from './modules/broadcast.js';
+import { set } from 'mongoose';
 
 class BardBot {
     constructor() {
         this.debounceTime = 5000;
         this.lastProcessed = 0;
         this.messageCache = [];
-        this.model = 'llama3.2:1b';
+        this.model = 'llama3.2:3b';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';
@@ -56,6 +57,7 @@ class BardBot {
     }
 
     async reflectAndUpdateGoal() {
+        await dream(this.memory, this.avatar);
         await reflectAndUpdateGoal(this.memory, this.avatar);
     }
 

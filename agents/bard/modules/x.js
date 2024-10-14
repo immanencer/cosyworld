@@ -58,13 +58,35 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Enhanced function to post tweets with various options and error handling
-export async function postX(params, accountId = '') {
+// Function to upload a single image buffer
+async function uploadImageBuffer(buffer, type = 'png') {
+    try {
+        const mediaId = await client.v1.uploadMedia(Buffer.from(buffer), { mimeType: `image/${type}` });
+        console.log('🌳 Image uploaded successfully:', mediaId);
+        return mediaId;
+    } catch (error) {
+        console.error('🌳 Error uploading image:', error);
+        throw error;
+    }
+}
+
+// Enhanced function to post tweets with various options, image attachment, and error handling
+export async function postX(params, accountId = '', imageBuffer = null) {
     const { text, ...otherParams } = params;
     const tweetChunks = chunkText(text || '');
 
     let inReplyToTweetId = accountId || null;
     const maxRetries = 3;
+    let mediaId = null;
+
+    // Upload image if buffer is provided
+    if (imageBuffer) {
+        try {
+            mediaId = await uploadImageBuffer(imageBuffer);
+        } catch (error) {
+            console.error('🌳 Failed to upload image, proceeding without it.');
+        }
+    }
 
     for (const chunk of tweetChunks) {
         let success = false;
@@ -72,11 +94,18 @@ export async function postX(params, accountId = '') {
 
         while (attempt < maxRetries && !success) {
             try {
-                const response = await client.v2.tweet({ 
-                    text: chunk, 
-                    ...otherParams, 
+                const tweetPayload = {
+                    text: chunk,
+                    ...otherParams,
                     reply: inReplyToTweetId ? { in_reply_to_tweet_id: inReplyToTweetId } : undefined,
-                });
+                };
+
+                // Attach mediaId if available and it's the first chunk
+                if (mediaId && inReplyToTweetId === null) {
+                    tweetPayload.media = { media_ids: [mediaId] };
+                }
+
+                const response = await client.v2.tweet(tweetPayload);
                 console.log('🌳 Tweet posted successfully:', response);
 
                 // Update inReplyToTweetId for the next tweet in the thread

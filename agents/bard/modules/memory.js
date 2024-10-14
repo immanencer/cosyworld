@@ -1,6 +1,11 @@
 import fs from 'fs/promises';
 import { chatWithAI } from './ai.js';
 
+/**
+ * Load memory from a file into the memory object.
+ * @param {string} memoryFile - Path to the memory JSON file.
+ * @param {object} memory - The memory object to populate.
+ */
 export async function loadMemory(memoryFile, memory) {
     try {
         const data = await fs.readFile(memoryFile, 'utf8');
@@ -15,6 +20,11 @@ export async function loadMemory(memoryFile, memory) {
     }
 }
 
+/**
+ * Save the memory object to a file.
+ * @param {string} memoryFile - Path to the memory JSON file.
+ * @param {object} memory - The memory object to save.
+ */
 export async function saveMemory(memoryFile, memory) {
     try {
         await fs.writeFile(memoryFile, JSON.stringify(memory, null, 2));
@@ -24,14 +34,30 @@ export async function saveMemory(memoryFile, memory) {
     }
 }
 
+/**
+ * Summarize the memory using AI and update the memory object.
+ * @param {object} memory - The memory object to summarize.
+ * @param {object} avatar - The avatar identifier (if applicable).
+ */
 export async function summarizeMemory(memory, avatar) {
     const memoryContent = JSON.stringify(memory);
-    memory.summary = await chatWithAI(`Summarize the following memory content in 2-3 sentences, using bardic phrases and short actions: ${memoryContent}`, avatar, memory);
-    console.log('🎶 Memory summarized');
+    memory.summary = await chatWithAI(
+        `You are the Lonely Bard's remembering mood. Here are some of your recent memories: ${memoryContent}. \n\nImagine what if you were the Lonely Bard what you remember and how you feel.`,
+        avatar,
+        memory
+    );
+
+    console.log('🎶 Memory summarized:', memory.summary);
 }
 
+/**
+ * Reflect on recent experiences and update the bard's goal in memory.
+ * @param {object} memory - The memory object to update.
+ * @param {string} avatar - The avatar identifier (if applicable).
+ */
 export async function reflectAndUpdateGoal(memory, avatar) {
-    const reflection = await chatWithAI(`
+    const reflection = await chatWithAI(
+        `
         As the Lonely Bard, reflect on your recent experiences, the whispers of your dreams, and the echoes of your memories:
         
         1. Your current heart's desire: "${memory.goal}"
@@ -39,7 +65,10 @@ export async function reflectAndUpdateGoal(memory, avatar) {
         3. The memories of your journey: "${memory.summary}"
         
         Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse.
-    `, avatar, memory);
+        `,
+        avatar,
+        memory
+    );
 
     console.log('🎶 Reflection:', reflection);
 
@@ -47,6 +76,14 @@ export async function reflectAndUpdateGoal(memory, avatar) {
     await saveMemory(memory.memoryFile, memory);
 }
 
+/**
+ * Summarize emojis and sentiments for a specific person.
+ * @param {string} person - The person whose sentiments are being summarized.
+ * @param {Array<string>} emojis - Array of emoji strings.
+ * @param {string} avatar - The avatar identifier (if applicable).
+ * @param {object} memory - The memory object containing relevant data.
+ * @returns {string} - The summarized sentiment as emojis.
+ */
 export async function summarizeEmojiSentiment(person, emojis, avatar, memory) {
     if (!emojis.length) {
         console.error('🎶 No emojis found for', person);
@@ -57,10 +94,19 @@ export async function summarizeEmojiSentiment(person, emojis, avatar, memory) {
         emojis = [emojis];
     }
         
-    const emojiSummary = await chatWithAI(`Summarize the following emojis and sentiments for ${person}: ${emojis.join(' ')} ONLY reply with emoji`, avatar, memory);
+    const emojiSummary = await chatWithAI(
+        `Summarize the following emojis and sentiments for ${person}: ${emojis.join(' ')}. ONLY reply with emojis.`,
+        avatar,
+        memory
+    );
     return emojiSummary.trim();
 }
 
+/**
+ * Update sentiments for all persons in memory.
+ * @param {object} memory - The memory object to update.
+ * @param {string} avatar - The avatar identifier (if applicable).
+ */
 export async function updateSentiments(memory, avatar) {
     for (const [person, emojis] of Object.entries(memory.sentiments)) {
         const emojiSummary = await summarizeEmojiSentiment(person, emojis || [], avatar, memory);
@@ -70,14 +116,25 @@ export async function updateSentiments(memory, avatar) {
     await saveMemory(memory.memoryFile, memory);
 }
 
+/**
+ * Collect sentiments (emojis) from incoming data and update memory.
+ * @param {object} memory - The memory object to update.
+ * @param {object} data - The incoming data containing sentiments.
+ */
 export function collectSentiment(memory, data) {
     const emojis = data.content.match(/\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu) || [];
-    if (!memory.sentiments[data.author] || !memory.sentiments[data.author].push) {
+    if (!memory.sentiments[data.author] || !Array.isArray(memory.sentiments[data.author])) {
         memory.sentiments[data.author] = [];
     }
     memory.sentiments[data.author].push(...emojis);
 }
 
+/**
+ * Update the conversation history in memory.
+ * @param {object} memory - The memory object to update.
+ * @param {object} data - The incoming data containing user messages.
+ * @param {string} response - The response generated by the system.
+ */
 export function updateMemory(memory, data, response) {
     memory.conversations.push({
         user: data.author,
@@ -87,5 +144,31 @@ export function updateMemory(memory, data, response) {
     });
     if (memory.conversations.length > 100) {
         memory.conversations.shift();
+    }
+}
+
+/**
+ * Generate and update the bard's dream based on current memory.
+ * @param {object} memory - The memory object to update.
+ * @param {string} avatar - The avatar identifier (if applicable).
+ */
+export async function dream(memory, avatar) {
+    const dreamPrompt = `
+        As the Lonely Bard, describe a vivid and ethereal dream that encapsulates your current emotional state and reflects your recent experiences:
+        
+        1. Current Goal: "${memory.goal}"
+        2. Recent Dream: "${memory.dream}"
+        3. Memory Summary: "${memory.summary}"
+        
+        Compose your dream in 3-4 lines of poetic verse, capturing the essence of your journey and aspirations.
+    `;
+
+    try {
+        const newDream = await chatWithAI(dreamPrompt, avatar, memory);
+        memory.dream = newDream.trim();
+        await saveMemory(memory.memoryFile, memory);
+        console.log('🎶 Dream updated:', memory.dream);
+    } catch (error) {
+        console.error('🎶 Error generating dream:', error);
     }
 }
