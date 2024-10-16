@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 class OllamaSystem {
     constructor(model) {
-        this.model = model || 'llama3.2:1b';
+        this.model = model || 'llama3.2:3b';
         this.conversations = {};
     }
 
@@ -28,7 +28,7 @@ class OllamaSystem {
         
         try {
             const response = await ollama.chat({
-                model: 'llama3.2:1b',
+                model: 'llama3.2:3b',
                 embedding: {
                   api: "ollama",
                   model: "nomic-embed-text"

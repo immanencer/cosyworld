@@ -95,7 +95,7 @@ export class MultiAvatarBot {
                 console.error(`🚨 Channel "${avatar.location}" not found for avatar "${avatar.name}".`);
                 return 'NO';
             }
-            const lastMessage = (await channel.messages.fetch({ limit: 1 }).toArray()).pop();
+            const lastMessage = (await channel.messages.fetch({ limit: 1 })).first();
             if (`${lastMessage.author.username}`.startsWith(`${avatar.name}`)) {
                 console.log(`${avatar.name} was the last avatar to respond.`);
                 return 'NO';
@@ -112,7 +112,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             `;
 
             const response = await this.ollama.chat({
-                model: 'llama3.2:1b',
+                model: 'llama3.2:3b',
                 messages: [
                     { role: 'system', content: `You are ${avatar.name} deciding whether to respond.` },
                     { role: 'user', content: prompt },
@@ -213,11 +213,11 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
         try {
             const tools = await this.prepareToolsForAvatar(avatar);
-            const avatarsInLocation = await this.database.avatarsCollection.find({ location: avatar.location }).toArray();
+            const avatarsInLocation = await this.database.avatarsCollection.find({ location: avatar.location, owner: 'host' }).toArray();
 
             const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
             const thoughtSummary = await this.ollama.chat({
-                model: 'llama3.2:1b',
+                model: 'llama3.2:3b',
                 options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
@@ -228,12 +228,13 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             });
 
             let thought;
-            if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content || thoughtSummary.message.content.startsWith("I cannot")) {
+            if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content || thoughtSummary.message.content.startsWith("I cannot") || thoughtSummary.message.content.startsWith("I can't engage")) {
                 console.error(`🦙 **${avatar.name}** received an invalid thought summary from Ollama.`, thoughtSummary);
                 thought = 'You find yourself idly daydreaming.';
             }
 
             thought = thoughtSummary.message.content.trim();
+            console.log(`🔮 **${avatar.name}** ponders the thought:\n\n${thought}`);
             this.memoryManager.updateMemoryCache(avatar.name, thought, 'thought');
 
             const items = (await this.fetchItemsForAvatar(avatar)).map(i => i.name);
@@ -248,7 +249,11 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
             console.log(`🔮 **${avatar.name}** ponders the message:\n\n${initialPrompt}`);
 
-            const initialResponse = await this.getChatResponse(avatar, initialPrompt, tools);
+            let initialResponse;
+            
+            while(!initialResponse) {
+                initialResponse = await this.getChatResponse(avatar, initialPrompt, tools);
+            } 
 
             if (!initialResponse || !initialResponse.message) {
                 console.error(`🦙 **${avatar.name}** received an invalid response from Ollama.`);
@@ -259,9 +264,15 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
                 const combinedToolResults = await this.executeToolCalls(avatar, initialResponse.message.tool_calls);
                 if (combinedToolResults.length > 0) {
                     const followUpContext= await this.getChannelContext(channel, avatar.name);
-                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, `${context}\n\n${followUpContext}`);
-                    const followUpResponse = await this.getChatResponse(avatar, followUpPrompt);
+                    const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, `${context}\n\n${followUpContext}\n\n+ "\n\n Provide a response for ${avatar.name} to the above conversation with a short message or *action*`);
 
+                    console.log(`🔮 **${avatar.name}** ponders the follow-up message:\n\n${followUpPrompt}`);
+                    let followUpResponse;
+                    
+                    while(!followUpResponse) {
+                        followUpResponse = await this.getChatResponse(avatar, followUpPrompt, tools);
+                    } 
+                            
                     if (!followUpResponse || !followUpResponse.message || !followUpResponse.message.content) {
                         console.error(`🦙 **${avatar.name}** received an invalid follow-up response from Ollama.`);
                         return null;
@@ -306,22 +317,22 @@ Message: ${message}
 
 Respond to the above conversation as ${avatar.name}.
 ${avatar.personality || ''} 
-You may use the tools available to you to craft a response.
+${tools ? 'You may use the tools available to you to craft a response.' : ''}
 Only provide a single short message or *action* that advances the conversation:
         `;
     }
 
     async getChatResponse(avatar, prompt, tools = undefined) {
-        const options =  {
-            temperature: 0.85, // Slightly lower for coherent but still creative summaries
-            top_p: 0.85, // Nucleus sampling to balance creativity and coherence
-            top_k: 50,   // Allow diversity in token selection
-            frequency_penalty: 0.2, // Discourage repeated thoughts
-            presence_penalty: 0.4,  // Encourage introducing new ideas
+        const options = {
+            temperature: 1.0,   // Higher temperature for more creative and varied responses
+            top_p: 0.9,         // Allowing a wider range of token choices
+            top_k: 100,         // Increase to enhance diversity in token selection
+            frequency_penalty: 0.1, // Neutral to avoid penalizing necessary repetitions
+            presence_penalty: 0.6,  // Higher value to encourage introducing new ideas and topics
         };
         try {
             const response = await this.ollama.chat({
-                model: 'llama3.2:1b',
+                model: 'llama3.2:3b',
                 options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
@@ -331,7 +342,7 @@ Only provide a single short message or *action* that advances the conversation:
                 tools: tools,
             });
 
-            if(response.message.content.startsWith("I cannot")) {
+            if(response.message.content.startsWith("I cannot") || response.message.content.startsWith("I can't") ) {
                 console.log(response);
                 throw new Error(`Ollama response: ${response.message.content}`);
             }
@@ -389,7 +400,6 @@ Based on this information, respond as ${avatar.name}, with a short message or *a
 
     handleError(avatar, error) {
         console.error(`🦙 **${avatar.name}** falters while crafting a response:`, error);
-        this.memoryManager.logThought(avatar.name, `Error occurred: ${error.message}`);
         return `**${avatar.name}** seems lost in thought...`;
     }
 
