@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 const cache = new Map();
 
-export async function initializeAI(base_model = 'llama3.2:3b', avatar) {
+export async function initializeAI(base_model = 'llama3.2', avatar) {
     if (cache.has(avatar.name)) {
         console.log('🦙 AI model already initialized');
         return
@@ -19,7 +19,7 @@ export async function initializeAI(base_model = 'llama3.2:3b', avatar) {
 export async function chatWithAI(message, avatar, memory) {
     try {
         const response = await ollama.chat({
-            model: cache.get(avatar.name || '') || 'llama3.2:3b',
+            model: cache.get(avatar.name || '') || 'llama3.2',
             messages: [
                 { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}` },
                 { role: 'user', content: `Memory Summary: ${memory.summary}\nRecent Dream: ${memory.dream}\nCurrent Goal: ${memory.goal}\nRecent Sentiments: ${JSON.stringify(memory.sentiments)}` },

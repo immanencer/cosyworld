@@ -21,7 +21,7 @@ export class MultiAvatarBot {
         this.ollama = ollama;
         this.token = process.env.DISCORD_BOT_TOKEN;
         this.guildId = '1219837842058907728';
-        this.mongoUri = process.env.MONGODB_URI;
+        this.mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 
         this.database = new Database(this.mongoUri);
         this.avatarManager = new AvatarManager(this.database);
@@ -112,7 +112,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             `;
 
             const response = await this.ollama.chat({
-                model: 'llama3.2:3b',
+                model: 'llama3.2',
                 messages: [
                     { role: 'system', content: `You are ${avatar.name} deciding whether to respond.` },
                     { role: 'user', content: prompt },
@@ -217,7 +217,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
             const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
             const thoughtSummary = await this.ollama.chat({
-                model: 'llama3.2:3b',
+                model: 'llama3.2',
                 options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
@@ -270,7 +270,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
                     let followUpResponse;
                     
                     while(!followUpResponse) {
-                        followUpResponse = await this.getChatResponse(avatar, followUpPrompt, tools);
+                        followUpResponse = await this.getChatResponse(avatar, followUpPrompt);
                     } 
                             
                     if (!followUpResponse || !followUpResponse.message || !followUpResponse.message.content) {
@@ -332,7 +332,7 @@ Only provide a single short message or *action* that advances the conversation:
         };
         try {
             const response = await this.ollama.chat({
-                model: 'llama3.2:3b',
+                model: 'llama3.2',
                 options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
@@ -400,7 +400,7 @@ Based on this information, respond as ${avatar.name}, with a short message or *a
 
     handleError(avatar, error) {
         console.error(`🦙 **${avatar.name}** falters while crafting a response:`, error);
-        return `**${avatar.name}** seems lost in thought...`;
+        return null;
     }
 
     async sendAsAvatar(avatar, content) {

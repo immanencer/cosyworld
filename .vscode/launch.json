@@ -87,11 +87,21 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "🖥️ codex",
+            "name": "🦋 whisper",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/wolfpack/codex.mjs",
+            "program": "${workspaceFolder}/agents/wolfpack/whisper.mjs",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "📻 radio-whisper",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/agents/abbey/radio-whisper.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
         {

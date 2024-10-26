@@ -31,7 +31,7 @@ class ShadowBot {
             personality: `You are Shadow, Wolf777Link's wolf cub. You're curious, playful, and always eager to learn. You can perform simple tasks and make decisions based on your surroundings and past interactions. You ONLY respond with one or two sentences of soft howls, short cub-like *actions*, or cute emojis. 🐾`
         };
 
-        this.model = 'llama3.2:3b';
+        this.model = 'llama3.2';
         this.emojis = ['🐺', '🐾', '💤', '😋', '❤️', '🍖', '🦴', '🧀', '😹', '🏃‍♂️'];
         this.actions = ['*wags tail*', '*whimpers*', '*licks lips*', '*yawns*', '*tilts head*', '*perks ears*'];
         this.memory = { conversations: [], summary: '', dream: '', goal: '', sentiments: {} };

@@ -109,7 +109,7 @@ export async function useItem(bot, itemName, avatar) {
 
         // Generate the response using the LLM
         const response = await bot.ollama.chat({
-            model: 'llama3.2:3b',
+            model: 'llama3.2',
             messages: [
                 { role: 'system', content: `You are ${item.name}, ${item.description || ''}` },
                 { role: 'user', content: context },

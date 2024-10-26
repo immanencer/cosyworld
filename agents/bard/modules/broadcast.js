@@ -46,8 +46,9 @@ export async function broadcast(memory, avatar) {
         // Generate the painting based on the evolving painting style
         let imageBuffer = null;
         try {
-            const paintingPrompt = `${bardPaintingStyle}\n\n"${sonnetText}"`;
-            imageBuffer = await draw_picture(paintingPrompt); // Generate the image using Replicate API
+            const paintingPrompt = await chatWithAI(`${bardPaintingStyle}\n\n"${sonnetText}\n\n${memory.dream}\n\n${memory.goal}\n\n${memory.summary}"\n\nBased on all that, describe in detail a painting that you would like to create, this will be a prompt for a diffusion model picture generator ai so tailor it accordingly. Keep it short and specific.`, avatar, memory); 
+            console.log(paintingPrompt);
+            imageBuffer = await draw_picture(paintingPrompt +  "\n\nImportant; oil painting signed by \"The Lonely Bard\""); // Generate the image using Replicate API
         } catch (error) {
             console.error('🎶 Error generating painting image:', error);
         }

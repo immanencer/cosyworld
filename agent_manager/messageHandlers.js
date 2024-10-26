@@ -41,7 +41,9 @@ export async function handleBotMessage(bot, message) {
 
             await bot.moveAvatarToChannel(avatar, message.channel.name);
             const response = await bot.generateResponse(avatar);  // Pass context
-            await bot.sendAsAvatar(avatar, response, message.channel);
+            if (response) {
+                await bot.sendAsAvatar(avatar, response, message.channel);
+            }
         }
     }
 
@@ -65,7 +67,9 @@ export async function handleBotMessage(bot, message) {
             return;
         }
         const response = await bot.generateResponse(avatar);  // Pass context
-        await bot.sendAsAvatar(avatar, response, message.channel);
+        if (response) {
+            await bot.sendAsAvatar(avatar, response, message.channel);
+        }
     }
 }
 

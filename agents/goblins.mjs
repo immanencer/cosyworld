@@ -61,7 +61,7 @@ class GoblinCave {
         ];
 
         // AI Model Configuration
-        this.model = 'llama3.2:3b';
+        this.model = 'llama3.2';
         this.isInitialized = false;
         this.messageQueue = [];
         this.webhookCache = {};

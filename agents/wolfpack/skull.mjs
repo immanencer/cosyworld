@@ -11,7 +11,7 @@ const CONFIG = {
     avatar: "https://i.imgur.com/OxroRtv.png",
     defaultLocation: '🐺 wolf den',
     personality: "You are a lone wolf named Skull. You communicate through instinctual actions—growls, whimpers, and movements. You think in terms of scents, sounds, and feelings, not words.",
-    model: 'llama3.2:3b',
+    model: 'llama3.2',
     maxConversations: 100,
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,

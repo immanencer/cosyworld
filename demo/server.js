@@ -119,7 +119,7 @@ app.post('/chat/:channel', async (req, res) => {
 
                 // Use Ollama directly, streaming responses
                 const chatStream = await ollama.chat({
-                    model: 'llama3.2:3b',
+                    model: 'llama3.2',
                     messages: [
                         { role: 'system', content: avatar.personality }, // Set the system prompt to the avatar's personality
                         ...(chatHistory.reverse()) // Include the message history and current message

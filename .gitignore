@@ -13,3 +13,4 @@ ssl_certificates/
 slash/config.js
 *.env
 .venv/*
+*.mp3

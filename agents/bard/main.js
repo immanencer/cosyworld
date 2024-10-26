@@ -9,7 +9,7 @@ class BardBot {
         this.debounceTime = 5000;
         this.lastProcessed = 0;
         this.messageCache = [];
-        this.model = 'llama3.2:3b';
+        this.model = 'llama3.2';
         this.memoryFile = 'bardbot_memory.json';
 
         this.persona = 'The Lonely Bard';
@@ -30,9 +30,9 @@ class BardBot {
             sentiments: {},
         };
 
-        this.goalUpdateInterval = 3600000; // 1 hour
-        this.sentimentUpdateInterval = 7200000; // 2 hours
-        this.broadcastInterval = 14400000; // 4 hours
+        this.goalUpdateInterval = 24 * 3600000; // 1 hour
+        this.sentimentUpdateInterval = 12 * 7200000; // 2 hours
+        this.broadcastInterval = 4 * 14400000; // 4 hours
 
         this.isInitialized = false;
         this.messageQueue = [];
