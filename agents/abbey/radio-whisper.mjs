@@ -7,6 +7,7 @@ import process from 'process';
 import { writeFile } from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'node-fetch';
+import fs from 'fs';
 import { Buffer } from 'buffer';
 
 // Initialize Discord client
@@ -16,7 +17,9 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 const mongoURI = process.env.MONGODB_URI;
 const dbName = 'radio-whisper';
 const collectionName = 'radio';
+const introCollectionName = 'track_intros';
 let trackCollection;
+let introCollection;
 
 // Audio player setup
 const player = createAudioPlayer({
@@ -25,6 +28,7 @@ const player = createAudioPlayer({
   },
 });
 
+// Get the next track to play
 async function getNextTrack() {
   try {
     const RECENTLY_PLAYED_LIMIT = 10;
@@ -76,24 +80,47 @@ async function getNextTrack() {
       return null;
     }
 
-    // Create and return the audio resource
-    return createAudioResource(randomTrack.path, {
-      metadata: { title: randomTrack.title },
-    });
+    // Check if an intro exists for the selected track
+    const intro = await introCollection.findOne({ trackId: randomTrack._id });
+    let introResource = null;
+
+    if (intro && intro.audioFilePath && fs.existsSync(intro.audioFilePath)) {
+      introResource = createAudioResource(intro.audioFilePath, {
+        metadata: { title: `Intro for ${randomTrack.title}` },
+      });
+    }
+
+    // Create audio resource for the track
+    if (fs.existsSync(randomTrack.path)) {
+      const trackResource = createAudioResource(randomTrack.path, {
+        metadata: { title: randomTrack.title },
+      });
+
+      return { introResource, trackResource };
+    } else {
+      console.warn(`File not found for track: ${randomTrack.path}`);
+      return { introResource: null, trackResource: null };
+    }
   } catch (error) {
     console.error('Error fetching the next track:', error);
-    return null;
+    return { introResource: null, trackResource: null };
   }
 }
 
-
-
-
 // Play next track
 async function playNext() {
-  const resource = await getNextTrack();
-  if (resource) {
-    player.play(resource);
+  const { introResource, trackResource } = await getNextTrack();
+  if (introResource) {
+    player.play(introResource);
+    player.once(AudioPlayerStatus.Idle, () => {
+      if (trackResource) {
+        player.play(trackResource);
+      } else {
+        console.log('No track to play after intro.');
+      }
+    });
+  } else if (trackResource) {
+    player.play(trackResource);
   } else {
     console.log('No more tracks in the database.');
   }
@@ -117,6 +144,7 @@ client.once('ready', async () => {
   await mongoClient.connect();
   console.log('Connected to MongoDB');
   trackCollection = mongoClient.db(dbName).collection(collectionName);
+  introCollection = mongoClient.db(dbName).collection(introCollectionName);
 
   // Connect to a voice channel and start the player
   const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
@@ -144,7 +172,8 @@ client.on('messageCreate', async (message) => {
           const buffer = await response.arrayBuffer();
           await writeFile(filePath, Buffer.from(buffer));
 
-          await trackCollection.insertOne({ path: filePath, title: `Track from ${message.author.tag}`, playcount: 0 });
+          const title = attachment.name.replace(/\.mp3$/, '');
+          await trackCollection.insertOne({ path: filePath, title: `${title} - ${message.author.username}`, playcount: 0 });
           console.log(`Added track from attachment: ${attachment.name}`);
           message.reply('Track added to the queue!');
         } catch (error) {
@@ -155,9 +184,20 @@ client.on('messageCreate', async (message) => {
     }
   } else if (message.content.startsWith('http') && message.content.endsWith('.mp3')) {
     const url = message.content.trim();
-    await trackCollection.insertOne({ path: url, title: `Track from ${message.author.tag}`, playcount: 0 });
-    console.log(`Added track: ${url}`);
-    message.reply('Track added to the queue!');
+    const filePath = `./tracks/${uuidv4()}.mp3`;
+
+    try {
+      const response = await fetch(url);
+      const buffer = await response.arrayBuffer();
+      await writeFile(filePath, Buffer.from(buffer));
+
+      await trackCollection.insertOne({ path: filePath, title: `Track from ${message.author.tag}`, playcount: 0 });
+      console.log(`Added track: ${url}`);
+      message.reply('Track added to the queue!');
+    } catch (error) {
+      console.error('Error downloading track from URL:', error);
+      message.reply('Failed to add the track. Please try again.');
+    }
   }
 });
 
