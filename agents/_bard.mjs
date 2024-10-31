@@ -104,9 +104,31 @@ class BardBot {
         this.messageCache.push(`(${data.location}) ${data.author}: ${data.content}`);
         if (!this.debounce()) return;
 
+        // get the sentiments towards the author
+
+        this.memory.sentiments[data.author] = this.memory.sentiments[data.author] || [];
+
+        // get the recent messages from the channel
+        const messages = message.channel.messages.fetch({ limit: 10 }).reverse();
+
         const respondCheck = await this.decideResponseFormat();
         if (respondCheck.toUpperCase().includes('YES')) {
-            const result = await this.chatWithAI(this.messageCache.join('\n'));
+            const result = await this.chatWithAI(`
+
+                ${this.memory.dream}
+
+                ${this.memory.goal}
+
+                ${this.memory.summary}
+
+                ${this.memory.goal}
+
+                You are in a chatroom with this user and others, here are the recent sentiments towards ${data.author}:
+                ${}    
+
+                Here are the recent conversations:
+                ${this.messageCache.join('\n')}`
+            );
             this.messageCache = [];
 
             if (result.trim() !== "") {
@@ -241,8 +263,17 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
         return decision.trim();
     }
 
-    async chatWithAI(message) {
+    async chatWithAI(message, channel) {
         try {
+            // get recent messages from the discord channel
+            const messages = (await channel.messages.fetch({ limit: 10 })).reverse();
+            // create an array and set the role to assistant if the message is from a user with teh same username as the avatar
+            const messagesArray = messages.map(msg => {
+                return {
+                    role: msg.author.username === this.avatar.name ? 'assistant' : 'user',
+                    content: `${msg.author.username}: ${msg.content}`
+                };
+            });
             const response = await ollama.chat({
                 model: 'bard',
                 embedding: {
@@ -251,8 +282,9 @@ Contemplate these thoughts and update your goal in 3-4 sentences of bardic verse
                 },
                 messages: [
                     { role: 'system', content: this.avatar.personality },
-                    { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
-                    { role: 'user', content: message }
+                    { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${this.memory.sentiments}` },
+                    ...messagesArray,
+                    { role: 'user', content: 'you are in a chatroom with the above recent messages, send a contextually relevant message of your own' }
                 ]
             });
             return response.message.content;

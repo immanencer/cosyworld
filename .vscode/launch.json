@@ -127,11 +127,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "📜 asher",
+            "name": "📜 radio researcher",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/agents/asher.mjs",
+            "program": "${workspaceFolder}/agents/abbey/research.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
         {

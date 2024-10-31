@@ -2,14 +2,15 @@ import https from 'https';
 import { MongoClient } from 'mongodb';
 import Replicate from 'replicate';
 import presets from './schema/blackforest-presets.js';
+import process from 'process';
 
 // Initialize Replicate with your API token
 const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN
+    auth: process.env.REPLICATE_API_KEY
 });
 
 // MongoDB connection URI and database name
-const MONGO_URI = "mongodb://localhost:27017";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const DB_NAME = "imageRequests";
 const COLLECTION_NAME = "requests";
 

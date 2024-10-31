@@ -82,20 +82,11 @@ export async function reflectAndUpdateGoal(memory, avatar) {
  * @param {Array<string>} emojis - Array of emoji strings.
  * @param {string} avatar - The avatar identifier (if applicable).
  * @param {object} memory - The memory object containing relevant data.
- * @returns {string} - The summarized sentiment as emojis.
+ * @returns {Promise<string>} - The summarized sentiment as emojis.
  */
 export async function summarizeEmojiSentiment(person, emojis, avatar, memory) {
-    if (!emojis.length) {
-        console.error('🎶 No emojis found for', person);
-        console.log(JSON.stringify(emojis, null, 2));
-        return '';
-    }
-    if (!emojis.join) {
-        emojis = [emojis];
-    }
-        
     const emojiSummary = await chatWithAI(
-        `Summarize the following emojis and sentiments for ${person}: ${emojis.join(' ')}. ONLY reply with emojis.`,
+        `Summarize the your sentiments towards for ${person}.\n current sentiment: ${emojis}.\n\n ONLY reply with emojis.`,
         avatar,
         memory
     );
@@ -150,7 +141,7 @@ export function updateMemory(memory, data, response) {
 /**
  * Generate and update the bard's dream based on current memory.
  * @param {object} memory - The memory object to update.
- * @param {string} avatar - The avatar identifier (if applicable).
+ * @param {object} avatar - The avatar (if applicable).
  */
 export async function dream(memory, avatar) {
     const dreamPrompt = `

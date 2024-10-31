@@ -221,7 +221,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
                 options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
-                    ...thoughts.map(thought => ({ role: 'assistant', content: thought })),
+                    ...thoughts.slice(-8).map(thought => ({ role: 'assistant', content: thought })),
                     { role: 'user', content: 'Summarize your thoughts and goals in a few sentences.' },
                 ],
                 stream: false,
@@ -231,9 +231,10 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             if (!thoughtSummary || !thoughtSummary.message || !thoughtSummary.message.content || thoughtSummary.message.content.startsWith("I cannot") || thoughtSummary.message.content.startsWith("I can't engage")) {
                 console.error(`🦙 **${avatar.name}** received an invalid thought summary from Ollama.`, thoughtSummary);
                 thought = 'You find yourself idly daydreaming.';
+            } else {
+                thought = thoughtSummary.message.content.trim();
             }
 
-            thought = thoughtSummary.message.content.trim();
             console.log(`🔮 **${avatar.name}** ponders the thought:\n\n${thought}`);
             this.memoryManager.updateMemoryCache(avatar.name, thought, 'thought');
 
@@ -336,7 +337,7 @@ Only provide a single short message or *action* that advances the conversation:
                 options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
-                    { role: 'user', content: prompt },
+                    { role: 'user', content: prompt + "\n\nDO NOT INCLUDE JSON IN YOUR RESPONSE, keep it short and ONLY speak for yourself." },
                 ],
                 stream: false,
                 tools: tools,

@@ -1,43 +1,45 @@
-import ollama, { Ollama } from 'ollama';
-import { generateHash } from '../tools/crypto.js';
+import ollama from 'ollama';
+
+/**
+ * @typedef {Object} OllamaConfig
+ * @property {string} [model='llama3.2'] - The base model to use
+ * @property {string} [systemPrompt='You are an AI assistant.'] - The system prompt
+ * @property {string} [personality=''] - The personality traits
+ * @property {number} [maxHistory=20] - Maximum number of messages to retain in history
+ */
 
 class OllamaService {
-    /**
-     * @typedef {Object} OllamaConfig
-     * @property {string} [model='llama3.2'] - The base model to use
-     * @property {string} [systemPrompt='You are an AI assistant.'] - The system prompt
-     * @property {string} [personality=''] - The personality traits
-     */
-
     /**
      * @type {string} model - The current model in use
      * @type {string} systemPrompt - The combined system prompt and personality
      * @type {Map<string, boolean>} modelCache - Cache of created models
      * @type {ollama.Message[]} messageHistory - Chat message history
      * @type {boolean} isChatInProgress - Prevents concurrent chat calls
-     */
-
-    /**
-     * @param {OllamaConfig} config
+     * @type {number} maxHistory - Maximum number of messages to retain in history
      */
     constructor(config = {}) {
-        this.model = 'llama3.2';
-        this.systemPrompt = config.systemPrompt || "You are an AI assistant.";
+        this.model = config.model || 'llama3.2';
+        this.systemPrompt = config.systemPrompt || 'You are an AI assistant.';
+        this.personality = config.personality || '';
         this.modelCache = new Map();
         this.messageHistory = [];
         this.isChatInProgress = false;
-        this.updateConfig(config);
+        this.maxHistory = config.maxHistory || 20;
     }
 
     /**
      * Updates the service configuration and creates a new model if necessary
      * @param {OllamaConfig} config
-     * @returns {Promise<string|null>} The model hash or null if creation failed
+     * @returns {Promise<string>} The updated model name
      */
-    async updateConfig(baseModel = 'llama3.2', systemPrompt = this.systemPrompt) {
-        this.model = baseModel;
-        this.systemPrompt = systemPrompt;
-        return baseModel;
+    async updateConfig(config = {}) {
+        this.model = config.model || this.model;
+        this.systemPrompt = config.systemPrompt || this.systemPrompt;
+        this.personality = config.personality || this.personality;
+        this.maxHistory = config.maxHistory || this.maxHistory;
+        // If there are any model creation steps, they can be handled here
+        // For now, simply return the updated model
+        return this.model;
     }
 
     /**
@@ -55,16 +57,23 @@ class OllamaService {
             if (message.role === 'user') {
                 this.messageHistory.push(message);
 
+                // Trim history if it exceeds maxHistory
+                if (this.messageHistory.length > this.maxHistory) {
+                    this.messageHistory = this.messageHistory.slice(-this.maxHistory);
+                }
+
                 const chatStream = await ollama.chat({
                     model: this.model,
                     messages: [
-                        { role: 'system', content: this.systemPrompt },
-                        ...this.messageHistory.slice(-20), // Limiting to the last 20 messages
+                        { role: 'system', content: this.systemPrompt + (this.personality ? ` ${this.personality}` : '') },
+                        ...this.messageHistory,
                     ],
                     stream: true,
                 });
 
-                yield* chatStream;
+                for await (const response of chatStream) {
+                    yield response;
+                }
             }
         } catch (error) {
             console.error('🦙 Chat error:', error.message);
@@ -81,7 +90,8 @@ class OllamaService {
      */
     async complete(prompt) {
         try {
-            return await ollama.generate({ model: this.model, prompt });
+            const response = await ollama.generate({ model: this.model, prompt });
+            return response;
         } catch (error) {
             console.error('🦙 Completion error:', error.message);
             throw error;
@@ -97,7 +107,9 @@ class OllamaService {
     async viewImageByUrl(url, prompt) {
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error('🦙 Failed to fetch image from URL.');
+            if (!response.ok) {
+                throw new Error(`🦙 Failed to fetch image from URL: ${response.statusText}`);
+            }
 
             const arrayBuffer = await response.arrayBuffer();
             const base64Image = Buffer.from(arrayBuffer).toString('base64');
@@ -117,7 +129,7 @@ class OllamaService {
     async viewImage(base64Image, prompt) {
         try {
             const stream = await ollama.chat({
-                model: 'moondream',
+                model: 'moondream', // Consider making this configurable if needed
                 messages: [{ role: 'user', images: [base64Image], content: prompt }],
                 stream: true,
             });
@@ -150,12 +162,13 @@ class OllamaService {
      * @returns {Promise<ollama.ChatResponse|AsyncGenerator<ollama.ChatResponse>>}
      */
     async rawChat(options) {
-        console.warn('Warning: Using rawChat method. This bypasses message history and custom configurations.');
+        console.warn('⚠️ Warning: Using rawChat method. This bypasses message history and custom configurations.');
         try {
             if (options.stream) {
-                return ollama.chat(options); // Return the async generator for streaming
+                const chatStream = await ollama.chat(options);
+                return chatStream;
             } else {
-                const response = await ollama.chat(options); // Non-streaming
+                const response = await ollama.chat(options);
                 return response;
             }
         } catch (error) {
