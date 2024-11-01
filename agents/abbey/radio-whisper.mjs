@@ -20,6 +20,7 @@ const collectionName = 'radio';
 const introCollectionName = 'track_intros';
 let trackCollection;
 let introCollection;
+let trackAnalysisCollection;
 
 // Audio player setup
 const player = createAudioPlayer({
@@ -145,6 +146,7 @@ client.once('ready', async () => {
   console.log('Connected to MongoDB');
   trackCollection = mongoClient.db(dbName).collection(collectionName);
   introCollection = mongoClient.db(dbName).collection(introCollectionName);
+  trackAnalysisCollection = mongoClient.db(dbName).collection('track_analyses');
 
   // Connect to a voice channel and start the player
   const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
@@ -163,6 +165,32 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', async (message) => {
+  if (message.channelId !== process.env.DISCORD_VC_ID) return;
+  if (message.content === '!skip') {
+    
+    // Play the next track after a short delay
+    setTimeout(() => {
+      playNext();
+    }, 1000);
+
+    message.reply('Skipping the current track...');
+  }
+
+  if (message.content === '!info') {
+    const trackCount = await trackCollection.countDocuments();
+
+    // current track
+    const currentTrack = await trackCollection.findOne({ lastPlayedTime: { $exists: true } }, { sort: { lastPlayedTime: -1 } });
+    // track_analysis
+    const trackAnalysis = await trackAnalysisCollection.findOne({ trackId: currentTrack._id });
+
+    message.reply(`There are ${trackCount} tracks in the database. The current track is: ${currentTrack.title}. It has been played ${currentTrack.playcount} times.`);
+    // format trackAnalysis in markdown headings for each item in the object
+    const trackAnalysisString = Object.entries(trackAnalysis).map(([key, value]) => `### ${key}\n${value}`).join('\n\n');
+    message.reply(trackAnalysisString);
+  }
+
+
   if (message.attachments.size > 0) {
     for (const attachment of message.attachments.values()) {
       if (attachment.name.endsWith('.mp3')) {

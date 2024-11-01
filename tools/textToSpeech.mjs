@@ -1,9 +1,9 @@
+// textToSpeech.mjs
+
 import process from "process";
-import uuid from "uuid";
+import { v4 as uuid } from "uuid";
 import { createWriteStream } from "fs";
-
 import dotenv from "dotenv";
-
 import { ElevenLabsClient } from "elevenlabs"; // Ensure this is the correct import path for the ElevenLabsClient
 
 dotenv.config();
@@ -14,7 +14,14 @@ const client = new ElevenLabsClient({
   apiKey: ELEVENLABS_API_KEY,
 });
 
-export const createAudioFileFromText = async (text = "", speaker) => {
+/**
+ * Converts text to speech and saves it as an audio file.
+ *
+ * @param {string} text - The text to convert to speech.
+ * @param {string} speaker - The speaker voice to use.
+ * @returns {Promise<string>} - Resolves with the filename of the created audio file.
+ */
+export const createAudioFileFromText = async (text = "", speaker = "Bob the Snake") => {
   return new Promise((resolve, reject) => {
     const generateAudio = async () => {
       try {
@@ -37,8 +44,11 @@ export const createAudioFileFromText = async (text = "", speaker) => {
   });
 }
 
-// check if we have been run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if the script is run directly
+const __filename = new URL(import.meta.url).pathname;
+//const __dirname = path.dirname(__filename);
+
+if (import.meta.url === `file://${__filename}`) {
     const text = process.argv[2] || "Hello, World!";
     const speaker = process.argv[3] || "Bob the Snake";
     console.log(`Running text-to-speech conversion for: "${text}"`);
@@ -46,4 +56,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         .then((fileName) => console.log(`Audio file created: ${fileName}`))
         .catch((error) => console.error("Error creating audio file:", error));
 }
-

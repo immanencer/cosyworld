@@ -57,7 +57,7 @@ class GoblinCave {
 
     async initializeDatabase() {
         try {
-            this.mongoClient = new MongoClient('mongodb://localhost:27017');
+            this.mongoClient = new MongoClient(process.env.MONGODB_URI);
             await this.mongoClient.connect();
             this.db = this.mongoClient.db('goblinCave');
             this.goblinSystem = new GoblinSystem(this.db);
