@@ -301,7 +301,7 @@ export async function generateBanter(prompt) {
                     ...currentMessages,
                     {
                         role: "user",
-                        content: `${i===0 ? prompt : ''}\n\nRespond to the above conversation with a single short radio appropriate sentence responding to the other host. Don't include (actions) in your output.`
+                        content: `${(i===0 && (Math.random() < 0.33)) ? prompt : 'feel free to change topics and be creative to keep the conversation interesting'}\n\nRespond to the above conversation with a single short radio appropriate sentence responding to the other host. Don't include (actions) in your output.`
                     }
                 ],
                 max_tokens: 300,
