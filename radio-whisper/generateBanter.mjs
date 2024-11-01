@@ -2,6 +2,8 @@
 import OpenAI from 'openai';
 import { MongoClient, ObjectId } from 'mongodb';
 import process from 'process';
+import fs from 'fs/promises';
+import path from 'path';
 
 const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
@@ -12,7 +14,59 @@ const openai = new OpenAI({
     }
 });
 
-const VALID_HOSTS = ["Bob the Snake", "Immanencer"];
+// Load personalities from JSON
+const personalitiesPath = path.join(process.cwd(), 'personalities.json');
+let personalities = null;
+
+async function loadPersonalities() {
+    try {
+        const data = await fs.readFile(personalitiesPath, 'utf8');
+        personalities = JSON.parse(data);
+    } catch (error) {
+        console.error("Failed to load personalities:", error);
+        throw error;
+    }
+}
+
+function getCurrentTimeslot() {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Morning";
+    if (hour >= 12 && hour < 17) return "Afternoon";
+    if (hour >= 17 && hour < 22) return "Evening";
+    return "Late Nights";
+}
+
+function getAvailableHosts() {
+    const currentTimeslot = getCurrentTimeslot();
+    const availableHosts = [];
+    
+    for (const [_, host] of Object.entries(personalities)) {
+        if (host.timeslots.includes(currentTimeslot)) {
+            availableHosts.push(host.name);
+        }
+    }
+    
+    if (availableHosts.length < 2) {
+        console.warn(`Not enough hosts for timeslot ${currentTimeslot}, falling back to default hosts`);
+        return ["Bob the Snake", "Immanencer"];
+    }
+    
+    // Randomly select 2 hosts from available ones
+    return availableHosts.sort(() => Math.random() - 0.5).slice(0, 2);
+}
+
+// Replace the VALID_HOSTS constant with a function
+let currentHosts = null;
+
+async function initializeHosts() {
+    if (!personalities) {
+        await loadPersonalities();
+    }
+    currentHosts = getAvailableHosts();
+    console.log(`🎙️ Selected hosts for current timeslot: ${currentHosts.join(' and ')}`);
+    return currentHosts;
+}
+
 let mongoClient = null;
 let db = null;
 let conversationMessages = null;
@@ -20,6 +74,10 @@ let hostMemories = null;
 
 async function initializeMongo() {
     try {
+        if (!currentHosts) {
+            await initializeHosts();
+        }
+        
         mongoClient = new MongoClient(process.env.MONGODB_URI);
         await mongoClient.connect();
         db = mongoClient.db('cosyworld');
@@ -27,7 +85,7 @@ async function initializeMongo() {
         hostMemories = db.collection('host_memories');
         
         // Ensure each host has a memory document
-        for (const host of VALID_HOSTS) {
+        for (const host of currentHosts) {
             await hostMemories.updateOne(
                 { hostName: host },
                 { 
@@ -53,9 +111,6 @@ async function getMongoClient() {
     }
     return mongoClient;
 }
-
-// Initialize MongoDB connection
-await initializeMongo();
 
 /**
  * Constructs a prompt based on available track analysis data.
@@ -154,13 +209,17 @@ async function updateHostMemory(hostName, conversation) {
                     role: "system",
                     content: "You are a memory curator. Provide concise updates to dreams, memories, and goals."
                 },
+                ...conversation.map(msg => ({
+                    role: msg.role,
+                    content: msg.text
+                })),
                 {
                     role: "user",
                     content: prompt
                 }
             ],
-            max_tokens: 200,
-            temperature: 0.7
+            max_tokens: 512,
+            temperature: 0.88
         });
 
         console.log(`🧠 Updating ${hostName}'s memory...`);
@@ -200,6 +259,7 @@ export async function generateBanter(prompt) {
         throw new TypeError('Prompt must be a non-empty string.');
     }
 
+    const hosts = await initializeHosts();
     const conversation = [];
     const repliesCount = 2 + Math.floor(Math.random() * 3);
     let currentHostIndex = 0;
@@ -210,9 +270,9 @@ export async function generateBanter(prompt) {
         const currentMessages = [];
 
         for (let i = 0; i < repliesCount; i++) {
-            const hostName = VALID_HOSTS[currentHostIndex];
+            const hostName = hosts[currentHostIndex];
             // Ensure consistent role assignment
-            const role = hostName === "Bob the Snake" ? "assistant" : "user";
+            const role = hostName === hosts[0] ? "assistant" : "user";
 
             // Map history messages based on current host's perspective
             const historyMessages = recentHistory.map(msg => ({
@@ -233,7 +293,7 @@ export async function generateBanter(prompt) {
                         role: "system",
                         content: `You are a charismatic and witty radio host named ${hostName}. 
                             You are having a conversation with your co-host.
-                            ${role === "assistant" ? "Your co-host is Bob the Snake." : "Your co-host is Immanencer."}
+                            ${role === "assistant" ? `Your co-host is ${hosts[1]}.` : `Your co-host is ${hosts[0]}.`}
                             ${memoryContext}
                         `
                     },
@@ -265,7 +325,7 @@ export async function generateBanter(prompt) {
             await saveMessage(messageDoc);
             conversation.push(messageDoc);
             currentMessages.push({ role, content: response });
-            currentHostIndex = (currentHostIndex + 1) % VALID_HOSTS.length;
+            currentHostIndex = (currentHostIndex + 1) % hosts.length;
 
             if (i === repliesCount - 1) {
                 // Update memories after the conversation is complete
