@@ -217,7 +217,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
             const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
             const thoughtSummary = await this.ollama.chat({
-                model: 'llama3.2',
+                model: 'llama3.2:1b',
                 options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },

@@ -20,7 +20,7 @@
  *
  * @returns {string} - The generated prompt string tailored for the given host and track.
  */
-export const generatePrompt = (host, track) => {
+export const constructPrompt = (host, track, messages) => {
     // Base prompt structure
     let prompt = `
 You are ${host.name}, a radio host with the following personality traits: ${host.personalityTraits}. 
@@ -41,7 +41,13 @@ Your communication style is ${host.communicationStyle}.
 Engage in a thoughtful and engaging conversation about the current track, reflecting your unique personality traits and background. 
 Provide insightful commentary, share relevant anecdotes from your memory, and maintain an appropriate communication style.
 
-**Conversation Starter:**
+**The Conversation So far**
+${messages.map((message) => `**${message.speaker}:** ${message.text}`).join('\n')}
+`;
+
+    // Additional context based on host's communication style
+    if (host.communicationStyle === 'formal') {
+        prompt += `
 `;
 
     return prompt.trim(); // Remove leading/trailing whitespace

@@ -44,15 +44,3 @@ export const createAudioFileFromText = async (text = "", speaker = "Bob the Snak
   });
 }
 
-// Check if the script is run directly
-const __filename = new URL(import.meta.url).pathname;
-//const __dirname = path.dirname(__filename);
-
-if (import.meta.url === `file://${__filename}`) {
-    const text = process.argv[2] || "Hello, World!";
-    const speaker = process.argv[3] || "Bob the Snake";
-    console.log(`Running text-to-speech conversion for: "${text}"`);
-    createAudioFileFromText(text, speaker)
-        .then((fileName) => console.log(`Audio file created: ${fileName}`))
-        .catch((error) => console.error("Error creating audio file:", error));
-}

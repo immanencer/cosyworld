@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": " 📻 radio whisper",
+            "program": "${workspaceFolder}/radio-whisper/main.mjs",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "👻 ghost",
@@ -92,16 +102,6 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/agents/wolfpack/whisper.mjs",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "📻 radio-whisper",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/agents/abbey/radio-whisper.mjs",
             "envFile": "${workspaceFolder}/.env"
         },
         {

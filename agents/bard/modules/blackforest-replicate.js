@@ -6,7 +6,7 @@ import process from 'process';
 
 // Initialize Replicate with your API token
 const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_KEY
+    auth: process.env.REPLICATE_API_TOKEN
 });
 
 // MongoDB connection URI and database name
