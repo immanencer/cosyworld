@@ -21,21 +21,31 @@ function shuffleArray(array) {
  */
 export async function selectLeastPlayedTracks(db, count = 10) {
     try {
-        const trackCollection = await db.collection('radio');
+        const trackCollection = db.collection('radio');
 
-        const tracks = await trackCollection
+        // Fetch all tracks for random selection
+        const allTracks = await trackCollection.find().toArray();
+        const randomAllTracks = shuffleArray(allTracks).slice(0, Math.floor(count * 3));
+
+        // Fetch least played tracks
+        const leastPlayedTracks = await trackCollection
             .find()
             .sort({ playcount: 1, lastPlayedTime: 1 })
-            .limit(count * 3)  // Get triple the needed tracks
+            .limit(count * 3)
             .toArray();
+        const randomLeastPlayed = shuffleArray(leastPlayedTracks).slice(0, Math.ceil(count * 1.5));
 
-        if (tracks.length === 0) {
-            console.warn("⚠️ No tracks available in the collection.");
-            return [];
-        }
+        // Combine both lists
+        const combined = [...randomAllTracks, ...randomLeastPlayed];
 
-        // Shuffle the tracks and take only the requested amount
-        return shuffleArray(tracks).slice(0, count);
+        // Deduplicate the playlist
+        const deduplicated = Array.from(new Map(combined.map(track => [track._id.toString(), track])).values());
+
+        // Shuffle the combined and deduplicated list
+        const shuffledPlaylist = shuffleArray(deduplicated);
+
+        // Select the final playlist count
+        return shuffledPlaylist.slice(0, count);
     } catch (error) {
         console.error("❌ Error selecting tracks with transitions:", error.message);
         return [];
@@ -58,23 +68,5 @@ export async function updateTrackPlaycount(trackCollection, trackId) {
         );
     } catch (error) {
         console.error("❌ Error updating track playcount:", error.message);
-    }
-}
-
-/**
- * Cleans up temporary transition files.
- */
-export async function cleanupTempFiles() {
-    try {
-        const tempTracksDir = path.join(process.cwd(), 'temp_tracks');
-        const files = await fs.readdir(tempTracksDir);
-        await Promise.all(
-            files.map(file => 
-                fs.unlink(path.join(tempTracksDir, file))
-                    .catch(err => console.warn(`⚠️ Failed to delete ${file}:`, err.message))
-            )
-        );
-    } catch (error) {
-        console.error("❌ Failed to cleanup temp files:", error.message);
     }
 }

@@ -7,7 +7,8 @@
         "memory": "Remembering the time we hosted a live jazz night that was unforgettable.",
         "communicationStyle": "humorous and engaging",
         "timeslots": [
-            "Morning"
+            "Morning",
+            "Evening"
         ]
     },
     "host2": {
@@ -31,8 +32,7 @@
         "memory": "The time we shared our favorite poems with listeners.",
         "communicationStyle": "expressive and poetic",
         "timeslots": [
-            "Afternoon",
-            "Evening"
+            "Afternoon"
         ]
     },
     "host4": {
@@ -43,7 +43,7 @@
         "journal": "Today I shared the most exhilarating stories about adventure and discovery.",
         "memory": "The time we cheered each other on during an exciting debate.",
         "communicationStyle": "enthusiastic and captivating",
-        "timeslots": ["Afternoon", "Evening"]
+        "timeslots": ["Evening"]
     },    
     "host5": {
         "name": "Zadkiel",

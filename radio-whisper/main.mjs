@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, NoSubscriberBehavior } from '@discordjs/voice';
 import { MongoClient } from 'mongodb';
-import { selectLeastPlayedTracks, updateTrackPlaycount, cleanupTempFiles } from './generatePlaylist.mjs';
+import { selectLeastPlayedTracks } from './generatePlaylist.mjs';
 import dotenv from 'dotenv';
 import process from 'process';
 
@@ -12,13 +12,12 @@ import { v4 as uuid } from 'uuid';
 import path from 'path';
 import { Buffer } from 'buffer';
 
+import fs from 'fs/promises';
 import { writeFile } from 'fs/promises';
+import { generateQRCode, extractUrls } from './qrCode.mjs';
+import { AttachmentBuilder } from 'discord.js';
 
 dotenv.config();
-
-// Constants for transition timing
-const MIN_SONGS_BEFORE_TRANSITION = 2;
-const MAX_SONGS_BEFORE_TRANSITION = 3;
 
 const client = new Client({
     intents: [
@@ -48,6 +47,42 @@ const player = createAudioPlayer({
 let currentPlaylist = [];
 let currentTrackIndex = 0;
 let currentTrackInfo = null;
+let isGeneratingTransition = false;
+
+async function generateAndInsertTransition(playlist, track1Index) {
+    if (isGeneratingTransition) {
+        return; // Prevent duplicate transitions
+    }
+
+    isGeneratingTransition = true;
+    try {
+
+        // get the analysis for the next song, and the title of the previous song
+        const firstTrack = playlist[track1Index];
+        const secondTrack = playlist[track1Index + 1];
+        const firstTrackAnalysis = await trackAnalysisCollection.findOne({ _id: firstTrack._id });
+        const secondTrackAnalysis = await trackAnalysisCollection.findOne({ _id: secondTrack._id });
+
+        const prompt = constructPrompt(firstTrackAnalysis, secondTrackAnalysis, []);
+
+        const banter = await generateBanter(prompt, firstTrack.title, secondTrack.title);
+        const transition = path.join(process.cwd(), 'temp_tracks', `transition-${uuid()}.mp3`);
+        await generateTransitionClip(banter, transition);
+        if (transition) {
+            playlist.splice(track1Index + 1, 0, {
+                type: 'transition',
+                path: transition,
+                prevTrack: firstTrack?.trackId,
+                nextTrack: secondTrack?.trackId
+            });
+        }
+    } catch (error) {
+        console.error('Error generating transition:', error);
+    } finally {
+        isGeneratingTransition = false;
+    }
+    return playlist;
+}
 
 async function playNextTrack() {
     if (!currentPlaylist.length || currentTrackIndex >= currentPlaylist.length) {
@@ -60,37 +95,11 @@ async function playNextTrack() {
             return;
         }
 
-        // Insert transition between two songs
+        // Generate transition for just one pair of tracks
         if (currentPlaylist.length >= 2) {
-            try {
-                // randomly select two tracks from the playlist to generate a transition
-                const track1Index = Math.floor(Math.random() * (currentPlaylist.length - 1));
-
-                // Ensure both tracks exist and have _id properties
-                const firstTrack = currentPlaylist[track1Index]?._id ?
-                    await trackAnalysisCollection.findOne({ trackId: currentPlaylist[track1Index]._id }) : null;
-                const secondTrack = currentPlaylist[track1Index + 1]?._id ?
-                    await trackAnalysisCollection.findOne({ trackId: currentPlaylist[track1Index + 1]._id }) : null;
-
-                let prompt = 'Respond creatively and naturally in character.';
-                if (firstTrack && secondTrack) {
-                    prompt = constructPrompt(firstTrack, secondTrack);
-                }
-                const banter = await generateBanter(prompt);
-                const transition = path.join(process.cwd(), 'temp_tracks', `transition-${uuid()}.mp3`);
-                await generateTransitionClip(banter, transition);
-                if (transition) {
-                    currentPlaylist.splice(track1Index + 1, 0, {
-                        type: 'transition',
-                        path: transition,
-                        prevTrack: firstTrack?.trackId,
-                        nextTrack: secondTrack?.trackId
-                    });
-                }
-            } catch (error) {
-                console.error('Error generating transition:', error);
-                // Continue without transition if there's an error
-            }
+            // Choose a random position for transition, but only generate one
+            const track1Index = Math.floor(Math.random() * (currentPlaylist.length - 1));
+            await generateAndInsertTransition(currentPlaylist, track1Index);
         }
     }
 
@@ -150,6 +159,7 @@ client.once('ready', async () => {
 // Command handling
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
+    if (message.channel.id !== process.env.DISCORD_VC_ID) return;
 
     const commands = {
         '!skip': async () => {
@@ -164,7 +174,6 @@ client.on('messageCreate', async message => {
             }
         },
         '!refresh': async () => {
-            await cleanupTempFiles();
             currentPlaylist = await selectLeastPlayedTracks(trackCollection, 10);
             currentTrackIndex = 0;
             message.reply('Playlist refreshed!');
@@ -180,9 +189,36 @@ client.on('messageCreate', async message => {
             console.error('Command error:', error);
             message.reply('An error occurred while executing the command');
         }
+        return;
     }
 
+    // Handle URLs in messages
+    const urls = extractUrls(message.content);
+    if (urls.length > 0) {
+        try {
+            // Generate QR code for each URL found
+            for (const url of urls) {
+                const qrPath = await generateQRCode(url, {
+                    width: 256,
+                    errorCorrectionLevel: 'H',
+                    dark: '#000000',
+                    light: '#ffffff'
+                });
 
+                const attachment = new AttachmentBuilder(qrPath, { name: 'qrcode.png' });
+                await message.reply({
+                    content: `QR Code for: ${url}`,
+                    files: [attachment]
+                });
+
+                // Clean up the temporary QR code file
+                await fs.unlink(qrPath).catch(console.error);
+            }
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            message.reply('Sorry, I couldn\'t generate a QR code for that URL.');
+        }
+    }
 
     if (message.attachments.size > 0) {
         for (const attachment of message.attachments.values()) {
@@ -225,7 +261,6 @@ client.on('messageCreate', async message => {
 // Error handling & cleanup
 process.on('SIGINT', async () => {
     console.log('Shutting down...');
-    await cleanupTempFiles();
     await mongoClient.close();
     client.destroy();
     process.exit(0);
@@ -233,7 +268,6 @@ process.on('SIGINT', async () => {
 
 process.on('uncaughtException', async error => {
     console.error('Uncaught exception:', error);
-    await cleanupTempFiles();
     await mongoClient.close();
     client.destroy();
     process.exit(1);

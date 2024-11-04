@@ -45,6 +45,7 @@
     "openai": "^4.38.2",
     "pm2": "^5.4.1",
     "prism-media": "^1.3.5",
+    "qrcode": "^1.5.4",
     "redis": "^4.6.15",
     "replicate": "^0.29.1",
     "rss-parser": "^3.13.0",

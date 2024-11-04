@@ -41,6 +41,7 @@ function getAvailableHosts() {
     const availableHosts = [];
     
     for (const [_, host] of Object.entries(personalities)) {
+        //console.debug(_); // Added for debugging
         if (host.timeslots.includes(currentTimeslot)) {
             availableHosts.push(host.name);
         }
@@ -61,6 +62,9 @@ let currentHosts = null;
 async function initializeHosts() {
     if (!personalities) {
         await loadPersonalities();
+    }
+    if (!personalities || Object.keys(personalities).length === 0) {
+        throw new Error('No personalities loaded. Please check personalities.json.');
     }
     currentHosts = getAvailableHosts();
     console.log(`🎙️ Selected hosts for current timeslot: ${currentHosts.join(' and ')}`);
@@ -84,20 +88,33 @@ async function initializeMongo() {
         conversationMessages = db.collection('conversation_messages');
         hostMemories = db.collection('host_memories');
         
-        // Ensure each host has a memory document
+        // Initialize default memory structure for each host
+        const defaultMemories = {
+            Morning: "",
+            Afternoon: "",
+            Evening: "",
+            "Late Nights": ""
+        };
+
+        // Ensure each host has a properly structured memory document
         for (const host of currentHosts) {
-            await hostMemories.updateOne(
-                { hostName: host },
-                { 
-                    $setOnInsert: { 
-                        hostName: host,
-                        dreams: [],
-                        memories: [],
-                        goals: []
+            const existingDoc = await hostMemories.findOne({ hostName: host });
+            
+            if (!existingDoc) {
+                // Create new document with proper structure
+                await hostMemories.insertOne({
+                    hostName: host,
+                    memories: defaultMemories
+                });
+            } else if (!existingDoc.memories || Array.isArray(existingDoc.memories)) {
+                // Fix existing document with wrong structure
+                await hostMemories.updateOne(
+                    { hostName: host },
+                    {
+                        $set: { memories: defaultMemories }
                     }
-                },
-                { upsert: true }
-            );
+                );
+            }
         }
     } catch (error) {
         console.error("Failed to initialize MongoDB:", error);
@@ -123,19 +140,7 @@ export function constructPrompt(prevTrack, nextTrack) {
         console.error("❌ Invalid track analysis data provided.");
         return 'Discuss anything you like, the date is ' + new Date().toDateString() + ' and it is approximately ' + new Date().toLocaleTimeString();
     }
-    let prompt = `Let's discuss the transition between "${prevTrack.suggestedTitle}" and "${nextTrack.suggestedTitle}".\n\n`;
-
-    if (prevTrack.emotionalProfile) {
-        prompt += `**Previous Track Emotional Profile:**\n${prevTrack.emotionalProfile}\n\n`;
-    }
-
-    if (prevTrack.genreAnalysis) {
-        prompt += `**Previous Track Genre Analysis:**\n${prevTrack.genreAnalysis}\n\n`;
-    }
-
-    if (prevTrack.musicAnalysis) {
-        prompt += `**Previous Track Music Analysis:**\n${prevTrack.musicAnalysis}\n\n`;
-    }
+    let prompt = `The prior track was "${prevTrack.suggestedTitle}" and "${nextTrack.suggestedTitle}" is coming up next.\n\n`;
 
     if (nextTrack.emotionalProfile) {
         prompt += `**Next Track Emotional Profile:**\n${nextTrack.emotionalProfile}\n\n`;
@@ -163,6 +168,7 @@ async function saveMessage(message) {
         const messageDoc = {
             ...message,
             timestamp: new Date(),
+            timeslot: getCurrentTimeslot(),
             _id: new ObjectId()
         };
         await conversationMessages.insertOne(messageDoc);
@@ -173,6 +179,100 @@ async function saveMessage(message) {
     }
 }
 
+// Modify getTodaySessionData to include timeslot
+async function getTodaySessionData() {
+    const today = new Date().toISOString().split('T')[0];
+    const currentTimeslot = getCurrentTimeslot();
+    await getMongoClient();
+    
+    const sessionData = await db.collection('session_data').findOne({ 
+        date: today,
+        timeslot: currentTimeslot
+    });
+    
+    if (!sessionData) {
+        const newSession = {
+            date: today,
+            timeslot: currentTimeslot,
+            messageCount: 0,
+            isFirstSession: true,
+            showNotes: []
+        };
+        await db.collection('session_data').insertOne(newSession);
+        return newSession;
+    }
+    return sessionData;
+}
+
+// 1. Enhance generateShowNotes with error handling and structured return
+async function generateShowNotes(conversation, isEnd = false, musicAnalysis) {
+    const prompt = `${musicAnalysis} Generate radio show notes for "The ${getCurrentTimeslot()} Show" based on this conversation. 
+Include topic ideas to discuss, the general mood, and any notable anecdotes shared by the hosts.
+${isEnd ? "This is the final segment of the show." : ""}`;
+
+    try {
+        // 2. Limit conversation length to prevent exceeding token limits
+        const MAX_MESSAGES = 100; // Adjust based on model's token capacity
+        const limitedConversation = conversation.slice(-MAX_MESSAGES);
+        
+        const completion = await openai.chat.completions.create({
+            model: "meta-llama/llama-3.1-405b-instruct",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are Dave, a radio show producer creating concise and engaging show notes."
+                },
+                ...limitedConversation.map(msg => ({
+                    role: "user",
+                    content: `${msg.speaker}: ${msg.text}`
+                })),
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            max_tokens: 300,
+            temperature: 0.7
+        });
+
+        if (completion.choices && completion.choices.length > 0) {
+            return {
+                showNotes: completion.choices[0].message.content + (isEnd ? "\n\nThis is the final segment. Wrap up." : ""),
+                timestamp: new Date(),
+                nextTrack: null // Update this if nextTrack information is available
+            };
+        } else {
+            console.error("No completion choices returned from OpenAI.");
+            return {
+                showNotes: "No show notes available.",
+                timestamp: new Date(),
+                nextTrack: null
+            };
+        }
+    } catch (error) {
+        console.error("Error generating show notes:", error);
+        return {
+            showNotes: "Error generating show notes.",
+            timestamp: new Date(),
+            nextTrack: null
+        };
+    }
+}
+
+// 3. Modify getProducerSuggestions to handle the structured response from generateShowNotes
+async function getProducerSuggestions(prompt, recentHistory, conversation) {
+    // Original prompt and OpenAI call removed for clarity
+
+    // Integrate generateShowNotes properly
+    const showNotesResult = await generateShowNotes(conversation, false);
+    
+    return {
+        showNotes: showNotesResult.showNotes,
+        timestamp: showNotesResult.timestamp,
+        nextTrack: showNotesResult.nextTrack
+    };
+}
+
 /**
  * Gets recent conversation history
  * @param {number} limit - Number of recent messages to retrieve
@@ -180,9 +280,18 @@ async function saveMessage(message) {
  */
 async function getRecentHistory(limit = 8) {
     try {
-        await getMongoClient(); // Ensure connection
+        await getMongoClient();
+        const today = new Date().toISOString().split('T')[0];
+        const currentTimeslot = getCurrentTimeslot();
+        
         return await conversationMessages
-            .find({})
+            .find({ 
+                timestamp: {
+                    $gte: new Date(today),
+                    $lt: new Date(new Date(today).getTime() + 24*60*60*1000)
+                },
+                timeslot: currentTimeslot
+            })
             .sort({ timestamp: -1 })
             .limit(limit)
             .toArray();
@@ -196,18 +305,14 @@ async function updateHostMemory(hostName, conversation) {
     try {
         await getMongoClient();
         
-        const prompt = `Based on the recent conversation, update ${hostName}'s perspective:
-            Dreams: What recurring dreams or aspirations emerge?
-            Memories: What significant memories formed?
-            Goals: What goals or intentions developed?
-            Write a paragraph describing this from an overall perspective.`;
+        const prompt = `Based on the recent conversation, summarize ${hostName}'s key memories, experiences, and developments from this radio show segment.`;
 
         const completion = await openai.chat.completions.create({
             model: "meta-llama/llama-3.1-405b-instruct",
             messages: [
                 {
                     role: "system",
-                    content: "You are a memory curator. Provide concise updates to dreams, memories, and goals."
+                    content: "You are a memory curator. Provide a concise summary of the host's experiences and personality development."
                 },
                 ...conversation.map(msg => ({
                     role: msg.role,
@@ -222,16 +327,18 @@ async function updateHostMemory(hostName, conversation) {
             temperature: 0.88
         });
 
-        console.log(`🧠 Updating ${hostName}'s memory...`);
-        console.log(`📝 Response: ${completion.choices[0].message.content}`);
+        const currentTimeslot = getCurrentTimeslot();
+        const memoryContent = completion.choices[0].message.content;
 
+        // Update with proper nesting
         await hostMemories.updateOne(
             { hostName },
             {
                 $set: {
-                    dreams: completion.choices[0].message.content,
+                    [`memories.${currentTimeslot}`]: memoryContent
                 }
-            }
+            },
+            { upsert: true }
         );
     } catch (error) {
         console.error(`Failed to update ${hostName}'s memory:`, error);
@@ -241,7 +348,9 @@ async function updateHostMemory(hostName, conversation) {
 async function getHostMemory(hostName) {
     try {
         await getMongoClient();
-        return await hostMemories.findOne({ hostName });
+        const memory = await hostMemories.findOne({ hostName });
+        const currentTimeslot = getCurrentTimeslot();
+        return memory ? { memories: memory.memories[currentTimeslot] || "" } : null;
     } catch (error) {
         console.error(`Failed to get ${hostName}'s memory:`, error);
         return null;
@@ -253,7 +362,7 @@ async function getHostMemory(hostName) {
  * @param {string} prompt - The prompt to generate banter from.
  * @returns {Promise<string>} - The generated banter conversation.
  */
-export async function generateBanter(prompt) {
+export async function generateBanter(prompt, prevTrack, nextTrack) {
     if (typeof prompt !== 'string' || prompt.trim() === '') {
         console.error('Invalid prompt: Expected a non-empty string.');
         throw new TypeError('Prompt must be a non-empty string.');
@@ -261,88 +370,102 @@ export async function generateBanter(prompt) {
 
     const hosts = await initializeHosts();
     const conversation = [];
-    const repliesCount = 2 + Math.floor(Math.random() * 3);
+    const repliesCount = 2 + Math.floor(Math.random() * 4); // 3 to 5 replies
     let currentHostIndex = 0;
 
     try {
-        // Get recent conversation history once
+        const sessionData = await getTodaySessionData();
         const recentHistory = await getRecentHistory();
+
+
+        // Get producer suggestions including show notes
+        const producerSuggestions = await getProducerSuggestions(prompt, recentHistory, conversation);
+
+        // Update session with show notes
+        await db.collection('session_data').updateOne(
+            { date: sessionData.date, timeslot: getCurrentTimeslot() },
+            { 
+                $push: { 
+                    showNotes: producerSuggestions
+                }
+            }
+        );
+
         const currentMessages = [];
-
+        
+        // Complete the message generation loop
         for (let i = 0; i < repliesCount; i++) {
-            const hostName = hosts[currentHostIndex];
-            // Ensure consistent role assignment
-            const role = hostName === hosts[0] ? "assistant" : "user";
+            const currentHost = hosts[currentHostIndex];
+            const hostMemory = await getHostMemory(currentHost);
+            const hostDetails = Object.values(personalities).find(host => host.name === currentHost);
+            
+            // Enhanced context for the model
+            const messages = [
+                {
+                    role: "system",
+                    content: `You are ${currentHost}, a radio host. ${hostDetails?.personality || ''}
+                    
+                    You are currently hosting the ${getCurrentTimeslot()} show with your co-host ${hosts[(currentHostIndex + 1) % 2]}.
 
-            // Map history messages based on current host's perspective
-            const historyMessages = recentHistory.map(msg => ({
-                role: msg.speaker === hostName ? "assistant" : "user",
-                content: msg.text
-            }));
+                    Engage in friendly and personal conversations with your co-host. Share anecdotes, opinions, and personal stories to create a more relatable and entertaining banter.
+            
+                    .\n\n
 
-            // Get host's memory context
-            const hostMemory = await getHostMemory(hostName);
-            const memoryContext = hostMemory ? `${hostMemory.dreams}` : '';
-
-            console.log(`🗣️ Generating message for ${hostName} (${role})...`);
+                    Today's Show Notes:\n${producerSuggestions.showNotes}\n\n
+                    
+                    ${i === 0 ? `This is the FIRST message of a new segment We just listened to ${prevTrack}, and we are live. ` : ""}
+                    ${i === repliesCount - 1 ? `This is the LAST message of the segment: after you speak, we'll be playing the next track, ${nextTrack}. Please wrap up naturally.` : ""}`
+                },
+                {
+                    role: "user",
+                    content: `Your current memories and experiences: ${hostMemory?.memories || "No specific memories."}`
+                },
+                ...recentHistory.map(msg => ({
+                    role: msg.speaker === currentHost ? "assistant" : "user",
+                    content: `${msg.speaker === currentHost ? '' : msg.speaker} said: ${msg.text}`
+                })),
+                ...currentMessages.map(msg => ({
+                    role: msg.speaker === currentHost ? "assistant" : "user",
+                    content: `${msg.speaker === currentHost ? '' : msg.speaker} said: ${msg.text}`
+                })),
+                {
+                    role: "user",
+                    content: `Continue the conversation naturally with a short response as ${currentHost}, no more than one or two sentences.`
+                }
+            ];
 
             const completion = await openai.chat.completions.create({
                 model: "meta-llama/llama-3.1-405b-instruct",
-                messages: [
-                    {
-                        role: "system",
-                        content: `You are a charismatic and witty radio host named ${hostName}. 
-                            You are having a conversation with your co-host.
-                            ${role === "assistant" ? `Your co-host is ${hosts[1]}.` : `Your co-host is ${hosts[0]}.`}
-                            ${memoryContext}
-                        `
-                    },
-                    ...historyMessages,
-                    ...currentMessages,
-                    {
-                        role: "user",
-                        content: `${(i===0 && (Math.random() < 0.33)) ? prompt : 'feel free to change topics and be creative to keep the conversation interesting'}\n\nRespond to the above conversation with a single short radio appropriate sentence responding to the other host. Don't include (actions) in your output.`
-                    }
-                ],
-                max_tokens: 300,
-                temperature: 0.8,
-                top_p: 0.95,
-                presence_penalty: 0.6,
-                frequency_penalty: 0.6
+                messages,
+                max_tokens: 128,
+                temperature: 0.88
             });
 
-            const response = completion.choices[0].message.content.trim();
-            console.log(`🎙️ ${hostName}: ${response}`);
-            
-            const messageDoc = {
-                speaker: hostName,
-                text: response,
-                role,
-                promptId: new ObjectId(),
-                context: prompt.substring(0, 200)
+            const message = {
+                speaker: currentHost,
+                text: completion.choices[0].message.content,
+                role: "assistant"
             };
-            
-            await saveMessage(messageDoc);
-            conversation.push(messageDoc);
-            currentMessages.push({ role, content: response });
-            currentHostIndex = (currentHostIndex + 1) % hosts.length;
 
-            if (i === repliesCount - 1) {
-                // Update memories after the conversation is complete
-                await updateHostMemory(hostName, conversation);
-            }
+            await saveMessage(message);
+            currentMessages.push(message);
+            conversation.push(message);
+
+            console.log(`🎙️ ${currentHost}: ${message.text}`);
+            
+            // Switch to the other host
+            currentHostIndex = (currentHostIndex + 1) % hosts.length;
         }
+
+        // Update memories for both hosts
+        await Promise.all(hosts.map(host => 
+            updateHostMemory(host, conversation)
+        ));
 
         return conversation;
     } catch (error) {
         console.error("❌ Failed to generate banter:", error);
         throw error;
-    } finally {
-        // Optionally close MongoDB connection if no other operations are pending
-        // if (mongoClient) {
-        //     await mongoClient.close();
-        //     mongoClient = null;
-        // }
     }
 }
 

@@ -55,7 +55,7 @@ export async function generateConversation(conversation, outputPath) {
                 channels: 2,              // Stereo
                 codec: 'libmp3lame',      // MP3 codec
                 bitrate: '192k',          // 192 kbps bitrate
-                crossfadeDuration: 0.33,     // 2-second crossfade
+                crossfadeDuration: 0.33,     // Updated from 0.33 to 2 to match FFmpeg command
             };
 
             try {

@@ -127,7 +127,7 @@ export const combineAudioFilesWithCrossfade = async (
     outputFile,
     options = {}
 ) => {
-    const { crossfadeDuration = 2 } = options;
+    const { crossfadeDuration = 0.3 } = options;
 
     try {
         // Input Validation
@@ -222,7 +222,7 @@ export const processAudioPipeline = async (
         channels = 2,
         codec = 'libmp3lame',
         bitrate = '192k',
-        crossfadeDuration = 2, // seconds
+        crossfadeDuration = 0.3, // seconds
     } = options;
 
     let tempDir = null;
@@ -271,7 +271,7 @@ export const processAudioPipeline = async (
         });
 
         // Clean up temporary directory
-        await fs.rm(tempDir, { recursive: true, force: true });
+        await fs.rm(tempDir, { recursive: true });
         log('✅ Temporary files cleaned up.');
 
         return outputFile;
@@ -288,88 +288,5 @@ export const processAudioPipeline = async (
                 logError(`Failed to clean up temp directory: ${error.message}`);
             }
         }
-    }
-};
-
-/**
- * Combines multiple audio files into a single audio file with crossfade transitions.
- * Simplified and corrected to ensure all paths are handled correctly.
- *
- * @param {string[]} audioFiles - Array of absolute paths to input audio files.
- * @param {string} outputFile - Absolute path to the output combined audio file.
- * @param {Object} options - Transition options.
- * @param {number} options.crossfadeDuration - Duration of the crossfade in seconds.
- * @returns {Promise<string>} - Resolves with the path to the combined audio file.
- */
-export const combineAudioFilesWithTransitions = async (
-    audioFiles,
-    outputFile,
-    options = {}
-) => {
-    const { crossfadeDuration = 2 } = options;
-
-    try {
-        // Input Validation
-        if (!Array.isArray(audioFiles) || audioFiles.length === 0) {
-            throw new Error("The 'audioFiles' parameter must be a non-empty array.");
-        }
-
-        if (typeof outputFile !== 'string' || outputFile.trim() === '') {
-            throw new Error("The 'outputFile' parameter must be a valid file path string.");
-        }
-
-        // Ensure all audio files exist
-        for (const file of audioFiles) {
-            if (!(await fileExists(file))) {
-                throw new Error(`Audio file does not exist: ${file}`);
-            }
-        }
-
-        // Ensure output directory exists
-        const outputDir = path.dirname(outputFile);
-        await fs.mkdir(outputDir, { recursive: true });
-
-        // Prepare the FFmpeg command
-        const command = ffmpeg();
-
-        // Add all input files to the FFmpeg command
-        audioFiles.forEach(file => {
-            command.input(file);
-        });
-
-        // Build the filter_complex for crossfading
-        let filterComplex = '';
-        const numFiles = audioFiles.length;
-
-        // Generate filter_complex for multiple crossfades
-        for (let i = 0; i < numFiles - 1; i++) {
-            const input1 = i === 0 ? `[${i}:a]` : `[a${i}]`;
-            const input2 = `[${i + 1}:a]`;
-            const output = `[a${i + 1}]`;
-            filterComplex += `${input1}${input2}acrossfade=d=${crossfadeDuration}:c1=tri:c2=tri${output}; `;
-        }
-
-        // Final mapping
-        filterComplex += `[a${numFiles - 1}]`;
-
-        // Configure FFmpeg with the filter_complex
-        command
-            .complexFilter(filterComplex)
-            .outputOptions('-map', `[a${numFiles - 1}]`)
-            .audioCodec('libmp3lame') // Ensure consistent codec
-            .audioBitrate(192)         // Set desired bitrate
-            .on('end', () => {
-                log(`✅ Combined audio file with crossfade created at: ${outputFile}`);
-            })
-            .on('error', (err) => {
-                logError(`Error during audio combination: ${err.message}`);
-                throw err;
-            })
-            .save(outputFile);
-
-        return outputFile;
-    } catch (error) {
-        logError(`Failed to combine audio files with crossfade: ${error.message}`);
-        throw error;
     }
 };

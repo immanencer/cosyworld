@@ -47,8 +47,8 @@ ${messages.map((message) => `**${message.speaker}:** ${message.text}`).join('\n'
 
     // Additional context based on host's communication style
     if (host.communicationStyle === 'formal') {
-        prompt += `
-`;
+        // Add any formal-specific prompt adjustments here
+    }
 
     return prompt.trim(); // Remove leading/trailing whitespace
 };
