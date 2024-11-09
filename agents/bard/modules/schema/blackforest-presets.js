@@ -59,10 +59,8 @@ const standard = {
   // Artistic/Experimental Image Generation (Creative mode, relaxed safety)
   const artistic = {
     input: {
-      prompt: "Your artistic prompt here",
-      prompt_upsampling: true,
-      width: 1024,
-      aspect_ratio: "9:16",
+      raw: false,
+      aspect_ratio: "3:2",
       output_format: "png",
       output_quality: 90, // High quality for artistic integrity
       safety_tolerance: 5 // Most permissive safety for experimental generation

@@ -1,5 +1,8 @@
-import { TwitterApi } from 'twitter-api-v2';
 import process from 'process';
+import { Buffer } from 'buffer';
+
+import sharp from 'sharp';
+import { TwitterApi } from 'twitter-api-v2';
 
 const client = new TwitterApi({
     appKey: process.env.X_API_KEY,
@@ -82,9 +85,16 @@ export async function postX(params, accountId = '', imageBuffer = null) {
     // Upload image if buffer is provided
     if (imageBuffer) {
         try {
+            // if the image Buffer exceeds 5242880 bytes (5MB), it will be resized
+            while (imageBuffer.length > 5242880) {
+                console.log('🌳 Resizing image buffer...');
+                imageBuffer = await sharp(imageBuffer).resize(0.8).toBuffer();
+            }
+
             mediaId = await uploadImageBuffer(imageBuffer);
         } catch (error) {
             console.error('🌳 Failed to upload image, proceeding without it.');
+            console.error(error);
         }
     }
 
@@ -92,6 +102,9 @@ export async function postX(params, accountId = '', imageBuffer = null) {
         let success = false;
         let attempt = 0;
 
+        // Wait for a few seconds between each chunk
+        await delay(5000);
+    
         while (attempt < maxRetries && !success) {
             try {
                 const tweetPayload = {

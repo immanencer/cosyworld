@@ -9,6 +9,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import Joi from 'joi';
 
+const __dirname = path.resolve(path.dirname(''));
+
 const db = {
     avatars: mongo.collection('avatars'),
     locations: mongo.collection('locations'),
@@ -19,7 +21,7 @@ const db = {
 
 const config = {
     guildId: process.env.DISCORD_GUILD_ID,
-    ollamaUri: process.env.OLLAMA_URI || 'http://localhost:11434/api',
+    ollamaUri: process.env.OLLAMA_URI || 'http://127.0.0.1:11434/api',
     summaryInterval: 3600000,
     storyInterval: 21600000, // 6 hours in milliseconds
     greatLibraryChannelName: 'great-library',
@@ -335,7 +337,7 @@ class LibrarianBot {
         }
     
         // Split the content into chunks by double line breaks
-        const chunks = splitIntoChunks(content);
+        const chunks = this.splitIntoChunks(content);
     
         if (chunks.length === 0) {
             console.error('No content found to save as chunks.');
@@ -358,7 +360,7 @@ class LibrarianBot {
             };
     
             // Validate the chunk before adding
-            const { error } = validateChunk(chunk);
+            const { error } = this.validateChunk(chunk);
             if (error) {
                 console.error(`Validation failed for chunk ${index + 1}:`, error.message);
                 // Optionally, skip invalid chunks or halt the process

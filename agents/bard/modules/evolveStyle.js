@@ -150,6 +150,7 @@ export async function evolveStyle(sonnetText, avatar, memory) {
 
     // Then evolve painting style
     await evolvePaintingStyle(sonnetText, avatar, memory);
+
 }
 
 /**

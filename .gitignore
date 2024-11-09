@@ -14,3 +14,4 @@ slash/config.js
 *.env
 .venv/*
 *.mp3
+bard_images

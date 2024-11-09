@@ -50,7 +50,8 @@ let currentTrackInfo = null;
 let isGeneratingTransition = false;
 
 async function generateAndInsertTransition(playlist, track1Index) {
-    if (isGeneratingTransition) {
+    const disableTransitions = true;
+    if (isGeneratingTransition || disableTransitions) {
         return; // Prevent duplicate transitions
     }
 
@@ -60,12 +61,18 @@ async function generateAndInsertTransition(playlist, track1Index) {
         // get the analysis for the next song, and the title of the previous song
         const firstTrack = playlist[track1Index];
         const secondTrack = playlist[track1Index + 1];
-        const firstTrackAnalysis = await trackAnalysisCollection.findOne({ _id: firstTrack._id });
-        const secondTrackAnalysis = await trackAnalysisCollection.findOne({ _id: secondTrack._id });
+        const firstTrackAnalysis = await trackAnalysisCollection.findOne({ trackId: firstTrack._id });
+        const secondTrackAnalysis = await trackAnalysisCollection.findOne({ trackId: secondTrack._id });
 
         const prompt = constructPrompt(firstTrackAnalysis, secondTrackAnalysis, []);
 
-        const banter = await generateBanter(prompt, firstTrack.title, secondTrack.title);
+        const banter = await generateBanter(prompt,
+            `${firstTrack.title} (${firstTrackAnalysis?.suggestedTitle || ''})
+             ${firstTrackAnalysis?.musicAnalysis}
+            `,
+            `${secondTrack.title} (${secondTrackAnalysis?.suggestedTitle || ''})
+             ${secondTrackAnalysis?.musicAnalysis}
+            `);
         const transition = path.join(process.cwd(), 'temp_tracks', `transition-${uuid()}.mp3`);
         await generateTransitionClip(banter, transition);
         if (transition) {
@@ -85,6 +92,7 @@ async function generateAndInsertTransition(playlist, track1Index) {
 }
 
 async function playNextTrack() {
+    let newPlaylist = false;
     if (!currentPlaylist.length || currentTrackIndex >= currentPlaylist.length) {
         // Generate new playlist when current one is finished
         currentPlaylist = await selectLeastPlayedTracks(db, 8);
@@ -94,13 +102,7 @@ async function playNextTrack() {
             console.error('Failed to generate new playlist');
             return;
         }
-
-        // Generate transition for just one pair of tracks
-        if (currentPlaylist.length >= 2) {
-            // Choose a random position for transition, but only generate one
-            const track1Index = Math.floor(Math.random() * (currentPlaylist.length - 1));
-            await generateAndInsertTransition(currentPlaylist, track1Index);
-        }
+        newPlaylist = true;
     }
 
     const item = currentPlaylist[currentTrackIndex];
@@ -112,6 +114,12 @@ async function playNextTrack() {
     try {
         const resource = createAudioResource(item.path);
         player.play(resource);
+        // Generate transition for just one pair of tracks
+        if (newPlaylist && currentPlaylist.length >= 2) {
+            // Choose a random position for transition, but only generate one
+            const track1Index = Math.floor(Math.random() * (currentPlaylist.length - 1));
+            await generateAndInsertTransition(currentPlaylist, track1Index);
+        }
         currentTrackIndex++;
     } catch (error) {
         console.error('Error playing track:', error);

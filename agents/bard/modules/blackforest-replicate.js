@@ -1,8 +1,9 @@
 import https from 'https';
 import { MongoClient } from 'mongodb';
+import { Buffer } from 'buffer';
 import Replicate from 'replicate';
-import presets from './schema/blackforest-presets.js';
 import process from 'process';
+import fs from 'fs';
 
 // Initialize Replicate with your API token
 const replicate = new Replicate({
@@ -90,16 +91,17 @@ export async function draw_picture(prompt) {
         return null;
     }
 
-    const input = {
-        ...presets.artistic,
-        prompt
-    };
-
     try {
         // Step 1: Initiate the image generation request using Replicate API
         const prediction = await replicate.predictions.create({
-            model: "black-forest-labs/flux-1.1-pro",
-            input
+            model: "black-forest-labs/flux-1.1-pro-ultra",
+            input: {
+                "raw": false,
+                prompt,
+                "aspect_ratio": "2:3",
+                "output_format": "png",
+                "safety_tolerance": 5
+            }
         });
         console.log('Prediction started:', prediction.id);
 
@@ -118,7 +120,7 @@ export async function draw_picture(prompt) {
             }
 
             // Wait for 2 seconds before the next poll
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 10000));
         }
 
         if (!completed) {
@@ -128,6 +130,12 @@ export async function draw_picture(prompt) {
         // Step 3: Download the generated image as a PNG
         const imageUrl = completed.output; // Assuming the first output is the PNG URL
         const imageBuffer = await downloadImage(imageUrl);
+
+        // Save the image to a file
+        if (!fs.existsSync('./bard_images')) {
+            fs.mkdirSync('./bard_images');
+        }
+        fs.writeFileSync(`./bard_images/${Date.now()}.png`, imageBuffer);
 
         // Step 4: Insert the prompt and result into MongoDB
         await insertRequestIntoMongo(prompt, completed.output);

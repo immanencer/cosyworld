@@ -206,7 +206,28 @@ async function getTodaySessionData() {
 
 // 1. Enhance generateShowNotes with error handling and structured return
 async function generateShowNotes(conversation, isEnd = false, musicAnalysis) {
-    const prompt = `${musicAnalysis} Generate radio show notes for "The ${getCurrentTimeslot()} Show" based on this conversation. 
+
+    const personalityTraits = [
+        "radiogenic and calm",
+        "quirky and energetic"
+    ];
+    for (const personality of Object.values(personalities)) {
+        if (currentHosts[0] === personality.name) {
+            personalityTraits[0] = personality.personalityTraits;
+        }
+        if (currentHosts[1] === personality.name) {
+            personalityTraits[1] = personality.personalityTraits;
+        }
+    }
+    
+    const prompt = `${musicAnalysis} Generate radio show notes for "The ${getCurrentTimeslot()} Show" based on this conversation.
+    Hosted by:
+    1. ${currentHosts[0]},
+    ${personalityTraits[0] || "radiogenic and calm"}
+    
+    - ${currentHosts[1]}
+    ${personalityTraits[1] || "quirky and energetic"}
+     
 Include topic ideas to discuss, the general mood, and any notable anecdotes shared by the hosts.
 ${isEnd ? "This is the final segment of the show." : ""}`;
 
@@ -231,8 +252,8 @@ ${isEnd ? "This is the final segment of the show." : ""}`;
                     content: prompt
                 }
             ],
-            max_tokens: 300,
-            temperature: 0.7
+            max_tokens: 512,
+            temperature: 0.8
         });
 
         if (completion.choices && completion.choices.length > 0) {
@@ -267,9 +288,9 @@ async function getProducerSuggestions(prompt, recentHistory, conversation) {
     const showNotesResult = await generateShowNotes(conversation, false);
     
     return {
-        showNotes: showNotesResult.showNotes,
+        showNotes: (showNotesResult.showNotes || '').replace(/noxannihilism/g, "Ratimics"),
         timestamp: showNotesResult.timestamp,
-        nextTrack: showNotesResult.nextTrack
+        nextTrack: (showNotesResult.nextTrack ||'').replace(/noxannihilism/g, "Ratimics"),
     };
 }
 
@@ -378,18 +399,25 @@ export async function generateBanter(prompt, prevTrack, nextTrack) {
         const recentHistory = await getRecentHistory();
 
 
-        // Get producer suggestions including show notes
-        const producerSuggestions = await getProducerSuggestions(prompt, recentHistory, conversation);
-
-        // Update session with show notes
-        await db.collection('session_data').updateOne(
-            { date: sessionData.date, timeslot: getCurrentTimeslot() },
-            { 
-                $push: { 
-                    showNotes: producerSuggestions
+        let producerSuggestions = sessionData.showNotes[sessionData.showNotes.length - 1];
+        if (!sessionData.producerSuggestions) {
+            // Get producer suggestions including show notes
+            producerSuggestions = await getProducerSuggestions(prompt, recentHistory, conversation);
+            sessionData.producerSuggestions = producerSuggestions;
+            
+            // Update session with show notes
+            await db.collection('session_data').updateOne(
+                { date: sessionData.date, timeslot: getCurrentTimeslot() },
+                { 
+                    $push: { 
+                        showNotes: producerSuggestions
+                    }
                 }
-            }
-        );
+            );
+            
+            console.log(`📝 Show Notes ${producerSuggestions.timestamp}: \n${producerSuggestions.showNotes}`);
+        }
+
 
         const currentMessages = [];
         
@@ -414,7 +442,7 @@ export async function generateBanter(prompt, prevTrack, nextTrack) {
                     Today's Show Notes:\n${producerSuggestions.showNotes}\n\n
                     
                     ${i === 0 ? `This is the FIRST message of a new segment We just listened to ${prevTrack}, and we are live. ` : ""}
-                    ${i === repliesCount - 1 ? `This is the LAST message of the segment: after you speak, we'll be playing the next track, ${nextTrack}. Please wrap up naturally.` : ""}`
+                    ${i === repliesCount - 1 ? `This is the LAST message of the segment: after you speak, we'll be playing the next track, ${nextTrack}. \n\nPlease wrap up naturally.` : ""}`
                 },
                 {
                     role: "user",
@@ -422,11 +450,11 @@ export async function generateBanter(prompt, prevTrack, nextTrack) {
                 },
                 ...recentHistory.map(msg => ({
                     role: msg.speaker === currentHost ? "assistant" : "user",
-                    content: `${msg.speaker === currentHost ? '' : msg.speaker} said: ${msg.text}`
+                    content: `${msg.speaker === currentHost ? '' : msg.speaker}: ${msg.text}`
                 })),
                 ...currentMessages.map(msg => ({
                     role: msg.speaker === currentHost ? "assistant" : "user",
-                    content: `${msg.speaker === currentHost ? '' : msg.speaker} said: ${msg.text}`
+                    content: `${msg.speaker === currentHost ? '' : msg.speaker}: ${msg.text}`
                 })),
                 {
                     role: "user",

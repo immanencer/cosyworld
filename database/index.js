@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 
 // MongoDB URI and Database Name
-const mongoURI = 'mongodb://localhost:27017';
+const mongoURI = 'mongodb://127.0.0.1:27017';
 const dbName = 'cosyworld';
 
 // Create a new MongoClient
@@ -24,7 +24,9 @@ async function connectToMongoDB() {
 }
 
 // Call this function at the start of your application
-await connectToMongoDB();
+(async () => {
+    await connectToMongoDB();
+})();
 
 export default db;
 export { db };

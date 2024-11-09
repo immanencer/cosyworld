@@ -16,6 +16,9 @@ export async function initializeAI(base_model = 'llama3.2', avatar) {
     }
 }
 
+export async function chatWithVisionAI(message, avatar, memory) {
+}
+
 export async function chatWithAI(message, avatar, memory) {
     try {
         const response = await ollama.chat({

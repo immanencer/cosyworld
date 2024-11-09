@@ -49,6 +49,7 @@
     "redis": "^4.6.15",
     "replicate": "^0.29.1",
     "rss-parser": "^3.13.0",
+    "sharp": "^0.33.5",
     "simplex-noise": "^4.0.1",
     "twitter-api-v2": "^1.17.0",
     "winston": "^3.13.0"
