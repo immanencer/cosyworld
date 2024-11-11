@@ -11,22 +11,15 @@ const client = new MongoClient(mongoURI);
 let db;
 
 // Connect to MongoDB
-async function connectToMongoDB() {
+export async function connectToMongoDB() {
     try {
         await client.connect();
         db = client.db(dbName);
 
         db.collection('items').createIndex({ name: 1 }, { unique: true });
         console.log('MongoDB connected');
+        return db;
     } catch (err) {
         console.error('Error connecting to MongoDB:', err);
     }
 }
-
-// Call this function at the start of your application
-(async () => {
-    await connectToMongoDB();
-})();
-
-export default db;
-export { db };

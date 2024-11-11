@@ -88,7 +88,17 @@ export async function postX(params, accountId = '', imageBuffer = null) {
             // if the image Buffer exceeds 5242880 bytes (5MB), it will be resized
             while (imageBuffer.length > 5242880) {
                 console.log('🌳 Resizing image buffer...');
-                imageBuffer = await sharp(imageBuffer).resize(0.8).toBuffer();
+
+                // Get image metadata first
+                const metadata = await sharp(imageBuffer).metadata();
+
+                // Calculate new dimensions (80% of original)
+                const newWidth = Math.floor(metadata.width * 0.8);
+                const newHeight = Math.floor(metadata.height * 0.8);
+
+                imageBuffer = await sharp(imageBuffer)
+                    .resize(newWidth, newHeight)
+                    .toBuffer();
             }
 
             mediaId = await uploadImageBuffer(imageBuffer);
@@ -104,7 +114,7 @@ export async function postX(params, accountId = '', imageBuffer = null) {
 
         // Wait for a few seconds between each chunk
         await delay(5000);
-    
+
         while (attempt < maxRetries && !success) {
             try {
                 const tweetPayload = {

@@ -1,5 +1,6 @@
 import { initializeDiscordClient, sendAsAvatar, getOrCreateThread, getChannelByName, discordClient } from '../services/discordService.mjs';
-import mongo from '../database/index.js';
+import { connectToMongoDB } from '../database/index.js';
+const mongo = await connectToMongoDB();
 import fetch from 'node-fetch';
 import crypto from 'crypto';
 import chunkText from '../tools/chunk-text.js';
