@@ -101,7 +101,7 @@ export async function useItem(bot, itemName, avatar) {
             Item Description: ${item.description}
             Location: ${avatar.location}
             Holder: ${avatar.name}
-            Thoughts: ${(bot.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
+            Thoughts: ${await bot.memoryManager.getThoughts(avatar.name)}
             
             You "${item.name}" have been used by ${avatar.name}.
             Respond as the item with a short message or *action*, reflecting its nature:

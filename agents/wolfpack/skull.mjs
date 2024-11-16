@@ -64,7 +64,7 @@ class SkullBot {
             await this.loadMemory();
             await this.client.login(process.env.DISCORD_BOT_TOKEN);
             this.setupEventListeners();
-            this.runDailyThoughts();
+            this.scheduleThoughts();
             setInterval(() => this.processQueue(), CONFIG.rateLimitDelay);
         } catch (error) {
             this.handleError('Initialization error', error);
@@ -105,20 +105,26 @@ class SkullBot {
         if (this.processingQueue || this.messageQueue.length === 0) return;
         this.processingQueue = true;
         const message = this.messageQueue.shift();
-        await this.handleMessage(message).catch(error => this.handleError('Message processing error', error));
-        this.processingQueue = false;
+        try {
+            await this.handleMessage(message);
+        } catch (error) {
+            this.handleError('Message processing error', error);
+        } finally {
+            this.processingQueue = false;
+        }
     }
 
-    async runDailyThoughts() {
-        for (const process of ['wake', 'dream', 'setGoal']) {
-            await this.think(process).catch(error => this.handleError(`Daily thought error: ${process}`, error));
-        }
-        setInterval(() => this.think('reflect'), CONFIG.reflectionInterval);
+    scheduleThoughts() {
+        // Schedule daily and hourly thought processes
+        setInterval(() => this.runThoughtProcess('reflect'), CONFIG.reflectionInterval);
+        ['wake', 'dream', 'setGoal'].forEach(process => {
+            this.runThoughtProcess(process).catch(error => this.handleError(`Daily thought error: ${process}`, error));
+        });
     }
 
     async handleMessage(message) {
-        await this.think('analyzeSentiment', { person: message.author.username });
-        await this.think('createMemory', { person: message.author.username });
+        await this.runThoughtProcess('analyzeSentiment', { person: message.author.username });
+        await this.runThoughtProcess('createMemory', { person: message.author.username });
 
         if (Math.random() < 0.1 || message.content.toLowerCase().includes('skull')) {
             const response = await this.generateResponse(message.content);
@@ -127,7 +133,7 @@ class SkullBot {
         }
     }
 
-    async think(processName, context = {}) {
+    async runThoughtProcess(processName, context = {}) {
         const process = THOUGHT_PROCESSES[processName];
         if (!process) return;
         const prompt = `${CONFIG.personality}\n\n${process.prompt}\n\nCurrent state: ${JSON.stringify(this.memory)}`.replace(/\{(\w+)\}/g, (_, key) => context[key] || key);
@@ -157,10 +163,7 @@ class SkullBot {
     async generateAIResponse(prompt, retries = 0) {
         try {
             const response = await ollama.chat({
-                model: 'skullx',
-                embedding: {
-                  api: "ollama"
-                },
+                model: CONFIG.model,
                 messages: [
                     { role: 'system', content: CONFIG.personality },
                     { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },

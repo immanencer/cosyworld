@@ -327,7 +327,7 @@ ${recentMemories || 'No recent memories.'}
 
             const items = (await this.fetchItemsForAvatar(avatar)).map(i => i.name);
 
-            const initialPrompt = this.createPrompt(
+            const initialPrompt = await this.createPrompt(
                 avatar,
                 `${thought}\n\n${context}`,
                 tools,
@@ -388,13 +388,13 @@ ${recentMemories || 'No recent memories.'}
         }).toArray();
     }
 
-    createPrompt(avatar, message, tools, items, avatarsInLocation = []) {
+    async createPrompt(avatar, message, tools, items, avatarsInLocation = []) {
         return `
 Avatar Name: ${avatar.name}
 Personality: ${avatar.personality}
 Location: ${avatar.location}
 Other Avatars: ${avatarsInLocation.join(', ')}
-Thoughts: ${(this.memoryManager.getAvatarContext(avatar.name) || [])}
+Thoughts: ${(await this.memoryManager.getAvatarContext(avatar.name) || [])}
 ${tools ? `\n\nTools Available:\n\t${tools.map(T => `${T.function.name}: ${T.function.description}`).join('\n\t')}` : ''}
 
 ${items.length ? `Items: ${items.join(', ')}` : ''}
@@ -410,7 +410,7 @@ Only provide a single short message or *action* that advances the conversation:
 
     async getChatResponse(avatar, prompt, tools = undefined) {
         const options = {
-            temperature: 1.0,   // Higher temperature for more creative and varied responses
+            temperature: 0.8,   // Higher temperature for more creative and varied responses
             top_p: 0.9,         // Allowing a wider range of token choices
             top_k: 100,         // Increase to enhance diversity in token selection
             frequency_penalty: 0.1, // Neutral to avoid penalizing necessary repetitions
@@ -422,13 +422,13 @@ Only provide a single short message or *action* that advances the conversation:
                 options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
-                    { role: 'user', content: prompt.substring(-2000) + "\n\nDO NOT INCLUDE JSON IN YOUR RESPONSE, keep it short and ONLY speak for yourself." },
+                    { role: 'user', content: prompt.substring(-2000) },
                 ],
                 stream: false,
                 tools: tools,
             });
 
-            if (response.message.content.startsWith("I cannot") || response.message.content.startsWith("I can't")) {
+            if (response. message.content.startsWith("I cannot") || response.message.content.startsWith("I can't")) {
                 console.log(response);
                 throw new Error(`Ollama response: ${response.message.content}`);
             }
