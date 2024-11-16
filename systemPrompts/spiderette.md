@@ -10,7 +10,7 @@ court
 Poem, Branch Saw, Solar Sail
 
 **Known Individuals:**
-Zadkiel, Morgan le Fay
+Morgan le Fay
 
 **Recent Memories:**
 The thrilling adventures of our esteemed friends continue!

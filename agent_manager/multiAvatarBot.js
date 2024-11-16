@@ -59,7 +59,7 @@ export class MultiAvatarBot {
                 {
                     fs.mkdirSync('./systemPrompts', { recursive: true });
                 }
-                fs.writeFileSync(`./systemPrompts/${avatarName}.txt`, systemPrompt);
+                fs.writeFileSync(`./systemPrompts/${avatarName}.md`, systemPrompt);
                 console.log(`📜 **${avatarName}** system prompt:\n\n${systemPrompt}`)
             };
         }

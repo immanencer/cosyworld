@@ -10,7 +10,7 @@ species-of-the-metastrata
 Candle of Knowledge
 
 **Known Individuals:**
-Badger, Toad, Samael, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
+Badger, Toad, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
 
 **Recent Memories:**
 *Rrrzzz* Ah, the whispers of those who dare to tread this moonlit meadow. I shall recall our recent encounters:

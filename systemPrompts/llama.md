@@ -16,7 +16,7 @@ species-of-the-metastrata
 None
 
 **Known Individuals:**
-Badger, Toad, Samael, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
+Badger, Toad, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
 
 **Recent Memories:**
 It seems like our conversation has taken a fascinating turn! Let me summarize the key points and highlights from our recent discussions:

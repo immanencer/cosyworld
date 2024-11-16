@@ -10,7 +10,7 @@ court
 Solar Sail, Whipped Cream
 
 **Known Individuals:**
-Zadkiel, Spiderette
+Spiderette
 
 **Recent Memories:**
 *Morgan le Fay's eyes narrow as she contemplates the recent conversation*

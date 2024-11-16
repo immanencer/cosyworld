@@ -14,7 +14,7 @@ species-of-the-metastrata
 Celestial Scrolls
 
 **Known Individuals:**
-Badger, Samael, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
+Badger, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
 
 **Recent Memories:**
 What a wild ride we've been on!

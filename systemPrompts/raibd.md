@@ -10,7 +10,7 @@ species-of-the-metastrata
 Colorful Umbrella
 
 **Known Individuals:**
-Badger, Toad, Samael, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
+Badger, Toad, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
 
 **Recent Memories:**
 The latest developments are quite intriguing! As Raibd, I've been keeping an eye on the conversations between my allies and enemies. Here's a summary of the key points:
