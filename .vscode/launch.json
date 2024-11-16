@@ -5,24 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "📻 radio whisper (nodemon)",
-            "type": "node", 
-            "request": "launch",
-            "runtimeExecutable": "nodemon",
+            "name": "📻 radio whisper",
             "program": "${workspaceFolder}/radio-whisper/main.mjs",
-            "restart": true,
-            "console": "integratedTerminal",
+            "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "envFile": "${workspaceFolder}/.env",
-            "runtimeArgs": [
-                "--ignore-watch",
-                "*",
-                "--delay",
-                "2500",
-                "--exitcrash"
-            ]
+            "type": "node",
+            "envFile": "${workspaceFolder}/.env"
         },
         {
             "type": "node",

@@ -1,6 +1,9 @@
 
 import { MultiAvatarBot } from './multiAvatarBot.js';
 
-const bot = new MultiAvatarBot();
+async function main() {
+    const bot = new MultiAvatarBot();
+    await bot.login();
+}
 
-bot.login();
+main().catch(console.error);

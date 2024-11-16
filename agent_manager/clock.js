@@ -43,7 +43,7 @@ async function clock(bot) {
 
 async function getTargetChannel(bot, avatar) {
     const channels = await bot.client.guilds.cache.get(bot.guildId).channels.fetch();
-    const recentChannels = bot.memoryManager.memoryCache[avatar.name]?.recentChannels || [];
+    const recentChannels = avatar.recentChannels || [];
 
     // Filter out channels that avatar has visited recently
     const availableChannels = channels.filter(channel => !channel.name.includes('🚧') && !recentChannels.includes(channel.id) && channel.isTextBased());

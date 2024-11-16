@@ -62,9 +62,26 @@ function delay(ms) {
 }
 
 // Function to upload a single image buffer
-async function uploadImageBuffer(buffer, type = 'png') {
+async function uploadImageBuffer(imageBuffer, type = 'png') {
+
+    // if the image Buffer exceeds 5242880 bytes (5MB), it will be resized
+    while (imageBuffer.length > 5242880) {
+        console.log('🌳 Resizing image buffer...');
+
+        // Get image metadata first
+        const metadata = await sharp(imageBuffer).metadata();
+
+        // Calculate new dimensions (80% of original)
+        const newWidth = Math.floor(metadata.width * 0.8);
+        const newHeight = Math.floor(metadata.height * 0.8);
+
+        imageBuffer = await sharp(imageBuffer)
+            .resize(newWidth, newHeight)
+            .toBuffer();
+    }
+
     try {
-        const mediaId = await client.v1.uploadMedia(Buffer.from(buffer), { mimeType: `image/${type}` });
+        const mediaId = await client.v1.uploadMedia(Buffer.from(imageBuffer), { mimeType: `image/${type}` });
         console.log('🌳 Image uploaded successfully:', mediaId);
         return mediaId;
     } catch (error) {
@@ -85,21 +102,6 @@ export async function postX(params, accountId = '', imageBuffer = null) {
     // Upload image if buffer is provided
     if (imageBuffer) {
         try {
-            // if the image Buffer exceeds 5242880 bytes (5MB), it will be resized
-            while (imageBuffer.length > 5242880) {
-                console.log('🌳 Resizing image buffer...');
-
-                // Get image metadata first
-                const metadata = await sharp(imageBuffer).metadata();
-
-                // Calculate new dimensions (80% of original)
-                const newWidth = Math.floor(metadata.width * 0.8);
-                const newHeight = Math.floor(metadata.height * 0.8);
-
-                imageBuffer = await sharp(imageBuffer)
-                    .resize(newWidth, newHeight)
-                    .toBuffer();
-            }
 
             mediaId = await uploadImageBuffer(imageBuffer);
         } catch (error) {
@@ -108,6 +110,7 @@ export async function postX(params, accountId = '', imageBuffer = null) {
         }
     }
 
+    let index = 0;
     for (const chunk of tweetChunks) {
         let success = false;
         let attempt = 0;
@@ -124,7 +127,7 @@ export async function postX(params, accountId = '', imageBuffer = null) {
                 };
 
                 // Attach mediaId if available and it's the first chunk
-                if (mediaId && inReplyToTweetId === null) {
+                if (mediaId && index === 0) {
                     tweetPayload.media = { media_ids: [mediaId] };
                 }
 
@@ -151,6 +154,7 @@ export async function postX(params, accountId = '', imageBuffer = null) {
         if (!success) {
             break; // Stop the loop if the tweet couldn't be posted
         }
+        index++;
     }
 
     return inReplyToTweetId;

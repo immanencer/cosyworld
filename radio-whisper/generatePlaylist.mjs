@@ -1,8 +1,5 @@
 // generatePlaylist.mjs
 import { ObjectId } from 'mongodb';
-import path from 'path';
-import fs from 'fs/promises';
-import process from 'process';
 
 // Helper function to shuffle array
 function shuffleArray(array) {
@@ -25,13 +22,13 @@ export async function selectLeastPlayedTracks(db, count = 10) {
 
         // Fetch all tracks for random selection
         const allTracks = await trackCollection.find().toArray();
-        const randomAllTracks = shuffleArray(allTracks).slice(0, Math.floor(count * 3));
+        const randomAllTracks = shuffleArray(allTracks).slice(0, Math.floor(count * 5));
 
         // Fetch least played tracks
         const leastPlayedTracks = await trackCollection
             .find()
             .sort({ playcount: 1, lastPlayedTime: 1 })
-            .limit(count * 3)
+            .limit(count * 2)
             .toArray();
         const randomLeastPlayed = shuffleArray(leastPlayedTracks).slice(0, Math.ceil(count * 1.5));
 

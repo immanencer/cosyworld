@@ -384,7 +384,7 @@ Let your response flow like a chilling breeze, in 3-4 sentences of eerie pup-spe
 
     collectSentiment(data) {
         const emojis = data.content.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu) || [];
-        if (!this.memory.sentiments[data.author]) {
+        if (!this.memory.sentiments[data.author] || this.memory.sentiments[data.author] === '') {
             this.memory.sentiments[data.author] = [];
         }
         this.memory.sentiments[data.author].push(...emojis);

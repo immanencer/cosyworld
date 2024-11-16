@@ -50,8 +50,7 @@ let currentTrackInfo = null;
 let isGeneratingTransition = false;
 
 async function generateAndInsertTransition(playlist, track1Index) {
-    const disableTransitions = true;
-    if (isGeneratingTransition || disableTransitions) {
+    if (isGeneratingTransition) {
         return; // Prevent duplicate transitions
     }
 

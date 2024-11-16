@@ -391,7 +391,7 @@ export async function generateBanter(prompt, prevTrack, nextTrack) {
 
     const hosts = await initializeHosts();
     const conversation = [];
-    const repliesCount = 2 + Math.floor(Math.random() * 4); // 3 to 5 replies
+    const repliesCount = 2 + Math.floor(Math.random() * 2); // 3 to 5 replies
     let currentHostIndex = 0;
 
     try {

@@ -30,10 +30,7 @@ export async function processAvatarResponse(bot, avatar, channel, messageContent
     }
 }
 
-async function updateMemoryAndMove(bot, avatar, channel, messageContent) {
-    bot.memoryManager.updateMemoryCache(avatar.name, messageContent, 'conversation');
-    console.log(`📝 **Memory Updated**: ${avatar.name}'s memory has been updated.`);
-
+async function updateMemoryAndMove(bot, avatar, channel) {
     const moveLog = await bot.tools.runTool('MOVE', { newLocation: channel.name }, avatar);
     console.log(`🚶‍♂️ **${avatar.name}** moves to ${channel.name}: ${moveLog}`);
 }
@@ -129,7 +126,6 @@ export async function decideIfShouldRespond(bot, avatar, message) {
         });
 
         const decision = response.message.content.trim();
-        bot.memoryManager.updateMemoryCache(avatar.name, decision, 'thought');
         console.log(`🔍 **Decision Made**: ${avatar.name} decides to respond with "${decision}".`);
         return decision.toLowerCase().includes('yes') ? 'YES' : 'NO';
     } catch (error) {

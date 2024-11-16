@@ -15,6 +15,8 @@ class Database {
         this.itemsCollection = this.db.collection('items');
         this.locationsCollection = this.db.collection('locations');
         this.messagesCollection = this.db.collection('messages'); // Assuming you store messages here
+        this.journalsCollection = this.db.collection('journals');
+        this.memorySummariesCollection = this.db.collection('memorySummaries');
     }
 
     // Modify your existing Database class

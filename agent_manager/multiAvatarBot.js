@@ -6,6 +6,9 @@ import MemoryManager from './memory.js';
 import ollama from 'ollama';
 import process from 'process';
 
+import { delay } from './utils.js';
+import fs from 'fs';
+
 import { handleUserMessage, handleBotMessage } from './messageHandlers.js';
 import { startClock } from './clock.js';
 
@@ -47,6 +50,25 @@ export class MultiAvatarBot {
         await this.database.connect();
         await this.avatarManager.cacheAvatars();
         startClock(this);  // Start the clock module
+
+        // Loop through the avatars and export their prompts
+        for (const avatarName in this.avatarManager.avatarCache) {
+            const systemPrompt = await this.exportSystemPrompt(avatarName);
+            if (systemPrompt) {
+                if (!fs.existsSync('./systemPrompts'))
+                {
+                    fs.mkdirSync('./systemPrompts', { recursive: true });
+                }
+                fs.writeFileSync(`./systemPrompts/${avatarName}.txt`, systemPrompt);
+                console.log(`📜 **${avatarName}** system prompt:\n\n${systemPrompt}`)
+            };
+        }
+
+
+        while (true) {
+            await this.processMessageQueue();
+            await delay(1000);
+        }
     }
 
     async login() {
@@ -58,13 +80,23 @@ export class MultiAvatarBot {
         }
     }
 
+    q = [];
     async handleMessage(message) {
         if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
+        this.q.push(message);
+    }
+
+    async processMessageQueue() {
+        if (this.q.length === 0) return;
+
+
+        const message = this.q.shift();
+        if (!message) return;
 
         if (message.author.bot) {
-            handleBotMessage(this, message);
+            await handleBotMessage(this, message);
         } else {
-            handleUserMessage(this, message);
+            await handleUserMessage(this, message);
         }
     }
 
@@ -77,7 +109,7 @@ export class MultiAvatarBot {
             this.responseTimes[avatar.name] = now;
             return 'YES';
         }
-        
+
 
         // Get the last time the avatar responded
         const lastResponseTime = this.responseTimes[avatar.name] || 0;
@@ -131,8 +163,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             const decisionLine = lines.slice(-1)[0].trim();
 
             console.log(`🤔 **${avatar.name}** ponders the haiku:\n\n${haiku}`);
-
-            this.memoryManager.updateMemoryCache(avatar.name, haiku, 'thought');
+            this.memoryManager.addRandomThought(avatar.name, haiku);
 
             if (decisionLine.toUpperCase().includes('YES')) {
                 // Update last response time
@@ -148,12 +179,70 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
         }
     }
 
+    // Add this function to your MultiAvatarBot class
+
+    async exportSystemPrompt(avatarName) {
+        const avatar = this.avatarManager.avatarCache[avatarName];
+
+        if (!avatar) {
+            console.error(`Avatar "${avatarName}" not found.`);
+            return null;
+        }
+        // Combine the last few memories to include in the prompt
+        const recentMemories = await this.memoryManager.getAvatarContext(avatar.name);
+
+        // Fetch items the avatar has or has interacted with
+        const items = await this.database.itemsCollection.find({
+            $or: [{ location: avatar.location }, { takenBy: avatar.name }]
+        }).toArray();
+        const itemNames = items.map(item => item.name);
+
+        // Fetch relationships with other avatars
+        const avatarsInLocation = await this.database.avatarsCollection.find({
+            location: avatar.location,
+            owner: 'host'
+        }).toArray();
+        const otherAvatarNames = avatarsInLocation.map(a => a.name).filter(name => name !== avatar.name);
+
+        // Construct the system prompt
+        const systemPrompt = `
+You are **${avatar.name}** ${avatar.emoji || ''}
+
+**Personality Traits:**
+${avatar.personality}
+
+**Current Location:**
+${avatar.location}
+
+**Inventory:**
+${itemNames.length > 0 ? itemNames.join(', ') : 'None'}
+
+**Known Individuals:**
+${otherAvatarNames.length > 0 ? otherAvatarNames.join(', ') : 'None'}
+
+**Recent Memories:**
+${recentMemories || 'No recent memories.'}
+
+
+**Instructions:**
+- Stay in character as ${avatar.name}.
+- Use your personality traits to guide your actions and speech.
+- Remember your recent experiences and interactions.
+- Pursue your goals and respond to situations accordingly.
+- Interact naturally with others in your environment.
+    `.trim();
+
+        // Return the generated system prompt
+        return systemPrompt;
+    }
+
+
     getWeightedAvatar(avatars) {
         if (avatars.length === 0) return null;
 
         // Increase weight for avatars with less recent interaction
         const weights = avatars.map(avatar => {
-            const lastInteracted = this.memoryManager.memoryCache[avatar.name]?.lastInteracted || 0;
+            const lastInteracted = this.responseTimes[avatar.name] || 0;
             const timeSinceLastInteracted = Date.now() - lastInteracted;
             return timeSinceLastInteracted;
         });
@@ -180,8 +269,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             return 'Unable to retrieve channel context.';
         }
         try {
-            const thoughts = this.memoryManager.memoryCache[avatarName]?.thought || [];
-            const thoughtsLog = thoughts.filter(T => typeof T === 'string').join('\n');
+            const thoughtsLog = await this.memoryManager.getAvatarContext(avatarName);
 
             // Fetch additional context from Discord
             const discordContext = await channel.messages.fetch({ limit: 10 });
@@ -203,7 +291,7 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
 
         const context = await this.getChannelContext(channel, avatar.name);
 
-        const options =  {
+        const options = {
             temperature: 0.85, // Slightly lower for coherent but still creative summaries
             top_p: 0.85, // Nucleus sampling to balance creativity and coherence
             top_k: 50,   // Allow diversity in token selection
@@ -215,13 +303,13 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             const tools = await this.prepareToolsForAvatar(avatar);
             const avatarsInLocation = await this.database.avatarsCollection.find({ location: avatar.location, owner: 'host' }).toArray();
 
-            const thoughts = (this.memoryManager.memoryCache[avatar.name]?.thought || []).slice(-100);
+            const thoughts = await this.memoryManager.getAvatarContext(avatar.name);
             const thoughtSummary = await this.ollama.chat({
-                model: 'llama3.2:1b',
+                model: 'llama3.2',
                 options,
                 messages: [
                     { role: 'system', content: `You are ${avatar.name}, ${avatar.personality}.` },
-                    ...thoughts.slice(-8).map(thought => ({ role: 'assistant', content: thought })),
+                    { role: 'assistant', content: thoughts },
                     { role: 'user', content: 'Summarize your thoughts and goals in a few sentences.' },
                 ],
                 stream: false,
@@ -236,7 +324,6 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             }
 
             console.log(`🔮 **${avatar.name}** ponders the thought:\n\n${thought}`);
-            this.memoryManager.updateMemoryCache(avatar.name, thought, 'thought');
 
             const items = (await this.fetchItemsForAvatar(avatar)).map(i => i.name);
 
@@ -251,10 +338,10 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             console.log(`🔮 **${avatar.name}** ponders the message:\n\n${initialPrompt}`);
 
             let initialResponse;
-            
-            while(!initialResponse) {
+
+            while (!initialResponse) {
                 initialResponse = await this.getChatResponse(avatar, initialPrompt, tools);
-            } 
+            }
 
             if (!initialResponse || !initialResponse.message) {
                 console.error(`🦙 **${avatar.name}** received an invalid response from Ollama.`);
@@ -264,27 +351,25 @@ Should ${avatar.name} respond to this message? Provide a haiku explaining your t
             if (this.hasToolCalls(initialResponse)) {
                 const combinedToolResults = await this.executeToolCalls(avatar, initialResponse.message.tool_calls);
                 if (combinedToolResults.length > 0) {
-                    const followUpContext= await this.getChannelContext(channel, avatar.name);
+                    const followUpContext = await this.getChannelContext(channel, avatar.name);
                     const followUpPrompt = this.createFollowUpPrompt(avatar, combinedToolResults, `${context}\n\n${followUpContext}\n\n+ "\n\n Provide a response for ${avatar.name} to the above conversation with a short message or *action*`);
 
                     console.log(`🔮 **${avatar.name}** ponders the follow-up message:\n\n${followUpPrompt}`);
                     let followUpResponse;
-                    
-                    while(!followUpResponse) {
+
+                    while (!followUpResponse) {
                         followUpResponse = await this.getChatResponse(avatar, followUpPrompt);
-                    } 
-                            
+                    }
+
                     if (!followUpResponse || !followUpResponse.message || !followUpResponse.message.content) {
                         console.error(`🦙 **${avatar.name}** received an invalid follow-up response from Ollama.`);
                         return null;
                     }
 
                     const finalResponse = followUpResponse.message.content.trim();
-                    await this.memoryManager.logThought(avatar.name, finalResponse);
                     return finalResponse;
                 }
             } else {
-                await this.memoryManager.logThought(avatar.name, initialResponse.message.content.trim());
                 return initialResponse.message.content.trim();
             }
         } catch (error) {
@@ -309,7 +394,7 @@ Avatar Name: ${avatar.name}
 Personality: ${avatar.personality}
 Location: ${avatar.location}
 Other Avatars: ${avatarsInLocation.join(', ')}
-Thoughts: ${(this.memoryManager.memoryCache[avatar.name]?.thought || []).join('\n')}
+Thoughts: ${(this.memoryManager.getAvatarContext(avatar.name) || [])}
 ${tools ? `\n\nTools Available:\n\t${tools.map(T => `${T.function.name}: ${T.function.description}`).join('\n\t')}` : ''}
 
 ${items.length ? `Items: ${items.join(', ')}` : ''}
@@ -337,18 +422,18 @@ Only provide a single short message or *action* that advances the conversation:
                 options,
                 messages: [
                     { role: 'system', content: `${avatar.emoji} You are ${avatar.name}. ${avatar.personality}` },
-                    { role: 'user', content: prompt + "\n\nDO NOT INCLUDE JSON IN YOUR RESPONSE, keep it short and ONLY speak for yourself." },
+                    { role: 'user', content: prompt.substring(-2000) + "\n\nDO NOT INCLUDE JSON IN YOUR RESPONSE, keep it short and ONLY speak for yourself." },
                 ],
                 stream: false,
                 tools: tools,
             });
 
-            if(response.message.content.startsWith("I cannot") || response.message.content.startsWith("I can't") ) {
+            if (response.message.content.startsWith("I cannot") || response.message.content.startsWith("I can't")) {
                 console.log(response);
                 throw new Error(`Ollama response: ${response.message.content}`);
             }
 
-            if(response.message.content.includes("{") && response.message.content.includes("}")) {
+            if (response.message.content.includes("{") && response.message.content.includes("}")) {
                 console.log(response);
                 throw new Error(`Unexpected JSON: ${response.message.content}`);
             }
@@ -382,7 +467,6 @@ Only provide a single short message or *action* that advances the conversation:
                 }
             } catch (toolError) {
                 console.error(`🛠️ **${avatar.name}** encountered an error with tool "${toolCall.function.name}":`, toolError);
-                await this.memoryManager.logThought(avatar.name, `Tool error: ${toolCall.function.name}`);
             }
         }
         return combinedToolResults;
