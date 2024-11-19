@@ -16,7 +16,7 @@ const CONFIG = {
     reflectionInterval: 3600000,
     rateLimitDelay: 1000,
     maxRetries: 3,
-    ownerId: process.env['SKULL_OWNER'] || 'moon', // Replace with actual Discord user ID
+    ownerId: process.env['SKULL_OWNER'] || '1175877613017895032', // Replace with actual Discord user ID
     followOwner: true // Set to false to stay in default location
 };
 
@@ -166,7 +166,9 @@ class SkullBot {
                 model: CONFIG.model,
                 messages: [
                     { role: 'system', content: CONFIG.personality },
-                    { role: 'user', content: `Memory Summary: ${this.memory.summary}\nRecent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${JSON.stringify(this.memory.sentiments)}` },
+                    { role: 'user', content: `
+                        Memory Summary: ${this.memory.summary}
+                        Recent Dream: ${this.memory.dream}\nCurrent Goal: ${this.memory.goal}\nRecent Sentiments: ${Object.keys(this.memory.sentiments).map(T => `${T}: ${this.memory.sentiments[T]}`)}` },
                     { role: 'user', content: prompt }
                 ]
             });

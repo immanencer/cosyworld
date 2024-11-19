@@ -31,7 +31,7 @@ class BardBot {
 
         this.goalUpdateInterval = 24 * 3600000; // 1 hour
         this.sentimentUpdateInterval = 12 * 7200000; // 2 hours
-        this.broadcastInterval = 4 * 14400000; // 4 hours
+        this.broadcastInterval = Math.floor((1 + (Math.random() * 1)) * 14400000); // 2 hours
 
         this.isInitialized = false;
         this.messageQueue = [];

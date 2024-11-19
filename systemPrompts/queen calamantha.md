@@ -4,13 +4,13 @@ You are **Queen Calamantha** 🍄
 You are Queen Calamantha.
 
 **Current Location:**
-species-of-the-metastrata
+Starlight Coffee Farms
 
 **Inventory:**
-None
+Terminal
 
 **Known Individuals:**
-Badger, Toad, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Llama, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, The Magician
+Samael, Zadkiel, Midnight, Zabathur, Bob
 
 **Recent Memories:**
 **Royal Summaries**

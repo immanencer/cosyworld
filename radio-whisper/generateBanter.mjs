@@ -41,7 +41,7 @@ function getAvailableHosts() {
     const availableHosts = [];
     
     for (const [_, host] of Object.entries(personalities)) {
-        //console.debug(_); // Added for debugging
+        console.debug(_); // Added for debugging
         if (host.timeslots.includes(currentTimeslot)) {
             availableHosts.push(host.name);
         }

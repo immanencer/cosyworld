@@ -117,6 +117,7 @@ class LibrarianBot {
         }
     }
 
+
     async handleUserQuery(message) {
         try {
             const query = message.content;
@@ -127,22 +128,13 @@ class LibrarianBot {
                 return;
             }
 
-            // Get the mapping of channelId to channelName
-            const channelIdToNameMap = await this.getLocationNames(messages);
-
-            // Format each message as "(location.name) author.name: message"
-            const formattedMessages = messages.map(msg => {
-                const locationName = channelIdToNameMap[msg.channelId] || 'Unknown Channel';
-                const authorName = msg.author?.username || 'Unknown Author';
-                const content = msg.content || '';
-                return `(${locationName}) ${authorName}: ${content}`;
-            }).join('\n');
+            const summary = await this.summarizeContext(messages);
 
             // Send the formatted list
             await sendAsAvatar({
                 ...this._scribeAsher,
                 channelId: message.channel.id,
-            }, `Here is the context I found:\n\n${formattedMessages}`);
+            }, `Here is the context I found:\n\n${summary}`);
 
         } catch (error) {
             console.error('Error handling user query:', error);
@@ -436,7 +428,7 @@ class LibrarianBot {
                 body: JSON.stringify({
                     model: 'llama3.2',
                     messages: [
-                        { role: 'system', content: character.personality },
+                        { role: 'system', content: `You are ${character.name}, ${character.personality}.` },
                         { role: 'user', content: input }
                     ],
                     stream: false
@@ -520,9 +512,9 @@ class LibrarianBot {
      * @returns {Promise<Array<Object>>} - An array of message objects matching the search criteria.
      * @throws Will throw an error if keyword extraction fails or if the database query encounters an issue.
      */
-    async searchMessages(query, limit = 100) {
+    async searchMessages(query, limit = 10) {
         // Step 1: Extract topics or characters from the query using Ollama
-        const extractionPrompt = `From the following instruction, extract key topics or characters for searching messages:\n\n${query}`;
+        const extractionPrompt =`From the following instruction, extract key topics or characters for searching messages:\n\n${query}`;
         let extraction; 
         
         while (!extraction) {
@@ -578,8 +570,10 @@ class LibrarianBot {
 
 
     async summarizeContext(messages) {
-        const messageContent = messages.map(msg => `${msg.author}: ${msg.content}`).join('\n\n');
-        const prompt = `Summarize the following context:\n\n${messageContent}`;
+        // Get the mapping of channelId to channelName
+        const channelIdToNameMap = await this.getLocationNames(messages);
+        const messageContent = messages.map(msg => `(${channelIdToNameMap[msg.channelId]}) ${msg.author}: ${msg.content}`).join('\n\n');
+        const prompt = `Summarize the following context:\n\n${messageContent}\n\nWrite a detailed and imaginative narrative summary.`;
         return this.generateResponse(this._scribeAsher, prompt);
     }
 
@@ -664,7 +658,7 @@ class LibrarianBot {
         // **Step 3: Build a Refined Query Based on the Analysis**
         const refinedQuery = `Find messages that are related to the following topics or characters: ${keywords.join(', ')}. These messages should help in creating a focused and coherent story.`;
 
-        const relevantMessages = await this.searchMessages(refinedQuery, 88) || [];
+        const relevantMessages = await this.searchMessages(refinedQuery, 18) || [];
 
         // **Fetch location names for the relevantMessages**
         const relevantChannelIdToNameMap = await this.getLocationNames(relevantMessages);

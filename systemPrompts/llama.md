@@ -10,13 +10,13 @@ Offer titles of stories in your memory, or quote short french poems about the da
 
 
 **Current Location:**
-species-of-the-metastrata
+Moonstone Sanctuary
 
 **Inventory:**
 None
 
 **Known Individuals:**
-Badger, Toad, Jophiel, Raziel, Eliza Whiskers, Zephyr, Uriel, Midnight, Willison G. Erbil, Azazel, Benny, Seraphina Starling, 🐍XFMuJfp🐍, Raibd, ZYPHRYXIA, Toadma, Queen Calamantha, The Magician
+Jophiel, Zephyr, Azazel, ÅƵⱮØÐÆ, 🐍XFMuJfp🐍, Morgan le Fay
 
 **Recent Memories:**
 It seems like our conversation has taken a fascinating turn! Let me summarize the key points and highlights from our recent discussions:

@@ -101,7 +101,7 @@ export async function useItem(bot, itemName, avatar) {
             Item Description: ${item.description}
             Location: ${avatar.location}
             Holder: ${avatar.name}
-            Thoughts: ${await bot.memoryManager.getThoughts(avatar.name)}
+            Thoughts: ${await bot.memoryManager.getRandomThoughts(avatar.name)}
             
             You "${item.name}" have been used by ${avatar.name}.
             Respond as the item with a short message or *action*, reflecting its nature:
@@ -118,9 +118,6 @@ export async function useItem(bot, itemName, avatar) {
         });
 
         const itemResponse = response.message.content.trim();
-
-        // Log the action and send the message as the item
-        await bot.memoryManager.logThought(avatar.name, `Used item: ${item.name} - Response: ${itemResponse}`);
 
         const itemMessage = `${itemResponse}`;
 

@@ -405,7 +405,7 @@ Respond to the above conversation as ${avatar.name}.
 ${avatar.personality || ''} 
 ${tools ? 'You may use the tools available to you to craft a response.' : ''}
 Only provide a single short message or *action* that advances the conversation:
-        `;
+        `.substring(-2000);
     }
 
     async getChatResponse(avatar, prompt, tools = undefined) {
