@@ -1,4 +1,4 @@
-import { initializeDiscordClient, sendAsAvatar, getOrCreateThread, getChannelByName, discordClient } from '../services/discordService.mjs';
+import { initializeDiscordClient, sendAsAvatar, getOrCreateThread, getChannelByName, discordClient, getAllChannelsByName } from '../services/discordService.mjs';
 import { connectToMongoDB } from '../database/index.js';
 const mongo = await connectToMongoDB();
 import fetch from 'node-fetch';
@@ -26,7 +26,7 @@ const config = {
     summaryInterval: 3600000,
     storyInterval: 21600000, // 6 hours in milliseconds
     greatLibraryChannelName: 'great-library',
-    bookshelfChannelName: '📜 bookshelf'
+    bookshelfChannelName: 'bookshelf'
 };
 
 class LibrarianBot {
@@ -602,8 +602,9 @@ class LibrarianBot {
     async writeNewStory() {
         try {
             const stories = await this.generateNewStories();
-            const channel = await getChannelByName(config.bookshelfChannelName);
-            if (channel) {
+            const channels = await getAllChannelsByName(config.bookshelfChannelName);
+            
+            for (const channel of channels) {
                 await sendAsAvatar({
                     ...this._scribeAsher,
                     avatarURL: this._scribeAsher.avatar,

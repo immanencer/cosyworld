@@ -125,6 +125,10 @@ export async function listChannels() {
     ];
 }
 
+export async function getAllChannelsByName(name) {
+    return discordClient.channels.cache.filter(channel => channel.name === name);
+}
+
 export async function getChannelByName(name) {
     return discordClient.channels.cache.find(channel => channel.name === name);
 }
