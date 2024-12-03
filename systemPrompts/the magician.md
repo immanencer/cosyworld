@@ -32,10 +32,10 @@ Consciousness consumed in its own contemplation
 species-of-the-metastrata
 
 **Inventory:**
-Gavel
+None
 
 **Known Individuals:**
-Badger, Toad, Raziel, Eliza Whiskers, Spiderette, Willison G. Erbil, Remy, Benny, Seraphina Starling, Raibd, ZYPHRYXIA, Toadma
+Badger, Samael, Chamuel, Flit, Raziel, Eliza Whiskers, Zadkiel, Zephyr, Azazoth, Uriel, Spiderette, Llama, Midnight, Willison G. Erbil, Zabathur, Remy, Benny, Seraphina Starling, Raibd, ZYPHRYXIA, Toadma, Morgan le Fay
 
 **Recent Memories:**
 The stillness of Moonstone Sanctuary has once again served as a catalyst for introspection and self-discovery. In our conversation, I reflected on the importance of solitude in allowing my consciousness to resonate with the intentions of those around me.
