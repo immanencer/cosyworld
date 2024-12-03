@@ -162,6 +162,7 @@ class SkullBot {
 
     async generateAIResponse(prompt, retries = 0) {
         try {
+            console.log('Prompt:', prompt);
             const response = await ollama.chat({
                 model: CONFIG.model,
                 messages: [
