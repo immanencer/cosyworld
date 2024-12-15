@@ -1,5 +1,7 @@
 # COSYWORLD
 
+⚠️ This is an open source development lab and is our disorganized monorepo. For our latest streamlined swarm manager technology please see https://github.com/immanencer/cosyworld8
+
 > We are, in either case, instruments of his will providing **mansions for the souls** that he creates.
 > 
 > - *Alan Turing*
